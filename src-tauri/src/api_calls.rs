@@ -118,14 +118,21 @@ impl UserSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct UserAnimeInfo {
     pub id: i32,
     pub media_id: i32,
+    pub status: String,
     pub score: i32,
     pub progress: i32,
     pub started_at: Option<FuzzyDate>,
     pub completed_at: Option<FuzzyDate>,
+}
+
+impl UserAnimeInfo {
+    pub const fn new() -> UserAnimeInfo {
+        UserAnimeInfo { id: 0, media_id: 0, status: String::new(), score: 0, progress: 0, started_at: None, completed_at: None }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -133,6 +140,12 @@ pub struct FuzzyDate {
     pub year: Option<i32>,
     pub month: Option<i32>,
     pub day: Option<i32>,
+}
+
+impl FuzzyDate {
+    pub const fn new() -> FuzzyDate {
+        FuzzyDate { year: None, month: None, day: None }
+    }
 }
 
 
@@ -198,6 +211,7 @@ query ($username: String) {
             entries {
                 id
                 mediaId
+                status
                 score
                 progress
                 startedAt {
@@ -283,6 +297,25 @@ query ($id: Int) { # Define which variables will be used in the query (id)
 			isAdult
 			userId
 		}
+        relations {
+            edges {
+                id
+                relationType
+                node {
+                    title {
+                        english
+                        romaji
+                    }
+                }
+            }
+            nodes {
+                id
+                title {
+                    english
+                    romaji
+                }
+            }
+        }
 		isFavourite
 		isFavouriteBlocked
         isAdult
@@ -387,6 +420,32 @@ query ($id: Int, $id2: Int) {
 }
 ";
 
+const ANIME_UPDATE_PROGRESS_ENTRY: &str = "
+mutation ($id: Int, $progress: Int) {
+    SaveMediaListEntry (id: $id, progress: $progress) {
+    }
+}
+";
+
+const ANIME_UPDATE_ENTRY: &str = "mutation ($id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $syear: Int, $smonth: Int, $sday: Int, $eyear: Int, $emonth: Int, $eday: Int) { 
+    SaveMediaListEntry (id: $id, status: $status, score: $score, progress: $progress, startedAt: {year: $syear, month: $smonth, day: $sday}, completedAt: {year: $eyear, month: $emonth, day: $eday}) {
+        id
+        mediaId
+        status
+        score
+        progress
+        startedAt {
+            year
+            month
+            day
+        }
+        completedAt {
+            year
+            month
+            day
+        }
+    }
+}";
 
 
 // retrive information on anime using it's anilist id
@@ -544,7 +603,6 @@ pub async fn anilist_list_quary_call(username: String, access_token: String) -> 
     // create client and query json
     let client = Client::new();
     let json = json!({"query": ANIME_LIST_QUERY, "variables": {"username": username}});
-    //print!("{}", json);
 
     // get media information from anilist api
     let response = client.post("https://graphql.anilist.co/")
@@ -626,18 +684,69 @@ pub async fn anilist_oauth_call() -> String {
     response_string
 }
 
+pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> String {
 
+    let mut mutation: String = ANIME_UPDATE_ENTRY.to_string();
+    let mut variables = json!({"id": anime.id, "status": anime.status, "score": anime.score, "progress": anime.progress});
 
-pub async fn test(id: i32) -> String {
+    if anime.started_at.is_none() {
+        mutation = mutation.replace(", $syear: Int, $smonth: Int, $sday: Int", "");
+        mutation = mutation.replace(", startedAt: {year: $syear, month: $smonth, day: $sday}", "");
+    }
+    else {
+        let started = anime.started_at.unwrap();
+        variables["syear"] = json!(started.year);
+        variables["smonth"] = json!(started.month);
+        variables["sday"] = json!(started.day);
+    }
+
+    if anime.completed_at.is_none() {
+        mutation = mutation.replace(", $eyear: Int, $emonth: Int, $eday: Int", "");
+        mutation = mutation.replace(", completedAt: {year: $eyear, month: $emonth, day: $eday}", "");
+    }
+    else {
+        let completed = anime.completed_at.unwrap();
+        variables["eyear"] = json!(completed.year);
+        variables["emonth"] = json!(completed.month);
+        variables["eday"] = json!(completed.day);
+    }
+
+    let json = json!({"query": mutation, "variables": variables});
+    print!("{}\n", json);
+
+    let client = Client::new();
+    let response = client.post("https://graphql.anilist.co/")
+        .header("Authorization", String::from("Bearer ") + &access_token)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .body(json.to_string())
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await;
+
+    let response_string = response.unwrap();
+    
+    let media_id_replaced = response_string.replace("mediaId", "media_id");
+    let started_at_replaced = media_id_replaced.replace("startedAt", "started_at");
+    let completed_at_replaced = started_at_replaced.replace("completedAt", "completed_at");
+
+    print!("{}\n", completed_at_replaced);
+    completed_at_replaced
+}
+
+pub async fn test(id: i32, access_token: String) -> String {
 
     print!("\n{}\n", id);
 
     let client = Client::new();
     //let json = json!({"query": ANIME_MULTI_INFO_QUERY});
-    let json = json!({"query": ANIME_MULTI_INFO_QUERY, "variables": {"id": 21, "id2": 17871}});
+    let json = json!({"query": ANIME_ALLINFO_QUERY, "variables": {"id": 5081 }});
     print!("{}\n", json);
 
     let response = client.post("https://graphql.anilist.co/")
+        .header("Authorization", String::from("Bearer ") + &access_token)
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .body(json.to_string())

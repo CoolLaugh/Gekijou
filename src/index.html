@@ -23,7 +23,7 @@
       <a href="#Onhold" onclick="show_paused_anime()">On hold<div class="underline" id="underline2"></div></a>
       <a href="#Dropped" onclick="show_dropped_anime()">Dropped<div class="underline" id="underline3"></div></a>
       <a href="#Plantowatch" onclick="show_planning_anime()">Plan to watch<div class="underline" id="underline4"></div></a>
-      <a href="#Browse">Browse<div class="underline" id="underline5"></div></a>
+      <a href="#Browse" onclick="test()">Browse<div class="underline" id="underline5"></div></a>
       <a href="#Settings" class="split" onclick="show_setting_window()">Settings</a>
     </div> 
 
@@ -42,45 +42,81 @@
         <div class="anime_info_panal" id="info_panal" style="border: 2px solid blue">
           <div class="anime_info_title_row">
             <p id="info_title" maxlength="50">title title title title</p>
-            <img src="/assets/close.png" onclick="hide_anime_info_window()" class="anime_info_close" style="float: right;" width="30" height="30">
+            <img id="info_close_button" src="/assets/close.png" onclick="hide_anime_info_window()" class="anime_info_close" style="float: right;" width="30" height="30">
           </div>
           <div class="anime_info_lower">
             <div class="anime_info_cover">
               <img src="/assets/CoverImageTest.png" id="info_cover" alt="Cover Image" width="200" height="300"/>
-              <a id="Trailer_link" href="">No Trailer</a>
             </div>
             <div>
-              <div class="anime_info_text"><p id="info_description"></p></div>
-              <div>
-                <table>
+              <div class="tabnav">
+                <a href="#information" onclick="openTab('information', 'underline_tab_0')">Information<div class="tab_underline" id="underline_tab_0"></div></a>
+                <a href="#user_entry" onclick="openTab('user_entry', 'underline_tab_1')">User Entry<div class="tab_underline" id="underline_tab_1"></div></a>
+                <a href="#trailer" onclick="openTab('trailer', 'underline_tab_2')">Trailer<div class="tab_underline" id="underline_tab_2"></div></a>
+              </div>
+              <div id="information" class="tabcontent">
+                <div class="anime_info_text">
+                  <p id="info_description"></p>
+                </div>
+                <div>
+                  <table>
+                    <tr>
+                      <th><p id="info_format">TV</p></th>
+                      <th><p id="info_rating">88%</p></th>
+                      <th><p id="info_duration">13 x 24 minutes</p></th>
+                      <th><p id="info_season_year">Spring 2021</p></th>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+              
+              <div id="user_entry" class="tabcontent">
+                <Table>
                   <tr>
+                    <th><p>Status:</p></th>
                     <th>
-                      <p id="info_format">TV</p>
-                    </th>
-                    <th>
-                      <p id="info_rating">88%</p>
-                    </th>
-                    <th>
-                      <p id="info_duration">13 x 24 minutes</p>
-                    </th>
-                    <th>
-                      <p id="info_season_year">Spring 2021</p>
+                      <select name="status select" id="status_select">
+                        <option value="">Not in list</option>
+                        <option value="CURRENT">Watching</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="PAUSED">On hold</option>
+                        <option value="DROPPED">Dropped</option>
+                        <option value="PLANNING">Plan to watch</option>
+                        <option value="REPEATING">Rewatching</option>
+                      </select>
                     </th>
                   </tr>
-                </table>
+                  <tr>
+                    <th><p>Episode: </p></th>
+                    <th><input type="number" id="episode_number" name="quantity" min="1" max="26"></th>
+                  </tr>
+                  <tr>
+                    <th><p>Score: </p></th>
+                    <th>
+                      <select name="score_select" id="score_0to5">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th><p>Started: </p></th>
+                    <th><input type="date" id="started_date" name="started date" value="" min="1970-01-01" max="2100-12-31"><img src="/assets/close.png" onclick="clearDate('started_date')" class="anime_info_close" style="vertical-align: middle;" width="30" height="30"></th>
+                  </tr>
+                  <tr>
+                    <th><p>Finished: </p></th>
+                    <th><input type="date" id="finished_date" name="finished date" value="" min="1970-01-01" max="2100-12-31"><img src="/assets/close.png" onclick="clearDate('finished_date')" class="anime_info_close" style="vertical-align: middle;" width="30" height="30"></th>
+                  </tr>
+                </Table>
               </div>
-              <div>
-                <p>Status:</p>
-                <select name="status" id="GJD">
-                  <option value="not_in_list">Not in list</option>
-                  <option value="watching">Watching</option>
-                  <option value="completed">Completed</option>
-                  <option value="on_hold">On hold</option>
-                  <option value="dropped">Dropped</option>
-                  <option value="plan_to_watch">Plan to watch</option>
-                </select>
+              
+              <div id="trailer" class="tabcontent">
+                <iframe id="youtube_embed" width="500" height="281" src="" title="YouTube video player" frameborder="0" allow="autoplay;" allowfullscreen></iframe>
               </div>
-              <div><p>and more</p></div>
             </div>
           </div>
         </div>

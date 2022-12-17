@@ -3,6 +3,9 @@ const { invoke } = window.__TAURI__.tauri;
 window.addEventListener("DOMContentLoaded", () => {
   invoke("read_token_data");
   get_user_settings();
+
+  document.getElementById("information").style.display = "block";
+  document.getElementById("underline_tab_0").style.visibility = "visible";
 });
 
 async function get_user_settings() {
@@ -57,28 +60,34 @@ async function show_setting_window() {
   document.getElementById("cover_panal_grid").style.opacity = 0.3;
 }
 
+var current_tab = "";
 async function show_watching_anime() {
-  show_anime_list("Watching");
+  current_tab = "CURRENT";
+  show_anime_list(current_tab);
   exclusive_underline(0);
 }
 
 async function show_completed_anime() {
-  show_anime_list("Completed");
+  current_tab = "COMPLETED";
+  show_anime_list(current_tab);
   exclusive_underline(1);
 }
 
 async function show_paused_anime() {
-  show_anime_list("Paused");
+  current_tab = "PAUSED";
+  show_anime_list(current_tab);
   exclusive_underline(2);
 }
 
 async function show_dropped_anime() {
-  show_anime_list("Dropped");
+  current_tab = "DROPPED";
+  show_anime_list(current_tab);
   exclusive_underline(3);
 }
 
 async function show_planning_anime() {
-  show_anime_list("Planning");
+  current_tab = "PLANNING";
+  show_anime_list(current_tab);
   exclusive_underline(4);
 }
 
@@ -93,10 +102,10 @@ function exclusive_underline(index) {
 async function show_anime_list(name) {
 
   var watching = await invoke("get_watching_list", { listName: name });
-  //console.log(watching);
+  console.log(watching);
   var user_data = await invoke("get_list_user_info", { listName: name });
   // get userdata on anime
-  //console.log(user_data);
+  console.log(user_data);
   // add anime to UI
   removeChilds(document.getElementById("cover_panal_grid"));
 
@@ -155,9 +164,14 @@ async function add_anime(anime, user_data, cover_id) {
 }
 
 // hide information window and return to cover grid
-async function hide_anime_info_window() {
-  document.getElementById("info_panal").style.visibility = "hidden";
+async function hide_anime_info_window(anime_id) {
+  document.getElementById("youtube_embed").src = "";
+  document.getElementById("info_panal").style.display = "none";
   document.getElementById("cover_panal_grid").style.opacity = 1;
+  var refresh = await update_user_entry(anime_id);
+  if (refresh == true) {
+    show_anime_list(current_tab);
+  }
 }
 
 // show information window populated with the shows info
@@ -196,15 +210,97 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("info_season_year").textContent = info.season.charAt(0) + info.season.toLowerCase().slice(1) + " " + info.season_year;
 
   if(info.trailer != null && info.trailer.site == "youtube") {
-    document.getElementById("Trailer_link").href = "https://www.youtube.com/watch?v=" + info.trailer.id;
-    document.getElementById("Trailer_link").innerHTML = "Watch Trailer";
+    document.getElementById("youtube_embed").src = "https://www.youtube.com/embed/" + info.trailer.id;
   } else {
-    document.getElementById("Trailer_link").href = "";
-    document.getElementById("Trailer_link").innerHTML = "No Trailer";
+
   }
 
-  document.getElementById("info_panal").style.visibility = "visible";
+  var user_data = await invoke("get_user_info", {id: anime_id});
+  console.log(user_data);
+  document.getElementById("status_select").value = user_data.status;
+  document.getElementById("episode_number").value = user_data.progress;
+  document.getElementById("score_0to5").value = user_data.score;
+  if (user_data.started_at != null) {
+    document.getElementById("started_date").value = user_data.started_at.year + "-" + String(user_data.started_at.month).padStart(2,'0') + "-" + String(user_data.started_at.day).padStart(2,'0');
+  }
+  if (user_data.completed_at != null) {
+    document.getElementById("finished_date").value = user_data.completed_at.year + "-" + String(user_data.completed_at.month).padStart(2,'0') + "-" + String(user_data.completed_at.day).padStart(2,'0');
+  }
+  document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(user_data.media_id)};
+
+  openTab('information', 'underline_tab_0');
+  document.getElementById("info_panal").style.display = "block";
   document.getElementById("cover_panal_grid").style.opacity = 0.3;
+}
+
+async function update_user_entry(anime_id) {
+
+  var user_data = await invoke("get_user_info", {id: anime_id});
+
+  var user_entry = {
+    'id': user_data.id,
+    'media_id': anime_id,
+    'status': document.getElementById("status_select").value,
+    'score': parseInt(document.getElementById("score_0to5").value),
+    'progress': parseInt(document.getElementById("episode_number").value)
+  };
+
+
+  var started = document.getElementById("started_date").value.split("-");
+  if (started.length == 3) {
+    user_entry.started_at = {year: parseInt(started[0]), month: parseInt(started[1]), day: parseInt(started[2])};
+  } else {
+    user_entry.started_at = {year: null, month: null, day: null};
+  }
+
+  var finished = document.getElementById("finished_date").value.split("-");
+  if (finished.length == 3) {
+    user_entry.completed_at = {year: parseInt(finished[0]), month: parseInt(finished[1]), day: parseInt(finished[2])};
+  } else {
+    user_entry.completed_at = {year: null, month: null, day: null};
+  }
+
+  // only update if something changed
+  if (user_entry.status != user_data.status ||
+    user_entry.score != user_data.score ||
+    user_entry.progress != user_data.progress ||
+    user_entry.started_at.year != user_data.started_at.year ||
+    user_entry.started_at.month != user_data.started_at.month ||
+    user_entry.started_at.day != user_data.started_at.day ||
+    user_entry.completed_at.year != user_data.completed_at.year ||
+    user_entry.completed_at.month != user_data.completed_at.month ||
+    user_entry.completed_at.day != user_data.completed_at.day) {
+
+      await invoke("update_user_entry", {anime: user_entry});
+  }
+
+  // return true if the status has changed and the list needs to be refreshed
+  return user_entry.status != user_data.status;
+}
+
+
+
+function openTab(tab_name, underline_name) {
+
+  // Get all elements with class="tabcontent" and hide them
+  var tabcontent = document.getElementsByClassName("tabcontent");
+  for (var i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+
+  // Get all elements with class="tab_underline" and hide them
+  var tabcontent = document.getElementsByClassName("tab_underline");
+  for (var i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.visibility = "hidden";
+  }
+
+  // Show the current tab, and an underline to the button that opened the tab
+  document.getElementById(tab_name).style.display = "block";
+  document.getElementById(underline_name).style.visibility = "visible";
+}
+
+async function clearDate(date_id) {
+  document.getElementById(date_id).value = "";
 }
 
 // list of categories that can be searched by
@@ -261,7 +357,7 @@ async function sort_anime() {
 
       switch(sort_categorie_index) {
         case 0:
-          sortMe.push([ elements[i].getAttribute("title") , elements[i] ]);
+          sortMe.push([ elements[i].getAttribute("title").toLowerCase() , elements[i] ]);
           break;
         case 1:
           sortMe.push([ parseInt(elements[i].getAttribute("score"), 10) , elements[i] ]);
@@ -298,6 +394,8 @@ async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
 }
 
+window.clearDate = clearDate;
+window.openTab = openTab;
 window.show_anime_list = show_anime_list;
 window.show_watching_anime = show_watching_anime;
 window.show_completed_anime = show_completed_anime;

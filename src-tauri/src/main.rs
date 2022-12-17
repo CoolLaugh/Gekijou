@@ -22,7 +22,8 @@ use crate::api_calls::{AnimeInfo, UserAnimeInfo};
 lazy_static! {
     static ref GLOBAL_TOKEN: Mutex<TokenData> = Mutex::new(TokenData { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() });
     static ref GLOBAL_ANIME_DATA: Mutex<HashMap<i32, AnimeInfo>> = Mutex::new(HashMap::new());
-    static ref GLOBAL_USER_ANIME_DATA: Mutex<HashMap<String, Vec<UserAnimeInfo>>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_USER_ANIME_DATA: Mutex<HashMap<i32, UserAnimeInfo>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_USER_ANIME_LISTS: Mutex<HashMap<String, Vec<i32>>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_SETTINGS: Mutex<UserSettings> = Mutex::new(UserSettings::new());
 }
 
@@ -97,33 +98,31 @@ async fn get_watching_list(list_name: String) -> Vec<AnimeInfo> {
         file_operations::read_file_anime_info_cache().await;
     }
 
-    let list_name_formatted = format!("\"{}\"", list_name);
-    print!("\n{}", list_name_formatted);
-    let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-    let list = user_data.entry(String::from(list_name_formatted.clone())).or_insert(Vec::new());
 
     let mut missing_anime: Vec<i32> = Vec::new();
 
     {
         let anime_list = &mut *GLOBAL_ANIME_DATA.lock().await;
-        for item in list {
-            if anime_list.contains_key(&item.media_id) == false || anime_list[&item.media_id].cover_image.large.is_empty() {
-                missing_anime.push(item.media_id);
+        for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name.clone()).or_insert(Vec::new()) {
+            if anime_list.contains_key(&item) == false || anime_list[&item].cover_image.large.is_empty() {
+                missing_anime.push(item.clone());
             }
         }
     }
 
     print!("\nmissing anime: {}", missing_anime.len());
-    api_calls::anilist_get_anime_info_split(missing_anime).await;
-    file_operations::write_file_anime_info_cache().await;
+    if missing_anime.len() > 0 {
+            
+        api_calls::anilist_get_anime_info_split(missing_anime).await;
+        file_operations::write_file_anime_info_cache().await;
+    }
 
     let mut return_data: Vec<AnimeInfo> = Vec::new();
     {
-        let list2 = user_data.entry(String::from(list_name_formatted)).or_insert(Vec::new());
         let anime_list = &mut *GLOBAL_ANIME_DATA.lock().await;
-        for item in list2 {
+        for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name.clone()).or_insert(Vec::new()) {
             //print!("\n{} ", item.media_id);
-            let entry = anime_list.entry(item.media_id.clone()).or_insert(AnimeInfo::new()).clone();
+            let entry = anime_list.entry(item.clone()).or_insert(AnimeInfo::new()).clone();
             //print!("{}", entry.title.english.unwrap());
             return_data.push(entry);
         }
@@ -140,11 +139,23 @@ async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
         get_user_data().await;
     }
 
-    let list_name_formatted = format!("\"{}\"", list_name);
+    let mut list: Vec<UserAnimeInfo> = Vec::new();
     let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-    let list = user_data.entry(String::from(list_name_formatted.clone())).or_insert(Vec::new());
+    for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name).or_insert(Vec::new()) {
+        list.push(user_data.entry(*item).or_insert(UserAnimeInfo::new()).clone());
+    }
 
-    list.to_vec()
+    list
+}
+
+#[tauri::command]
+async fn get_user_info(id: i32) -> UserAnimeInfo {
+
+    if GLOBAL_USER_ANIME_DATA.lock().await.is_empty() {
+        get_user_data().await;
+    }
+
+    GLOBAL_USER_ANIME_DATA.lock().await.entry(id).or_insert(UserAnimeInfo::new()).clone()
 }
 
 #[tauri::command]
@@ -159,16 +170,51 @@ async fn get_anime_info(id: i32) -> AnimeInfo {
 }
 
 #[tauri::command]
+async fn update_user_entry(anime: UserAnimeInfo) {
+
+    let old_status: String = if GLOBAL_USER_ANIME_DATA.lock().await.contains_key(&anime.media_id) {
+        GLOBAL_USER_ANIME_DATA.lock().await.entry(anime.media_id).or_default().status.clone()
+    } else {
+        String::new()
+    };
+    
+    let new_status = if anime.status == "REPEATING" {
+        String::from("CURRENT")
+    } else {
+        anime.status.clone()
+    };
+
+    if old_status != new_status {
+        
+        GLOBAL_USER_ANIME_LISTS.lock().await.entry(old_status.clone()).and_modify(|data|{ 
+            data.remove(data.iter().position(|&v| v == anime.media_id).unwrap());
+        });
+        
+        GLOBAL_USER_ANIME_LISTS.lock().await.entry(new_status).or_default().push(anime.media_id);
+    }
+
+    let response = api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime).await;
+    let json: serde_json::Value = serde_json::from_str(&response).unwrap();
+    let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
+    let media_id = new_info.media_id.clone();
+
+    GLOBAL_USER_ANIME_DATA.lock().await.entry(media_id).and_modify(|entry| {
+        *entry = new_info;
+    });
+
+}
+
+#[tauri::command]
 async fn test() -> String {
 
-    let anime: Vec<i32> = [5114,9253,21202,17074,2904].to_vec();
-    api_calls::anilist_get_anime_info(anime.clone()).await;
-    return String::new();
+    //let anime: Vec<i32> = [5114,9253,21202,17074,2904].to_vec();
+    let response = api_calls::test(0, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+    return response;
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list,get_list_user_info,get_anime_info])
+        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
     
@@ -178,19 +224,31 @@ fn main() {
 async fn get_user_data() {
 
     let response = api_calls::anilist_list_quary_call(GLOBAL_USER_SETTINGS.lock().await.username.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
-    //print!("\n{}", response);
+    
     let json: serde_json::Value = serde_json::from_str(&response).unwrap();
 
     for item in json["data"]["MediaListCollection"]["lists"].as_array().unwrap() {
 
-        let name: String = item["name"].to_string();
+        let mut name: String = serde_json::from_value(item["status"].clone()).unwrap();
+        if name == "REPEATING" {
+            name = String::from("CURRENT");
+        }
 
         let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-        let list = user_data.entry(name.clone()).or_insert(Vec::new());
-
-        for item2 in item["entries"].as_array().unwrap() {
-
-            list.push(serde_json::from_value(item2.clone()).unwrap());
+        
+        if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&name) == false {
+            GLOBAL_USER_ANIME_LISTS.lock().await.insert(name.clone(), Vec::new());
         }
+
+        GLOBAL_USER_ANIME_LISTS.lock().await.entry(name.clone()).and_modify(|list| {
+            
+            for item2 in item["entries"].as_array().unwrap() {
+
+                let entry: UserAnimeInfo = serde_json::from_value(item2.clone()).unwrap();
+                //println!("{} {}", entry.id, entry.progress);
+                list.push(entry.media_id.clone());
+                user_data.insert(entry.media_id, entry);
+            }
+        });
     }
 }

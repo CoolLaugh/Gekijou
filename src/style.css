@@ -56,15 +56,49 @@
   transform: translate(-50%,-50%);
   background-color: #333;
   width: 732px;
+  min-height: 411px;
   display: grid;
   border-radius: 10px;
   padding: 10px;
   gap: 10px;
-  visibility: hidden;
+  display: none;
 }
 
 .anime_info_close:hover {
   background-color:#b83c3c;
+}
+
+.tabnav {
+  background-color: #333;
+  overflow: hidden;
+  min-width: 450px;
+}
+
+/* Style the links inside the navigation bar */
+.tabnav a {
+  float: left;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+/* Change the color of links on hover */
+.tabnav a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+.tab_underline {
+  transform: translateY(14px);
+  height: 5px;
+  background-color: #14c7a6;
+  visibility: hidden;
+}
+
+.tabcontent {
+  display: none;
 }
 
 .anime_info_panal p {
