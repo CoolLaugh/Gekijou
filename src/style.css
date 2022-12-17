@@ -325,10 +325,14 @@ body {
 }
 
 .cover_container:hover button {
-  opacity: 0.8;
+  opacity: 1;
 }
 
 .cover_container:hover .cover_nav {
+  opacity: 1;
+}
+
+.cover_container:hover .add_buttons {
   opacity: 1;
 }
 
@@ -343,6 +347,7 @@ body {
   top: 45%;
   left: 50%;
   padding: 20px;
+  display: block;
 }
 
 .big_play_button:hover img {
@@ -374,15 +379,45 @@ body {
   overflow: hidden;
 }
 
+.add_buttons {
+  position: absolute;
+  background-color: var(--background-color2);
+  overflow: hidden;
+  top: 8%;
+  left: 31.5px;
+  padding: 6px 6px;
+  border-radius: 16px;
+  opacity: 0;
+}
+
+/* Style the links inside the navigation bar */
+.add_buttons a {
+  float: left;
+  color: var(--text-color);
+  text-align: center;
+  padding: 4px;
+  text-decoration: none;
+  font-size: 16px;
+  min-width: 117px;
+  border-radius: 12px;
+}
+
+/* Change the color of links on hover */
+.add_buttons a:hover {
+  background-color: var(--text-color);
+  color: var(--background-color1);
+}
+
 .cover_nav {
   position: absolute;
   background-color: var(--background-color2);
   overflow: hidden;
   top: 70%;
-  left: 12.5%;
+  left: 31.5px;
   padding: 6px 6px;
   border-radius: 16px;
   opacity: 0;
+  width: 125px;
 }
 
 /* Style the links inside the navigation bar */
@@ -393,7 +428,7 @@ body {
   padding: 4px;
   text-decoration: none;
   font-size: 16px;
-  min-width: 20px;
+  min-width: 33.66px;
 }
 
 /* Change the color of links on hover */

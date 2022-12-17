@@ -276,7 +276,6 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
     let json = json!({"query": ANIME_BROWSE, "variables": variables});
 
     let mut response = post(&json, None).await;
-    //println!("{}", response);
 
     response = response.replace("averageScore", "average_score");
     response = response.replace("coverImage", "cover_image");
@@ -320,8 +319,6 @@ pub async fn anilist_api_call(id: i32) -> AnimeInfo {
     let json = json!({"query": ANIME_INFO_QUERY, "variables": {"id": id}});
 
     let mut response = post(&json, None).await;
-
-    print!("{}", response);
 
     // change json keys to snake case
     response = response.replace("\"Media\"", "\"media\"")
@@ -400,7 +397,6 @@ pub async fn anilist_get_anime_info_split(anime: Vec<i32>) {
 
     for i in 0..anime.len() {
         split_anime[i / vec_length].push(anime[i]);
-        //print!("\n{} {} {}", i, i % vec_length, split_anime[i % vec_length].len());
     }
 
     for list in split_anime {
@@ -505,7 +501,7 @@ pub async fn anilist_list_query_call(username: String, access_token: String) -> 
 pub async fn anilist_get_access_token(code: String) -> TokenData {
 
     let client = Client::new();
-    print!("{}\n\n", code);
+
     let json = serde_json::json!({
         "grant_type": "authorization_code",
         "client_id": secrets::CLIENT_ID,
@@ -525,7 +521,6 @@ pub async fn anilist_get_access_token(code: String) -> TokenData {
         .await;
 
     let response_string = response.unwrap();
-    print!("{}\n\n", response_string);
 
     if response_string.contains("\"error\"") {
         return TokenData { token_type: json.to_string(), expires_in: 0, access_token: response_string, refresh_token: String::new() };
@@ -568,7 +563,6 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
     }
 
     let json = json!({"query": mutation, "variables": variables});
-    print!("{}\n", json);
 
     let mut response = post(&json, Some(&access_token)).await;
     

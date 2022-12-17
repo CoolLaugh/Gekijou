@@ -13,13 +13,14 @@ pub mod file_name_recognition;
 #[macro_use]
 extern crate lazy_static;
 
+use chrono::prelude::*;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
 use tauri::{async_runtime::Mutex};
 use window_titles::{Connection, ConnectionTrait};
 use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread, fmt::format, cell::Ref};
 
-use api_calls::{TokenData, UserSettings, Title};
+use api_calls::{TokenData, UserSettings, FuzzyDate};
 
 use crate::{api_calls::{AnimeInfo, UserAnimeInfo}, file_name_recognition::AnimePath};
 
@@ -174,7 +175,7 @@ async fn get_user_info(id: i32) -> UserAnimeInfo {
 }
 
 #[tauri::command]
-async fn get_delay_info() -> (f64, i32, Title, i64) {
+async fn get_delay_info() -> (f64, i32, String, i64) {
 
     let found_anime = WATCHING_TRACKING.lock().await.clone();
     
@@ -187,7 +188,7 @@ async fn get_delay_info() -> (f64, i32, Title, i64) {
         return (anime.1.timer.elapsed().as_secs_f64() / delay, anime.1.episode, anime.1.title.clone(), (delay as i64) - (anime.1.timer.elapsed().as_secs() as i64));
     }
 
-    return (0.0, 0, Title::default(), 0)
+    return (0.0, 0, String::new(), 0)
 }
 
 // get data for a specific anime
@@ -278,7 +279,8 @@ async fn on_shutdown() {
 async fn check_delayed_updates(wait: bool) {
     
     let delay = 15;
-    for entry in GLOBAL_UPDATE_ANIME_DELAYED.lock().await.iter() {
+    let delayed_update = GLOBAL_UPDATE_ANIME_DELAYED.lock().await.clone();
+    for entry in delayed_update.iter() {
         
         if entry.1.elapsed() >= Duration::from_secs(delay) || wait == false {
 
@@ -332,10 +334,9 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
         if (change == -1 && progress == 0) || (change == 1 && progress == max_episodes) {
             return;
         }
-        user_data.entry(anime_id).and_modify(|data| {
-            
-            data.progress += change;
-        });
+
+        let anime = user_data.get_mut(&anime_id).unwrap();
+        change_episode(anime, anime.progress + change).await;
 
         let mut delayed_update = GLOBAL_UPDATE_ANIME_DELAYED.lock().await;
         if delayed_update.contains_key(&anime_id) {
@@ -359,7 +360,7 @@ struct WatchingTracking {
     timer: std::time::Instant,
     monitoring: bool,
     episode: i32,
-    title: Title,
+    title: String,
 }
 lazy_static! {
     static ref WATCHING_TRACKING: Mutex<HashMap<i32, WatchingTracking>> = Mutex::new(HashMap::new());
@@ -402,6 +403,7 @@ async fn anime_update_delay() {
     //let mut ignore_filenames: Vec<String> = Vec::new();
     let regex = Regex::new(r"\.mkv|\.avi|\.mp4").unwrap();
     let delay = (GLOBAL_USER_SETTINGS.lock().await.update_delay * 60)  as u64;
+    let language = GLOBAL_USER_SETTINGS.lock().await.title_language.clone();
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut watching_data = WATCHING_TRACKING.lock().await;
     let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
@@ -428,29 +430,98 @@ async fn anime_update_delay() {
                 entry.monitoring = true;
             });
         } else if user_data.contains_key(&media_id) && user_data.get(&media_id).unwrap().progress + 1 == episode { // only add if it is in the users list and it is the next episode
-            watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.clone()});
+            if language == "romaji" {
+                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.romaji.clone().unwrap()});
+            } else if language == "english" {
+                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.english.clone().unwrap()});
+            } else if language == "native" {
+                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.native.clone().unwrap()});
+            }
         }
     }
 
+    let mut update_entries: Vec<UserAnimeInfo> = Vec::new();
     for (media_id, tracking_info) in watching_data.iter_mut() {
         let seconds = tracking_info.timer.elapsed().as_secs();
         if seconds >= delay {
             tracking_info.monitoring = false;
             // update anime
 
-            user_data.entry(*media_id).and_modify(|ud| {
-                ud.progress = tracking_info.episode;
-            });
+            let anime = user_data.get_mut(&media_id).unwrap();
+            change_episode(anime, tracking_info.episode).await;
 
-            api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), user_data.get(media_id).unwrap().clone()).await;
+            //api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), user_data.get(media_id).unwrap().clone()).await;
+            update_entries.push(user_data.get(media_id).unwrap().clone());
             *GLOBAL_REFRESH_UI.lock().await = true;
         }
-        println!("{} {}/{}", anime_data.get(media_id).unwrap().title.romaji.clone().unwrap(), seconds, delay);
     }
-    
+
     watching_data.retain(|_, v| v.monitoring == true);
+
+    // unlock mutexes before doing api calls which might take awhile
+    drop(anime_data);
+    drop(watching_data);
+    drop(user_data);
+
+    let access_token = GLOBAL_TOKEN.lock().await.access_token.clone();
+    for anime in update_entries {
+
+        api_calls::update_user_entry(access_token.clone(), anime).await;
+    }
 }
 
+async fn change_episode(anime: &mut UserAnimeInfo, episode: i32) {
+
+    let episodes = GLOBAL_ANIME_DATA.lock().await.get(&anime.media_id).unwrap().episodes.unwrap();
+    let progress = anime.progress;
+    anime.progress = episode;
+
+    // set start date when the first episode is watched
+    if progress == 0 && episode >= 1 {
+        let now: DateTime<Local> = Local::now();
+        anime.started_at = Some(FuzzyDate {
+            year: Some(now.year()),
+            month: Some(now.month() as i32),
+            day: Some(now.day() as i32),
+        });
+    }
+
+    // add anime to watching if progress increases
+    if episode > progress && episode != episodes && anime.status != "CURRENT"{
+
+        change_list(anime, String::from("CURRENT")).await;
+    }
+
+    // add anime to completed if the last episode was watched and set complete date
+    if episode == episodes {
+        let now: DateTime<Local> = Local::now();
+        anime.completed_at = Some(FuzzyDate {
+            year: Some(now.year()),
+            month: Some(now.month() as i32),
+            day: Some(now.day() as i32),
+        });
+        if anime.status != "COMPLETED" {
+
+            change_list(anime, String::from("COMPLETED")).await;
+        }
+    }
+}
+
+async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
+
+    let mut lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+
+    lists.entry(anime.status.clone()).and_modify(|list| {
+        let index = list.iter().position(|v| *v == anime.media_id).unwrap();
+        list.remove(index);
+    });
+
+    anime.status = new_list;
+
+    lists.entry(anime.status.clone()).and_modify(|list| {
+        list.push(anime.media_id);
+    });
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct RefreshUI {

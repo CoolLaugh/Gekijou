@@ -148,6 +148,66 @@ async function show_browse_anime() {
   removeChildren(document.getElementById("cover_panel_grid"));
 }
 
+// draw progress bar for recognizing anime being played by media players
+window.draw_delay_progress = draw_delay_progress;
+async function draw_delay_progress() {
+
+  var percent = await invoke("get_delay_info");
+  var ctx = document.getElementById("recognition_delay").getContext("2d");
+
+  if (percent[0] == 0.0 || percent[0] >= 0.995) {
+    // no anime being tracked or anime is about to update anyway so don't track it
+    ctx.clearRect(0,0,52,52);
+    document.getElementById("recognition_delay").title = "";
+  } else {
+    // format seconds remaining as minutes and seconds
+    var time_remaining = "";
+    if (percent[3] >= 60) {
+      time_remaining = Math.floor(percent[3] / 60) + "m " + (percent[3] % 60) + "s";
+    } else {
+      time_remaining = percent[3] + "s";
+    }
+    // full description tooltip text
+    document.getElementById("recognition_delay").title = "Updating " + percent[2] + " to episode " + percent[1] + " in " + time_remaining;
+
+    ctx.clearRect(0,0,52,52);
+    
+    // progress bar background
+    ctx.beginPath();
+    ctx.arc(26,26,25,0, 2 * Math.PI, false);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight-secondary');
+    ctx.fill();
+
+    // progress bar
+    ctx.beginPath();
+    ctx.arc(26,26,25, 1.5 * Math.PI, (1.5 + (2 * percent[0])) * Math.PI, false);
+    ctx.lineTo(26, 26);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
+    ctx.fill();
+    
+    // hollow center
+    ctx.beginPath();
+    ctx.arc(26,26,21,0, 2 * Math.PI, false);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--background-color2');
+    ctx.fill();
+  
+    // center text
+    var left = 14;
+    if (percent[1] >= 10) {
+      left -= 3;
+    }
+    ctx.fillText("ep " + percent[1], left, 25);
+    var left2 = 19;
+    if (percent[0] > 0.095) {
+      left2 -= 4;
+    }
+    // timer text
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
+    ctx.font = "12px Arial";
+    ctx.fillText(Math.round(percent[0] * 100) + "%", left2, 37);
+  }
+}
+
 // shows the settings window
 window.show_setting_window = show_setting_window;
 async function show_setting_window() {
@@ -253,7 +313,7 @@ async function sort_anime() {
 
   var container = document.getElementById("cover_panel_grid");
   var elements = container.childNodes;
-  var sortMe = [];
+  var sort_me = [];
 
   for (var i=0; i<elements.length; i++) {
       
@@ -261,16 +321,16 @@ async function sort_anime() {
 
       switch(sort_category_index) {
         case 0:
-          sortMe.push([ elements[i].getAttribute("title").toLowerCase() , elements[i] ]);
+          sort_me.push([ elements[i].getAttribute("title").toLowerCase() , elements[i] ]);
           break;
         case 1:
-          sortMe.push([ parseInt(elements[i].getAttribute("score"), 10) , elements[i] ]);
+          sort_me.push([ parseInt(elements[i].getAttribute("score"), 10) , elements[i] ]);
           break;
         case 2:
-          sortMe.push([ parseInt(elements[i].getAttribute("date"), 10) , elements[i] ]);
+          sort_me.push([ parseInt(elements[i].getAttribute("date"), 10) , elements[i] ]);
           break;
         case 3:
-          sortMe.push([ parseInt(elements[i].getAttribute("popularity"), 10) , elements[i] ]);
+          sort_me.push([ parseInt(elements[i].getAttribute("popularity"), 10) , elements[i] ]);
           break;
       }
     }
@@ -278,23 +338,23 @@ async function sort_anime() {
 
   switch(sort_category_index) {
     case 0:
-      sortMe.sort();
+      sort_me.sort();
       break;
     case 1: // intentional fall through
     case 2: // intentional fall through
-    case 3: // intentional fall through
-      sortMe.sort(function(a,b) {
+    case 3: 
+      sort_me.sort(function(a,b) {
         return a[0]-b[0];
       });
       break;
   }
 
   if (sort_ascending == false) {
-    sortMe.reverse();
+    sort_me.reverse();
   }
 
-  for (var i=0; i<sortMe.length; i++) {
-      container.appendChild(sortMe[i][1]);
+  for (var i=0; i<sort_me.length; i++) {
+      container.appendChild(sort_me[i][1]);
   }
 }
 
@@ -302,29 +362,7 @@ async function sort_anime() {
 window.add_anime = add_anime;
 async function add_anime(anime, user_data, cover_id, language) {
 
-  var title = null;
-  if (language == "romaji" && anime.title.romaji != null) {
-    title = anime.title.romaji;
-  } else if (language == "english" && anime.title.english != null) {
-    title = anime.title.english;
-  }  else if (language == "native" && anime.title.native != null) {
-    title = anime.title.native;
-  } 
-
-  if (title == null) {
-    if(anime.title.user_preferred != null){
-      title = anime.title.user_preferred;
-    } else if(anime.title.english != null){
-      title = anime.title.english;
-    } else if (anime.title.romaji != null) {
-      title = anime.title.romaji;
-    } else if (anime.title.native != null) {
-      title = anime.title.native;
-    } else {
-      title = "ID: " + anime.id;
-    }
-  }
-
+  var title = await determine_title(anime.title, null);
 
   var watch_percent = 0;
   var episode_text = "";
@@ -372,32 +410,38 @@ async function add_anime(anime, user_data, cover_id, language) {
 
   add_cover_card(anime.id, cover_id, cover_image, start_date, anime.popularity, average_score, title, episode_text);
 
-  draw_episode_canvas(anime.episodes, watch_percent, anime.id, cover_id);
+  draw_episode_canvas(anime.episodes, watch_percent, anime.id);
 }
 
 // insert a card into the ui
 window.add_cover_card = add_cover_card;
 async function add_cover_card(anime_id, cover_id, cover_image, start_date, popularity, score, title, episode_text) {
 
-  var html = "";
-  html += "<div anime_id=" + anime_id + " class=\"cover_container\" date=" + start_date + " popularity=" + popularity + " score=" + score + " title=\"" + title + "\">";
-  html += "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=" + cover_image + " width=\"200\">";
+  var display_browse = "none";
+  var display_not_browse = "none";
+
   if (current_tab == "BROWSE") {
-    html += "<button class=\"add_planning_button\" onclick=\"add_to_list(" + anime_id + ", 'PLANNING')\" type=\"button\">Add to Planning</button>";
-    html += "<button class=\"add_watching_button\" onclick=\"add_to_list(" + anime_id + ", 'CURRENT')\" type=\"button\">Add to Watching</button>";
+    display_browse = "block";
   } else {
-    html += "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime_id + ")\" type=\"button\"><img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\"></button>";
+    display_not_browse = "block";
   }
-  html += "<div class=\"cover_nav\">";
-  html +=   "<a href=\"#\" onclick=\"show_anime_info_window(" + anime_id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px\">info</a>";
-  html +=   "<a href=\"#\" onclick=\"decrease_episode(" + anime_id + ")\">-</a>";
-  html +=   "<a href=\"#\" onclick=\"show_anime_info_window_edit(" + anime_id + ")\">" + episode_text + "</a>";
-  html +=   "<a href=\"#\" onclick=\"increase_episode(" + anime_id + ")\" style=\"border-top-right-radius: 12px; border-bottom-right-radius:12px\">+</a>";
+
+  var html = "";
+  html += "<div id=\"" + anime_id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + popularity + "\" score=\"" + score + "\" title=\"" + title + "\">";
+  html += "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=\"" + cover_image + "\" width=\"200\">";
+  html += "<div class=\"add_buttons\"><a href=\"#\" onclick=\"show_anime_info_window(" + anime_id + ")\">Information</a></div>";
+  html += "<div class=\"add_buttons\" style=\"top: 25%; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime_id + ", 'PLANNING')\">Add to Planning</a></div>";
+  html += "<div class=\"add_buttons\" style=\"top: 42%; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime_id + ", 'CURRENT')\">Add to Watching</a></div>";
+  html += "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime_id + ")\" type=\"button\" style=\"display: " + display_not_browse + ";\">";
+	html += "<img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\">";
+  html += "</button>";
+  html += "<div class=\"cover_nav\" style=\"display: " + display_not_browse + ";\">";
+	html += "<a href=\"#\" onclick=\"decrease_episode(" + anime_id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px; font-size: 24px;\">-</a>";
+	html += "<a href=\"#\" onclick=\"show_anime_info_window_edit(" + anime_id + ")\" id=\"episode_text_" + anime_id + "\">" + episode_text + "</a>";
+	html += "<a href=\"#\" onclick=\"increase_episode(" + anime_id + ")\" style=\"border-top-right-radius: 12px; border-bottom-right-radius:12px; font-size: 24px;\">+</a>";
   html += "</div>";
-  html += "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes" + cover_id + "\" width=\"200\"></canvas>";
-  html += "<div class=\"cover_title\">";
-  html +=   "<p id=\"title" + anime_id + "\">" + title + "</p>";
-  html += "</div>";
+  html += "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes_" + anime_id + "\" width=\"200\"></canvas>";
+  html += "<div class=\"cover_title\"><p id=\"title" + anime_id + "\">" + title + "</p></div>";
   html += "</div>";
 
   document.getElementById("cover_panel_grid").insertAdjacentHTML("beforeend", html);
@@ -405,10 +449,11 @@ async function add_cover_card(anime_id, cover_id, cover_image, start_date, popul
 
 // fills in the episode progress bar to show episodes available on disk and episodes watched
 window.draw_episode_canvas = draw_episode_canvas;
-async function draw_episode_canvas(episodes, watch_percent, media_id, cover_id) {
+async function draw_episode_canvas(episodes, watch_percent, media_id) {
   
-  var bar = document.getElementById("progress_episodes" + cover_id);
-  var ctx = bar.getContext("2d"); 
+  var bar = document.getElementById("progress_episodes_" + media_id);
+  var ctx = bar.getContext("2d");
+  ctx.clearRect(0,0,200,5);
 
   var width = bar.width / episodes;
 
@@ -522,19 +567,42 @@ async function hide_anime_info_window(anime_id) {
   }
 }
 
+async function determine_title(title_struct, user_settings) {
+
+  if (user_settings == null) {
+    user_settings = await invoke("get_user_settings");
+  }
+
+  var title = null;
+  // try to use the language the user chose
+  if (user_settings.title_language == "romaji" && title_struct.romaji != null) {
+    title = title_struct.romaji;
+  } else if (user_settings.title_language == "english" && title_struct.english != null) {
+    title = title_struct.english;
+  } else if (user_settings.title_language == "native" && title_struct.native != null) {
+    title = title_struct.native;
+  }
+  // if the preferred language does not exist use another language
+  if (title == null) {
+    if(title_struct.romaji != null) {
+      title = title_struct.romaji;
+    } else if(title_struct.english != null) {
+      title = title_struct.english;
+    } else {
+      title = title_struct.native;
+    }
+  }
+
+  return title;
+}
+
 // show information window populated with the shows info
 window.show_anime_info_window = show_anime_info_window;
 async function show_anime_info_window(anime_id) {
   
+  var user_settings = await invoke("get_user_settings");
   var info = await invoke("get_anime_info", {id: anime_id});
-  var title = "";
-  if(info.title.english != null) {
-    title = info.title.english;
-  } else if(info.title.romaji != null) {
-    title = info.title.romaji;
-  } else {
-    title = info.title.native;
-  }
+  var title = determine_title(info.title, user_settings);
 
   var episode_text = "";
   if (info.episodes == null) {
@@ -577,7 +645,6 @@ async function show_anime_info_window(anime_id) {
   }
   document.getElementById("info_genres").textContent = genres_text;
   
-  var user_settings = await invoke("get_user_settings");
   var tags = "";
   for (var i = 0; i < info.tags.length; i++) {
     if (user_settings.show_spoilers == false && (info.tags[i].is_general_spoiler || info.tags[i].is_media_spoiler)) {
@@ -623,7 +690,17 @@ window.decrease_episode = decrease_episode;
 async function decrease_episode(anime_id) {
   
   await invoke("increment_decrement_episode", {animeId: anime_id, change: -1});
-  show_anime_list(current_tab);
+
+  var text = document.getElementById("episode_text_"+ anime_id);
+  var episodes = text.textContent.split('/');
+  var progress = parseInt(episodes[0]) - 1;
+  var total = parseInt(episodes[1]);
+  if (progress > -1) {
+
+    text.textContent = progress + "/" + total;
+
+    draw_episode_canvas(total, progress / total, anime_id);
+  }
 }
 
 // open the info window to the edit user info tab
@@ -638,7 +715,21 @@ window.increase_episode = increase_episode;
 async function increase_episode(anime_id) {
 
   await invoke("increment_decrement_episode", {animeId: anime_id, change: 1});
-  show_anime_list(current_tab);
+
+  var text = document.getElementById("episode_text_"+ anime_id);
+  var episodes = text.textContent.split('/');
+  var progress = parseInt(episodes[0]) + 1;
+  var total = parseInt(episodes[1]);
+  if (progress <= total) {
+
+    text.textContent = progress + "/" + total;
+
+    draw_episode_canvas(total, progress / total, anime_id);
+  
+    if (progress == total) {
+      show_anime_list(current_tab);
+    }
+  }
 }
 
 // changes the opened tab in the anime info window
@@ -667,6 +758,7 @@ async function update_user_entry(anime_id) {
 
   var user_data = await invoke("get_user_info", {id: anime_id});
 
+  // grab data from ui
   var user_entry = {
     'id': user_data.id,
     'media_id': anime_id,
@@ -675,7 +767,7 @@ async function update_user_entry(anime_id) {
     'progress': parseInt(document.getElementById("episode_number").value)
   };
 
-
+  // fill in start date
   var started = document.getElementById("started_date").value.split("-");
   if (started.length == 3) {
     user_entry.started_at = {year: parseInt(started[0]), month: parseInt(started[1]), day: parseInt(started[2])};
@@ -683,6 +775,7 @@ async function update_user_entry(anime_id) {
     user_entry.started_at = {year: null, month: null, day: null};
   }
 
+  // fill in finished date
   var finished = document.getElementById("finished_date").value.split("-");
   if (finished.length == 3) {
     user_entry.completed_at = {year: parseInt(finished[0]), month: parseInt(finished[1]), day: parseInt(finished[2])};
@@ -702,6 +795,16 @@ async function update_user_entry(anime_id) {
     user_entry.completed_at.day != user_data.completed_at.day) {
 
       await invoke("update_user_entry", {anime: user_entry});
+  }
+
+  if (user_entry.progress != user_data.progress) {
+    
+    var text = document.getElementById("episode_text_"+ anime_id);
+    var total = text.textContent.split('/')[1];
+
+    text.textContent = user_entry.progress + "/" + total;
+
+    draw_episode_canvas(total, user_entry.progress / total, anime_id);
   }
 
   // return true if the status has changed and the list needs to be refreshed
@@ -748,65 +851,4 @@ async function minimizeWindow() {
 window.toggleMaximizeWindow = toggleMaximizeWindow;
 async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
-}
-
-window.draw_delay_progress = draw_delay_progress;
-async function draw_delay_progress() {
-
-  var percent = await invoke("get_delay_info");
-  var ctx = document.getElementById("recognition_delay").getContext("2d");
-
-  if (percent[0] == 0.0 || percent[0] >= 0.995) {
-
-    ctx.clearRect(0,0,52,52);
-    document.getElementById("recognition_delay").title = "";
-  } else {
-    var title = "";
-    if (percent[2].romaji != null) {
-      title = percent[2].romaji;
-    } else if (percent[2].english != null) {
-      title = percent[2].english;
-    } else if (percent[2].native != null) {
-      title = percent[2].native;
-    }
-    var time_remaining = "";
-    if (percent[3] >= 60) {
-      time_remaining = Math.floor(percent[3] / 60) + "m " + (percent[3] % 60) + "s";
-    } else {
-      time_remaining = percent[3] + "s";
-    }
-    document.getElementById("recognition_delay").title = "Updating " + title + " to episode " + percent[1] + " in " + time_remaining;
-
-    ctx.clearRect(0,0,52,52);
-    
-    ctx.beginPath();
-    ctx.arc(26,26,25,0, 2 * Math.PI, false);
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight-secondary');
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(26,26,25, 1.5 * Math.PI, (1.5 + (2 * percent[0])) * Math.PI, false);
-    ctx.lineTo(26, 26);
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
-    ctx.fill();
-    
-    ctx.beginPath();
-    ctx.arc(26,26,21,0, 2 * Math.PI, false);
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--background-color2');
-    ctx.fill();
-  
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
-    ctx.font = "12px Arial";
-  
-    var left = 14;
-    if (percent[1] >= 10) {
-      left -= 3;
-    }
-    ctx.fillText("ep " + percent[1], left, 25);
-    var left2 = 19;
-    if (percent[0] > 0.095) {
-      left2 -= 4;
-    }
-    ctx.fillText(Math.round(percent[0] * 100) + "%", left2, 37);
-  }
 }

@@ -23,6 +23,7 @@ regex = "1"
 strsim = "0.10.0"
 open = "3"
 window_titles = { git = "https://github.com/HiruNya/window_titles" }
+chrono = "0.4"
 
 [features]
 # by default Tauri runs in production mode
