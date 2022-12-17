@@ -14,6 +14,8 @@ async function get_user_settings() {
   
   document.getElementById("user_name").value = user_settings.username;
   document.getElementById("title_language").value = user_settings.title_language;
+  document.getElementById("show_spoiler_tags").checked = user_settings.show_spoilers;
+  document.getElementById("show_adult").checked = user_settings.show_adult;
 }
 
 // add anime for testing
@@ -47,12 +49,12 @@ async function hide_setting_window() {
   document.getElementById("login_panal").style.visibility = "hidden";
   document.getElementById("cover_panal_grid").style.opacity = 1;
 
-  var un = document.getElementById("user_name").value;
-  var lang = document.getElementById("title_language").value;
+  var username = document.getElementById("user_name").value;
+  var language = document.getElementById("title_language").value;
+  var show_spoiler = document.getElementById("show_spoiler_tags").checked
+  var show_adult = document.getElementById("show_adult").checked
 
-  console.log(un + " " + lang + "\n");
-
-  invoke("set_user_settings", { username: un, titleLanguage: lang});
+  invoke("set_user_settings", { username: username, titleLanguage: language, showSpoilers: show_spoiler, showAdult: show_adult});
 }
 
 async function show_setting_window() {
@@ -223,10 +225,31 @@ async function show_anime_info_window(anime_id) {
   }
   document.getElementById("info_season_year").textContent = info.season.charAt(0) + info.season.toLowerCase().slice(1) + " " + info.season_year;
 
+  var genres_text = "";
+  for (var i = 0; i < info.genres.length; i++) {
+    genres_text += info.genres[i];
+    if (i != info.genres.length - 1) {
+      genres_text += ", ";
+    }
+  }
+  document.getElementById("info_genres").textContent = genres_text;
+  
+  var user_settings = await invoke("get_user_settings");
+  var tags = "";
+  for (var i = 0; i < info.tags.length; i++) {
+    if (user_settings.show_spoilers == false && (info.tags[i].is_general_spoiler || info.tags[i].is_media_spoiler)) {
+      continue;
+    }
+    tags += info.tags[i].name + ", ";
+  }
+  tags = tags.substring(0, tags.length - 2);
+  document.getElementById("info_tags").textContent = tags;
+
   if(info.trailer != null && info.trailer.site == "youtube") {
+    document.getElementById("trailer_button").style.display = "block";
     document.getElementById("youtube_embed").src = "https://www.youtube.com/embed/" + info.trailer.id;
   } else {
-
+    document.getElementById("trailer_button").style.display = "none";
   }
 
   var user_data = await invoke("get_user_info", {id: anime_id});

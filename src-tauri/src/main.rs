@@ -14,9 +14,9 @@ pub mod file_name_recognition;
 extern crate lazy_static;
 
 use regex::Regex;
-use tauri::{async_runtime::Mutex, Manager};
+use tauri::{async_runtime::Mutex};
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::HashMap, path::Path, thread, time::Duration};
+use std::{collections::HashMap, path::Path};
 
 use api_calls::{TokenData, UserSettings};
 
@@ -71,12 +71,16 @@ async fn get_anime_info_query(id: i32) -> api_calls::AnimeInfo {
 }
 
 #[tauri::command]
-async fn set_user_settings(username: String, title_language: String) {
+async fn set_user_settings(username: String, title_language: String, show_spoilers: bool, show_adult: bool) {
 
-    GLOBAL_USER_SETTINGS.lock().await.username = username;
-    GLOBAL_USER_SETTINGS.lock().await.title_language = title_language;
+    let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
 
-    file_operations::write_file_user_settings(&*GLOBAL_USER_SETTINGS.lock().await);
+    user_settings.username = username;
+    user_settings.title_language = title_language;
+    user_settings.show_spoilers = show_spoilers;
+    user_settings.show_adult = show_adult;
+
+    file_operations::write_file_user_settings(&*user_settings);
 }
 
 #[tauri::command]
@@ -145,7 +149,7 @@ async fn get_watching_list(list_name: String) -> Vec<AnimeInfo> {
         let anime_list = &mut *GLOBAL_ANIME_DATA.lock().await;
         for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name.clone()).or_insert(Vec::new()) {
             //print!("\n{} ", item.media_id);
-            let entry = anime_list.entry(item.clone()).or_insert(AnimeInfo::new()).clone();
+            let entry = anime_list.entry(item.clone()).or_insert(AnimeInfo::default()).clone();
             //print!("{}", entry.title.english.unwrap());
             return_data.push(entry);
         }
@@ -301,36 +305,36 @@ async fn anime_update_delay() {
 
         let mut title_edit: String = regex.replace(&title, "").to_string();
         title_edit = file_name_recognition::remove_brackets(&title_edit);
-        let episode = file_name_recognition::identify_number(&title_edit);
-        title_edit = title_edit.replace(episode.0.as_str(), "");
+        let (episode_str, episode) = file_name_recognition::identify_number(&title_edit);
+        title_edit = title_edit.replace(episode_str.as_str(), "");
         title_edit = file_name_recognition::irrelevant_information_removal(title_edit);
 
-        let similarity = file_name_recognition::identify_media_id(&title_edit, &anime_data);
-        if similarity.1 < 0.8 { continue; }
-        //println!("{} {} {} {:.4}", title_edit, episode.1, similarity.0, similarity.1);
-        if watching_data.contains_key(&similarity.0) {
-            watching_data.entry(similarity.0).and_modify(|entry| {
+        let (media_id, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data);
+        if media_score < 0.8 { continue; }
+        //println!("{} {} {} {:.4}", title_edit, episode.1, media_id, media_score);
+        if watching_data.contains_key(&media_id) {
+            watching_data.entry(media_id).and_modify(|entry| {
                 entry.monitoring = true;
             });
-        } else if user_data.contains_key(&similarity.0) && user_data.get(&similarity.0).unwrap().progress + 1 == episode.1 { // only add if it is in the users list and it is the next episode
-            watching_data.insert(similarity.0, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode.1});
+        } else if user_data.contains_key(&media_id) && user_data.get(&media_id).unwrap().progress + 1 == episode { // only add if it is in the users list and it is the next episode
+            watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode});
         }
     }
 
     let token = GLOBAL_TOKEN.lock().await;
-    for data in watching_data.iter_mut() {
-        let seconds = data.1.timer.elapsed().as_secs();
+    for (media_id, tracking_info) in watching_data.iter_mut() {
+        let seconds = tracking_info.timer.elapsed().as_secs();
         if seconds >= 1 * 30 {
-            data.1.monitoring = false;
+            tracking_info.monitoring = false;
             // update anime
 
-            user_data.entry(*data.0).and_modify(|ud| {
-                ud.progress = data.1.episode;
+            user_data.entry(*media_id).and_modify(|ud| {
+                ud.progress = tracking_info.episode;
             });
 
-            api_calls::update_user_entry(token.access_token.clone(), user_data.get(data.0).unwrap().clone()).await;
+            api_calls::update_user_entry(token.access_token.clone(), user_data.get(media_id).unwrap().clone()).await;
         }
-        println!("{} {}/30", anime_data.get(data.0).unwrap().title.romaji.clone().unwrap(), seconds);
+        println!("{} {}/30", anime_data.get(media_id).unwrap().title.romaji.clone().unwrap(), seconds);
     }
 
     watching_data.retain(|_, v| v.monitoring == true);

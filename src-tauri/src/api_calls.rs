@@ -3,9 +3,9 @@
 
 use std::collections::HashMap;
 
-use reqwest::Client;
+use reqwest::{Client, Response};
 use serde::{Serialize, Deserialize};
-use serde_json::{json};
+use serde_json::{json, Value};
 
 use crate::{secrets, GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS};
 
@@ -17,44 +17,71 @@ pub struct TrailerData {
     pub site: String
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Title {
     pub english: Option<String>,
     pub native: Option<String>,
-    pub romaji: Option<String>
+    pub romaji: Option<String>,
+    pub user_preferred: Option<String>
 }
 
-impl Title {
-    pub const fn new() -> Title {
-        Title { english: None, native: None, romaji: None }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CoverImage {
     pub large: String
 }
 
-impl CoverImage {
-    pub const fn new() -> CoverImage {
-        CoverImage { large: String::new() }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AnilistDate {
     pub year: i32,
     pub month: i32,
     pub day: i32
 }
 
-impl AnilistDate {
-    pub const fn new() -> AnilistDate {
-        AnilistDate { year: 0, month: 0, day: 0 }
-    }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Node {
+    pub title: Title,
+    pub cover_image: CoverImage
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Edge {
+    pub id: i32,
+    pub relation_type: String,
+    pub node: Node,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Relations {
+    pub edges: Vec<Edge>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct  MediaRecommendation {
+    pub id: i32,
+    pub title: Title,
+    pub cover_image: CoverImage,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RecNode {
+    pub rating: i32,
+    pub media_recommendation: MediaRecommendation,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Recommendations {
+    pub nodes: Vec<RecNode>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Tag {
+    pub name: String,
+    pub is_general_spoiler: bool,
+    pub is_media_spoiler: bool,
+    pub description: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AnimeInfo {
     pub average_score: i32,
     pub cover_image: CoverImage,
@@ -72,14 +99,9 @@ pub struct AnimeInfo {
     pub title: Title,
     pub trailer: Option<TrailerData>,
     pub anime_type: String, // type is a rust keyword
-}
-
-impl AnimeInfo {
-    pub const fn new() -> AnimeInfo {
-        AnimeInfo { average_score: 0, cover_image: CoverImage::new(), description: String::new(), duration: 0, 
-            episodes: Option::None, format: String::new(), genres: Vec::new(), id: 0, is_adult: false, popularity: 0, 
-            season: Option::None, season_year: Option::None, title: Title::new(), trailer: Option::None, anime_type: String::new(), start_date: AnilistDate::new()}
-    }
+    pub relations: Relations,
+    pub recommendations: Recommendations,
+    pub tags: Vec<Tag>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -110,11 +132,13 @@ impl TokenData {
 pub struct UserSettings {
     pub username: String,
     pub title_language: String,
+    pub show_spoilers: bool,
+    pub show_adult: bool,
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new() }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true }
     }
 }
 
@@ -303,8 +327,10 @@ query ($id: Int) { # Define which variables will be used in the query (id)
                 relationType
                 node {
                     title {
-                        english
-                        romaji
+                        userPreferred
+                    }
+                    coverImage {
+                        large
                     }
                 }
             }
@@ -427,7 +453,8 @@ mutation ($id: Int, $progress: Int) {
 }
 ";
 
-const ANIME_UPDATE_ENTRY: &str = "mutation ($id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $syear: Int, $smonth: Int, $sday: Int, $eyear: Int, $emonth: Int, $eday: Int) { 
+const ANIME_UPDATE_ENTRY: &str = "
+mutation ($id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $syear: Int, $smonth: Int, $sday: Int, $eyear: Int, $emonth: Int, $eday: Int) { 
     SaveMediaListEntry (id: $id, status: $status, score: $score, progress: $progress, startedAt: {year: $syear, month: $smonth, day: $sday}, completedAt: {year: $eyear, month: $emonth, day: $eday}) {
         id
         mediaId
@@ -459,7 +486,7 @@ const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListS
           progress
           updatedAt 
           startedAt {
-              year
+            year
             month 
             day
           }
@@ -500,6 +527,40 @@ const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListS
               month 
               day
             }
+            relations {
+              edges {
+                id
+                relationType
+                node {
+                  title {
+                    userPreferred
+                  }
+                  coverImage {
+                    large
+                  }
+                }
+              }
+            }
+            recommendations {
+              nodes {
+                rating
+                mediaRecommendation {
+                  id
+                  title {
+                    userPreferred
+                  }
+                  coverImage {
+                    large
+                  }
+                }
+              }
+            }
+            tags {
+              name
+              isGeneralSpoiler
+              isMediaSpoiler
+              description
+            }
           }
         }
       }
@@ -511,26 +572,14 @@ const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListS
 pub async fn anilist_api_call(id: i32) -> AnimeInfo {
     
     // create client and query json
-    let client = Client::new();
     let json = json!({"query": ANIME_INFO_QUERY, "variables": {"id": id}});
 
-    // get media information from anilist api
-    let response = client.post("https://graphql.anilist.co/")
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .body(json.to_string())
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await;
+    let response = post(&json, None).await;
 
-    let response_string = response.unwrap();
-
-    print!("{}", response_string);
+    print!("{}", response);
 
     // change json keys to snake case
-    let average_score_replaced = response_string.replace("averageScore", "average_score");
+    let average_score_replaced = response.replace("averageScore", "average_score");
     let cover_image_replaced = average_score_replaced.replace("coverImage", "cover_image");
     let is_adult_replaced = cover_image_replaced.replace("isAdult", "is_adult");
     let season_year_replaced = is_adult_replaced.replace("seasonYear", "season_year");
@@ -547,32 +596,24 @@ pub async fn anilist_api_call(id: i32) -> AnimeInfo {
 // retrive information on anime using it's anilist id
 pub async fn anilist_get_list(username: String, status: String, access_token: String) {
 
-    // create client and query json
-    let client = Client::new();
+    // create query json
     let json = json!({"query": USER_LIST_WITH_MEDIA, "variables": {"userName": username, "status": status}});
 
-    // get media information from anilist api
-    let response = client.post("https://graphql.anilist.co/")
-        .header("Authorization", String::from("Bearer ") + &access_token)
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .body(json.to_string())
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await;
+    let mut response = post(&json, Some(&access_token)).await;
 
-    let mut response_string = response.unwrap();
+    response = response.replace("averageScore", "average_score");
+    response = response.replace("coverImage", "cover_image");
+    response = response.replace("isAdult", "is_adult");
+    response = response.replace("seasonYear", "season_year");
+    response = response.replace("type", "anime_type");
+    response = response.replace("startDate", "start_date");
+    response = response.replace("userPreferred", "user_preferred");
+    response = response.replace("relationType", "relation_type");
+    response = response.replace("mediaRecommendation", "media_recommendation");
+    response = response.replace("isGeneralSpoiler", "is_general_spoiler");
+    response = response.replace("isMediaSpoiler", "is_media_spoiler");
 
-    response_string = response_string.replace("averageScore", "average_score");
-    response_string = response_string.replace("coverImage", "cover_image");
-    response_string = response_string.replace("isAdult", "is_adult");
-    response_string = response_string.replace("seasonYear", "season_year");
-    response_string = response_string.replace("type", "anime_type");
-    response_string = response_string.replace("startDate", "start_date");
-
-    let list: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response_string).unwrap()["data"]["MediaListCollection"]["lists"][0]["entries"].take();
+    let list: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["MediaListCollection"]["lists"][0]["entries"].take();
 
     let mut anime_user_data = GLOBAL_USER_ANIME_DATA.lock().await;
     let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
@@ -661,25 +702,14 @@ pub async fn anilist_get_anime_info(anime: Vec<i32>) -> bool {
 
 
     // create client and query json
-    let client = Client::new();
     let json = json!({"query": query, "variables": ids});
 
     // get media information from anilist api
-    let response = client.post("https://graphql.anilist.co/")
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .body(json.to_string())
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await;
-
-    let response_string = response.unwrap();
+    let response = post(&json, None).await;
     //print!("\n{}", response_string);
     
     // change json keys to snake case
-    let average_score_replaced = response_string.replace("averageScore", "average_score");
+    let average_score_replaced = response.replace("averageScore", "average_score");
     let cover_image_replaced = average_score_replaced.replace("coverImage", "cover_image");
     let is_adult_replaced = cover_image_replaced.replace("isAdult", "is_adult");
     let season_year_replaced = is_adult_replaced.replace("seasonYear", "season_year");
@@ -716,24 +746,12 @@ pub async fn anilist_get_anime_info(anime: Vec<i32>) -> bool {
 pub async fn anilist_list_quary_call(username: String, access_token: String) -> String {
 
     // create client and query json
-    let client = Client::new();
     let json = json!({"query": ANIME_LIST_QUERY, "variables": {"username": username}});
 
     // get media information from anilist api
-    let response = client.post("https://graphql.anilist.co/")
-        .header("Authorization", String::from("Bearer ") + &access_token)
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .body(json.to_string())
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await;
-
-    let response_string = response.unwrap();
+    let response = post(&json, Some(&access_token)).await;
     
-    let media_id_replaced = response_string.replace("mediaId", "media_id");
+    let media_id_replaced = response.replace("mediaId", "media_id");
     let started_at_replaced = media_id_replaced.replace("startedAt", "started_at");
     let completed_at_replaced = started_at_replaced.replace("completedAt", "completed_at");
 
@@ -780,23 +798,12 @@ pub async fn anilist_oauth_call() -> String {
     let username = "";
 
     // create client and query json
-    let client = Client::new();
     let json = json!({"query": ANIME_LIST_QUERY, "variables": {"userName": username}});
     print!("{}", json);
 
     // get media information from anilist api
-    let response = client.post("https://graphql.anilist.co/")
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .body(json.to_string())
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await;
-
-    let response_string = response.unwrap();
-    response_string
+    let response = post(&json, None).await;
+    response
 }
 
 pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> String {
@@ -829,21 +836,9 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
     let json = json!({"query": mutation, "variables": variables});
     print!("{}\n", json);
 
-    let client = Client::new();
-    let response = client.post("https://graphql.anilist.co/")
-        .header("Authorization", String::from("Bearer ") + &access_token)
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .body(json.to_string())
-        .send()
-        .await
-        .unwrap()
-        .text()
-        .await;
-
-    let response_string = response.unwrap();
+    let response = post(&json, Some(&access_token)).await;
     
-    let media_id_replaced = response_string.replace("mediaId", "media_id");
+    let media_id_replaced = response.replace("mediaId", "media_id");
     let started_at_replaced = media_id_replaced.replace("startedAt", "started_at");
     let completed_at_replaced = started_at_replaced.replace("completedAt", "completed_at");
 
@@ -853,16 +848,22 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
 
 pub async fn test(id: i32, access_token: String) -> String {
 
-    print!("\n{}\n", id);
+    let json = json!({"query": ANIME_ALLINFO_QUERY, "variables": {"id": 5081 }});
+
+    let response = post(&json, Some(&access_token)).await;
+
+    print!("{}\n", response);
+    response
+}
+
+pub async fn post(json: &Value, access_token: Option<&String>) -> String {
 
     let client = Client::new();
-    //let json = json!({"query": ANIME_MULTI_INFO_QUERY});
-    let json = json!({"query": ANIME_ALLINFO_QUERY, "variables": {"id": 5081 }});
-    print!("{}\n", json);
-
-    let response = client.post("https://graphql.anilist.co/")
-        .header("Authorization", String::from("Bearer ") + &access_token)
-        .header("Content-Type", "application/json")
+    let mut request_builder = client.post("https://graphql.anilist.co/");
+    if access_token.is_some() {
+        request_builder = request_builder.header("Authorization", String::from("Bearer ") + access_token.unwrap());
+    }
+    let response = request_builder.header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .body(json.to_string())
         .send()
@@ -872,7 +873,5 @@ pub async fn test(id: i32, access_token: String) -> String {
         .await;
 
     let response_string = response.unwrap();
-    print!("{}\n", response_string);
     response_string
 }
-

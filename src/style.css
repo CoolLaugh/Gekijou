@@ -1,10 +1,16 @@
 :root {
+
+  --background-color1: #1f2122;
+  --background-color2: #27292a;
+  --text-color: #f6f6f6;
+  --highlight: #60b6ec;
+
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
-  color: #f6f6f6;
-  background-color: #2f2f2f;
+  color: var(--text-color);
+  background-color: var(--background-color1);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -12,17 +18,31 @@
   -webkit-text-size-adjust: 100%;
 }
 
+html {height: 100%;}
+
+body {
+    overflow: hidden;
+}
+
+.header {
+  position: fixed;
+  width: 100%;
+  display: contents;
+}
+
 /* Create a top navigation bar with a black background color  */
 .topnav {
-  background-color: #333;
+  background-color: var(--background-color2);
   overflow: hidden;
   min-width: 722px;
+  height: 52px;
+  margin-bottom: 8px;
 }
 
 /* Style the links inside the navigation bar */
 .topnav a {
   float: left;
-  color: #f2f2f2;
+  color: var(--text-color);
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
@@ -31,22 +51,34 @@
 
 /* Change the color of links on hover */
 .topnav a:hover {
-  background-color: #ddd;
-  color: black;
+  background-color: var(--text-color);
+  color: var(--background-color1);
 }
 
 /* Create a right-aligned (split) link inside the navigation bar */
 .topnav a.split {
   float: right;
-  background-color: #16c0a4;
+  background-color: var(--highlight);
   color: white;
 }
 
+.subnav {
+  overflow: hidden;
+  min-width: 722px;
+  /* text-align: center; */
+  margin-bottom: 8px;
+  align-content: center;
+}
+
 .underline {
-  transform: translateY(14px);
+  transform: translateY(9px);
   height: 5px;
-  background-color: #14c7a6;
+  background-color: var(--highlight);
   visibility: hidden;
+}
+
+.filters {
+  display: none;
 }
 
 .anime_info_panal {
@@ -54,7 +86,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
-  background-color: #333;
+  background-color: var(--background-color2);
   width: 732px;
   min-height: 411px;
   display: grid;
@@ -62,6 +94,7 @@
   padding: 10px;
   gap: 10px;
   display: none;
+  border: 2px solid var(--highlight);
 }
 
 .anime_info_close:hover {
@@ -69,7 +102,7 @@
 }
 
 .tabnav {
-  background-color: #333;
+  background-color: var(--background-color1);
   overflow: hidden;
   min-width: 450px;
 }
@@ -77,7 +110,7 @@
 /* Style the links inside the navigation bar */
 .tabnav a {
   float: left;
-  color: #f2f2f2;
+  color: var(--text-color);
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
@@ -86,14 +119,14 @@
 
 /* Change the color of links on hover */
 .tabnav a:hover {
-  background-color: #ddd;
-  color: black;
+  background-color: var(--text-color);
+  color: var(--background-color1);
 }
 
 .tab_underline {
   transform: translateY(14px);
   height: 5px;
-  background-color: #14c7a6;
+  background-color: var(--highlight);
   visibility: hidden;
 }
 
@@ -111,7 +144,7 @@
   width: 100%;
   text-align: center;
   table-layout: fixed;
-  background-color: #272727;
+  background-color: var(--background-color1);
 }
 
 .anime_info_panal_title {
@@ -123,11 +156,12 @@
 }
 
 .anime_info_title_row {
-  scroll-snap-align: center;
-  align-content: baseline;
+  /* scroll-snap-align: center; */
+  /* align-content: baseline; */
   font-size: 24px;
   vertical-align: bottom;
-  max-height: 24px;
+  /* max-height: 24px; */
+  height: 30px;
 }
 
 .anime_info_lower {
@@ -141,8 +175,8 @@
 
 .anime_info_text {
   min-height: 150px;
-  max-height: 300px; 
-  Overflow-y: scroll;
+  max-height: 300px;
+  Overflow-y: auto;
 }
 
 .anilist_login_panal {
@@ -150,7 +184,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
-  background-color: #333;
+  background-color: var(--background-color1);
   width: 400px;
   display: grid;
   border-radius: 10px;
@@ -173,7 +207,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
-  background-color: #333;
+  background-color: var(--background-color1);
   width: 700px;
   display: grid;
   border-radius: 10px;
@@ -183,7 +217,7 @@
 
 .myProgress {
   width: 100%;
-  background-color: #454545;
+  background-color: var(--background-color1);
   margin-top: -6px;
   height: 5px;
   position: absolute;
@@ -193,7 +227,7 @@
 .myBar {
   width: 15%;
   height: 5px;
-  background-color: #00ce00;
+  background-color: var(--highlight);
   position: absolute;
   z-index: 3;
 }
@@ -211,8 +245,6 @@
   transition: .5s ease;
   font-size: 14px;
   text-align: center;
-  max-height: 86vh;
-  overflow: auto;
 }
 
 .cover_panal p {
@@ -224,6 +256,9 @@
   position: relative;
   width: 100%;
   max-width: 200px;
+  background: var(--background-color2);
+  /* border-radius: 8px; */
+  /* padding: 4px; */
 }
 
 .cover_container button {
@@ -263,42 +298,24 @@
 
 .container_header {
   float: right;
-  max-height: 25px;
+  height: 25px;
+  vertical-align: bottom;
+  padding: 1px;
 }
 
 .container {
-  margin: 0;
-  padding-top: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: left;
-  text-align: left;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
+  overflow-y: auto;
+  max-height: calc(100vh - 68px);
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--text-color);
   text-decoration: inherit;
 }
 
 a:hover {
-  color: #24c8db;
+  color: var(--highlight);
 }
 
 h1 {
@@ -306,7 +323,8 @@ h1 {
 }
 
 input,
-button {
+button,
+select {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 0.6em;
@@ -314,9 +332,10 @@ button {
   font-weight: 500;
   font-family: inherit;
   color: #ffffff;
-  background-color: #0f0f0f98;
+  background-color: var(--background-color1);
   transition: border-color 0.25s;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+  outline: none;
 }
 
 button {
@@ -324,14 +343,5 @@ button {
 }
 
 button:hover {
-  border-color: #396cd8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
+  border-color: var(--highlight);
 }
