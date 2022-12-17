@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use regex::Regex;
+use serde::{Serialize, Deserialize};
 
 
 use crate::api_calls::AnimeInfo;
-use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH};
+use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_USER_SETTINGS, file_operations};
 use strsim;
 
 // working struct to store data while determining what anime a file belongs to
@@ -24,6 +25,7 @@ impl AnimePathWorking {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AnimePath {
     pub path: String,
     pub similarity_score: f64,
@@ -32,8 +34,9 @@ pub struct AnimePath {
 // scans these folders and subfolders looking for files that match titles in the users anime list
 // found files are then stored in a global list for each anime and episode
 // media_id is for finding files for a specific anime instead of any anime known
-pub async fn parse_file_names(folders: &Vec<String>, media_id: Option<i32>) {
+pub async fn parse_file_names(media_id: Option<i32>) {
     
+    let folders = GLOBAL_USER_SETTINGS.lock().await.folders.clone();
     for folder in folders {
 
         let path = Path::new(&folder);
@@ -96,6 +99,7 @@ pub async fn parse_file_names(folders: &Vec<String>, media_id: Option<i32>) {
             }
         }
     }
+    file_operations::write_file_episode_path().await;
 }
 
 // remove all brackets from a filename
@@ -142,7 +146,7 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i
     let mut previous_file_name = String::new();
     //let mut counter = 0;
     //let total = paths.len();
-    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
 
     paths.iter_mut().for_each(|path| {
         // skip files that have the same title
@@ -161,7 +165,6 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i
             path.media_id = similarity_score.0;
             path.similarity_score = similarity_score.1;
         }
-
     });
 
     // fill in data for files that were skipped

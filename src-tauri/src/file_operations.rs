@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tauri::async_runtime::Mutex;
 
-use crate::{GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN};
+use crate::{GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN, GLOBAL_ANIME_PATH};
 
 extern crate dirs;
 
@@ -54,6 +54,14 @@ pub async fn write_file_user_info() {
 pub async fn read_file_user_info() {
     read_file_data(&GLOBAL_USER_ANIME_DATA, "user_data").await;
     read_file_data(&GLOBAL_USER_ANIME_LISTS, "user_Lists").await;
+}
+
+pub async fn write_file_episode_path() {
+    write_file_data(&GLOBAL_ANIME_PATH, "episode_path").await;
+}
+
+pub async fn read_file_episode_path() {
+    read_file_data(&GLOBAL_ANIME_PATH, "episode_path").await;
 }
 
 // writes all held data on anime to a file

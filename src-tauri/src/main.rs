@@ -101,7 +101,7 @@ async fn set_user_settings(settings: UserSettings) {
     }
 
     if scan {
-        file_name_recognition::parse_file_names(&user_settings.folders, None).await;
+        file_name_recognition::parse_file_names(None).await;
     }
 
     drop(user_settings);
@@ -336,6 +336,7 @@ async fn on_startup() {
     file_operations::read_file_token_data().await;
     file_operations::read_file_anime_info_cache().await;
     file_operations::read_file_user_info().await;
+    file_operations::read_file_episode_path().await;
     let score_format = api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await;
     GLOBAL_USER_SETTINGS.lock().await.score_format = score_format;
     scan_anime_folder().await;
@@ -433,7 +434,7 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
 // scan folders for episodes of anime
 #[tauri::command]
 async fn scan_anime_folder() {
-    file_name_recognition::parse_file_names(&GLOBAL_USER_SETTINGS.lock().await.folders, None).await;
+    file_name_recognition::parse_file_names(None).await;
 }
 
 #[derive(Debug, Clone)]
@@ -468,7 +469,7 @@ async fn anime_update_delay_loop() {
         check_delayed_updates(true).await;
 
         if hour_timer.elapsed() > one_hour {
-            file_name_recognition::parse_file_names(&GLOBAL_USER_SETTINGS.lock().await.folders, None).await;
+            file_name_recognition::parse_file_names(None).await;
             hour_timer = Instant::now();
         }
 
@@ -706,7 +707,7 @@ async fn add_to_list(id: i32, list: String) {
     user_anime.status = list;
 
     update_user_entry(user_anime).await;
-    file_name_recognition::parse_file_names(&GLOBAL_USER_SETTINGS.lock().await.folders, Some(id)).await;
+    file_name_recognition::parse_file_names(Some(id)).await;
 }
 
 
