@@ -808,9 +808,12 @@ name = "gekijou"
 version = "0.0.0"
 dependencies = [
  "lazy_static",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",
+ "similar-string",
+ "strsim",
  "tauri",
  "tauri-build",
 ]
@@ -2587,6 +2590,12 @@ dependencies = [
  "libc",
  "winapi",
 ]
+
+[[package]]
+name = "similar-string"
+version = "1.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3ac42455f28f7f9fc2ca816746b7143356f51ae195abb35d5bb4ac3808c7fa3"
 
 [[package]]
 name = "siphasher"

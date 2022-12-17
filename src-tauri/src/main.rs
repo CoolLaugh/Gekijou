@@ -8,6 +8,7 @@
 pub mod secrets;
 pub mod api_calls;
 pub mod file_operations;
+pub mod file_name_recognition;
 
 #[macro_use]
 extern crate lazy_static;
@@ -85,6 +86,25 @@ async fn get_user_settings() -> UserSettings {
     }
 
    GLOBAL_USER_SETTINGS.lock().await.clone()
+}
+
+#[tauri::command]
+async fn get_list(list_name: String) -> Vec<AnimeInfo> {
+
+    api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+    file_operations::write_file_anime_info_cache().await;
+
+    let lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+    let list = lists.get(&list_name).unwrap();
+
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+
+    let mut list_info: Vec<AnimeInfo> = Vec::new();
+    for id in list {
+        list_info.push(anime_data.get(id).unwrap().clone());
+    }
+
+    list_info
 }
 
 #[tauri::command]
@@ -205,16 +225,28 @@ async fn update_user_entry(anime: UserAnimeInfo) {
 }
 
 #[tauri::command]
+async fn on_startup() {
+
+    *GLOBAL_TOKEN.lock().await = file_operations::read_file_token_data();
+    file_operations::read_file_anime_info_cache().await;
+}
+
+
+#[tauri::command]
 async fn test() -> String {
 
+    file_name_recognition::parse_file_names(vec![String::from("D:\\Anime")]).await;
+
+    //api_calls::anilist_get_list("Fuzzywuzhe".to_string(), "CURRENT".to_string(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
     //let anime: Vec<i32> = [5114,9253,21202,17074,2904].to_vec();
-    let response = api_calls::test(0, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
-    return response;
+    //let response = api_calls::test(0, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+    //return response;
+    return String::new();
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry])
+        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
     

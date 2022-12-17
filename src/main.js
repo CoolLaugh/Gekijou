@@ -1,7 +1,7 @@
 const { invoke } = window.__TAURI__.tauri;
 
 window.addEventListener("DOMContentLoaded", () => {
-  invoke("read_token_data");
+  invoke("on_startup");
   get_user_settings();
 
   document.getElementById("information").style.display = "block";
@@ -101,7 +101,7 @@ function exclusive_underline(index) {
 
 async function show_anime_list(name) {
 
-  var watching = await invoke("get_watching_list", { listName: name });
+  var watching = await invoke("get_list", { listName: name });
   console.log(watching);
   var user_data = await invoke("get_list_user_info", { listName: name });
   // get userdata on anime

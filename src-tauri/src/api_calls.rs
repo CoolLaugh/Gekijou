@@ -7,7 +7,7 @@ use reqwest::Client;
 use serde::{Serialize, Deserialize};
 use serde_json::{json};
 
-use crate::{secrets, GLOBAL_ANIME_DATA};
+use crate::{secrets, GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS};
 
 
 // structs that replacate the structure of returning data
@@ -447,10 +447,69 @@ const ANIME_UPDATE_ENTRY: &str = "mutation ($id: Int, $status: MediaListStatus, 
     }
 }";
 
+const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListStatus) {
+    MediaListCollection(userName: $userName, type:ANIME, status:$status) {
+      lists {
+        name 
+        entries {
+          id 
+          mediaId 
+          status 
+          score 
+          progress
+          updatedAt 
+          startedAt {
+              year
+            month 
+            day
+          }
+          completedAt {
+            year 
+            month 
+            day
+          }
+          media {
+            id 
+            title {
+              userPreferred
+              romaji
+              english
+              native
+            }
+            coverImage {
+              large
+            }
+            season
+            seasonYear
+            type
+            format
+            episodes
+            duration
+            isAdult
+            genres
+            averageScore
+            popularity
+            description
+            status
+            trailer {
+              id
+              site
+            }
+            startDate {
+              year 
+              month 
+              day
+            }
+          }
+        }
+      }
+    }
+  }";
+
 
 // retrive information on anime using it's anilist id
 pub async fn anilist_api_call(id: i32) -> AnimeInfo {
-
+    
     // create client and query json
     let client = Client::new();
     let json = json!({"query": ANIME_INFO_QUERY, "variables": {"id": id}});
@@ -482,6 +541,62 @@ pub async fn anilist_api_call(id: i32) -> AnimeInfo {
     // return struct with media information
     let json: Data = serde_json::from_str(&start_date_replaced).unwrap();
     json.data.Media
+}
+
+
+// retrive information on anime using it's anilist id
+pub async fn anilist_get_list(username: String, status: String, access_token: String) {
+
+    // create client and query json
+    let client = Client::new();
+    let json = json!({"query": USER_LIST_WITH_MEDIA, "variables": {"userName": username, "status": status}});
+
+    // get media information from anilist api
+    let response = client.post("https://graphql.anilist.co/")
+        .header("Authorization", String::from("Bearer ") + &access_token)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .body(json.to_string())
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await;
+
+    let mut response_string = response.unwrap();
+
+    response_string = response_string.replace("averageScore", "average_score");
+    response_string = response_string.replace("coverImage", "cover_image");
+    response_string = response_string.replace("isAdult", "is_adult");
+    response_string = response_string.replace("seasonYear", "season_year");
+    response_string = response_string.replace("type", "anime_type");
+    response_string = response_string.replace("startDate", "start_date");
+
+    let list: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response_string).unwrap()["data"]["MediaListCollection"]["lists"][0]["entries"].take();
+
+    let mut anime_user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+    let mut anime_user_list_lock = GLOBAL_USER_ANIME_LISTS.lock().await;
+    let anime_user_list = anime_user_list_lock.entry(status).or_default();
+
+    anime_user_list.clear();
+    for entry in list.as_array().unwrap() {
+        
+        let user_info: UserAnimeInfo = UserAnimeInfo { id: entry["id"].as_i64().unwrap() as i32, 
+                                                        media_id: entry["mediaId"].as_i64().unwrap() as i32, 
+                                                        status: entry["status"].as_str().unwrap().to_string(), 
+                                                        score: entry["score"].as_i64().unwrap() as i32, 
+                                                        progress: entry["progress"].as_i64().unwrap() as i32, 
+                                                        started_at: serde_json::from_value(entry["startedAt"].clone()).unwrap(), 
+                                                        completed_at: serde_json::from_value(entry["completedAt"].clone()).unwrap() };
+
+        anime_user_data.insert(user_info.media_id, user_info);
+
+        let media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
+
+        anime_user_list.push(media.id);
+        anime_data.insert(media.id, media);
+    }
 }
 
 
