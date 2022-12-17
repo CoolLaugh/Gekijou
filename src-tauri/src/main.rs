@@ -13,12 +13,14 @@ pub mod file_name_recognition;
 #[macro_use]
 extern crate lazy_static;
 
-use tauri::async_runtime::Mutex;
-use std::{collections::HashMap};
+use regex::Regex;
+use tauri::{async_runtime::Mutex, Manager};
+use window_titles::{Connection, ConnectionTrait};
+use std::{collections::HashMap, path::Path, thread, time::Duration};
 
 use api_calls::{TokenData, UserSettings};
 
-use crate::api_calls::{AnimeInfo, UserAnimeInfo};
+use crate::{api_calls::{AnimeInfo, UserAnimeInfo}, file_name_recognition::AnimePath};
 
 lazy_static! {
     static ref GLOBAL_TOKEN: Mutex<TokenData> = Mutex::new(TokenData { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() });
@@ -26,7 +28,7 @@ lazy_static! {
     static ref GLOBAL_USER_ANIME_DATA: Mutex<HashMap<i32, UserAnimeInfo>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_ANIME_LISTS: Mutex<HashMap<String, Vec<i32>>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_SETTINGS: Mutex<UserSettings> = Mutex::new(UserSettings::new());
-    static ref GLOBAL_ANIME_PATH: Mutex<HashMap<i32,HashMap<i32,String>>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_ANIME_PATH: Mutex<HashMap<i32,HashMap<i32,AnimePath>>> = Mutex::new(HashMap::new());
 }
 
 #[tauri::command]
@@ -230,29 +232,123 @@ async fn on_startup() {
 
     *GLOBAL_TOKEN.lock().await = file_operations::read_file_token_data();
     file_operations::read_file_anime_info_cache().await;
+    scan_anime_folder().await;
+}
+
+#[tauri::command]
+async fn play_next_episode(id: i32) {
+    println!("entered function");
+    let next_episode = GLOBAL_USER_ANIME_DATA.lock().await.get(&id).unwrap().progress + 1;
+    let paths = GLOBAL_ANIME_PATH.lock().await;
+
+    if paths.contains_key(&id) {
+        let media = paths.get(&id).unwrap();
+        if media.contains_key(&next_episode) {
+            
+            let next_episode_path = Path::new(&media.get(&next_episode).unwrap().path);
+            match open::that(next_episode_path) {
+                Err(why) => panic!("{}",why),
+                Ok(e) => {e},
+            }
+            println!("opened {}", next_episode_path.to_str().unwrap());
+        } else {
+            println!("no episode key {}", next_episode);
+        }
+    } else {
+        println!("no media key {}", id);
+    }
+
+}
+
+#[tauri::command]
+async fn scan_anime_folder() {
+    file_name_recognition::parse_file_names(vec![String::from("D:\\anime_test_folder")]).await;
+}
+
+#[derive(Debug, Clone)]
+struct WatchingTracking {
+    timer: std::time::Instant,
+    monitoring: bool,
+    episode: i32,
+}
+lazy_static! {
+    static ref WATCHING_TRACKING: Mutex<HashMap<i32, WatchingTracking>> = Mutex::new(HashMap::new());
+}
+
+fn get_titles() -> Vec<String> {
+    let connection = Connection::new();
+    let titles: Vec<String> = connection.unwrap().window_titles().unwrap();
+    titles
+}
+
+#[tauri::command]
+async fn anime_update_delay() {
+
+    //let mut filename: String = String::new();
+    //let mut ignore_filenames: Vec<String> = Vec::new();
+    let regex = Regex::new(r"\.mkv|\.avi|\.mp4").unwrap();
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    let mut watching_data = WATCHING_TRACKING.lock().await;
+    let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+    watching_data.iter_mut().for_each(|entry| {
+        entry.1.monitoring = false;
+    });
+
+    let mut titles: Vec<String> = get_titles();
+    titles.retain(|v| regex.is_match(v));
+
+    for title in titles {
+
+        let mut title_edit: String = regex.replace(&title, "").to_string();
+        title_edit = file_name_recognition::remove_brackets(&title_edit);
+        let episode = file_name_recognition::identify_number(&title_edit);
+        title_edit = title_edit.replace(episode.0.as_str(), "");
+        title_edit = file_name_recognition::irrelevant_information_removal(title_edit);
+
+        let similarity = file_name_recognition::identify_media_id(&title_edit, &anime_data);
+        if similarity.1 < 0.8 { continue; }
+        //println!("{} {} {} {:.4}", title_edit, episode.1, similarity.0, similarity.1);
+        if watching_data.contains_key(&similarity.0) {
+            watching_data.entry(similarity.0).and_modify(|entry| {
+                entry.monitoring = true;
+            });
+        } else if user_data.contains_key(&similarity.0) && user_data.get(&similarity.0).unwrap().progress + 1 == episode.1 { // only add if it is in the users list and it is the next episode
+            watching_data.insert(similarity.0, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode.1});
+        }
+    }
+
+    let token = GLOBAL_TOKEN.lock().await;
+    for data in watching_data.iter_mut() {
+        let seconds = data.1.timer.elapsed().as_secs();
+        if seconds >= 1 * 30 {
+            data.1.monitoring = false;
+            // update anime
+
+            user_data.entry(*data.0).and_modify(|ud| {
+                ud.progress = data.1.episode;
+            });
+
+            api_calls::update_user_entry(token.access_token.clone(), user_data.get(data.0).unwrap().clone()).await;
+        }
+        println!("{} {}/30", anime_data.get(data.0).unwrap().title.romaji.clone().unwrap(), seconds);
+    }
+
+    watching_data.retain(|_, v| v.monitoring == true);
 }
 
 
+
 #[tauri::command]
-async fn test() -> String {
+async fn test() {
 
-    //file_name_recognition::parse_file_names(vec![String::from("D:\\anime_test_folder")]).await;
-    file_name_recognition::parse_file_names(vec![String::from("D:\\Anime")]).await;
-
-    //api_calls::anilist_get_list("Fuzzywuzhe".to_string(), "CURRENT".to_string(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
-    //let anime: Vec<i32> = [5114,9253,21202,17074,2904].to_vec();
-    //let response = api_calls::test(0, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
-    //return response;
-    return String::new();
+    //loop { anime_update_delay().await; thread::sleep(Duration::from_secs(5)); }
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup])
+        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,play_next_episode,anime_update_delay])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-    
-    
 }
 
 async fn get_user_data() {

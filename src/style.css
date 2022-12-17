@@ -183,15 +183,25 @@
 
 .myProgress {
   width: 100%;
-  background-color: grey;
+  background-color: #454545;
   margin-top: -6px;
   height: 5px;
+  position: absolute;
+  z-index: 1;
 }
 
 .myBar {
   width: 15%;
   height: 5px;
   background-color: #00ce00;
+  position: absolute;
+  z-index: 3;
+}
+
+.episodes_exist {
+  transform: translateX(-100px);
+  position: absolute;
+  z-index: 2;
 }
 
 .cover_panal {

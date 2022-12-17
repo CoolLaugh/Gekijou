@@ -122,9 +122,18 @@ const removeChilds = (parent) => {
 
 async function test() {
 
-  console.log("test fn started");
+  var bars = document.getElementsByClassName("episodes_exist");
+  for(var i = 0; i < bars.length; i++) {
+    var ctx = bars[i].getContext("2d");
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(0, 0, 46, 5);
+    ctx.fillRect(77, 0, 46, 5);
+    ctx.fillRect(154, 0, 30, 5);
+  }
+
+  //console.log("test fn started");
   var response = await invoke("test");
-  console.log(response);
+  //console.log(response);
 }
 
 // add an anime to the ui
@@ -150,10 +159,11 @@ async function add_anime(anime, user_data, cover_id) {
   document.getElementById("cover_panal_grid").insertAdjacentHTML("beforeend", 
   "<div class=\"cover_container\" anime_id=" + anime.id + " title=\"" + title + "\" score=" + anime.average_score + " date=" + (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day) + " popularity=" + anime.popularity + ">" +
     "<img class=\"image\" src=" + anime.cover_image.large + " id=\"" + cover_id + "\" alt=\"Cover Image\" width=\"200\" height=\"300\"/>" +
-    "<button class=\"cover_play_button\" type=\"button\" onclick=\"getanime(" + anime.id + ", " + cover_id + ")\">Play</button>" +
+    "<button class=\"cover_play_button\" type=\"button\" onclick=\"play_next_episode(" + anime.id + ")\">Play</button>" +
     "<button class=\"cover_info_button\" type=\"button\" onclick=\"show_anime_info_window(" + anime.id + ")\">Info</button>" +
     "<div class=\"myProgress\">" +
       "<div class=\"myBar\" id=\"Bar" + cover_id + "\"" + "style=\"width: " + watch_percent + "%;\"></div>" +
+      "<canvas class=\"episodes_exist\" id=\"progress_episodes" + cover_id + "\" width=\"200\" height=\"5\"></canvas>" +
     "</div>" +
     "<div class=\"cover_title\">" +
       "<p id=\"title" + anime.id + "\">" + title + "</p>" +
@@ -161,6 +171,10 @@ async function add_anime(anime, user_data, cover_id) {
   "</div>");
 
   sort_anime();
+}
+
+async function play_next_episode(id) {
+  await invoke("play_next_episode", { id: id });
 }
 
 // hide information window and return to cover grid
@@ -394,6 +408,7 @@ async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
 }
 
+window.play_next_episode = play_next_episode;
 window.clearDate = clearDate;
 window.openTab = openTab;
 window.show_anime_list = show_anime_list;

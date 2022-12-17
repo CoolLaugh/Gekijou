@@ -1,13 +1,14 @@
-use std::fmt::format;
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
+use std::string;
 use std::time::Instant;
 use regex::Regex;
 
 
-use crate::GLOBAL_ANIME_DATA;
-use similar_string::*;
+use crate::api_calls::AnimeInfo;
+use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH};
 use strsim;
 
 // working struct to store data while determining what anime a file belongs to
@@ -17,25 +18,18 @@ struct AnimePathWorking {
     filename: String,
     episode: i32,
     media_id: i32,
-
-    jaro: f64,
-    jaro_id: i32,
-    jaro_name: String,
-    sorensen_dice: f64,
-    sorensen_dice_id: i32,
-    sorensen_dice_name: String,
-    normalized_levenshtein: f64,
-    normalized_levenshtein_id: i32,
-    normalized_levenshtein_name: String,
-    normalized_damerau_levenshtein: f64,
-    normalized_damerau_levenshtein_id: i32,
-    normalized_damerau_levenshtein_name: String,
+    similarity_score: f64,
 }
 
 impl AnimePathWorking {
     pub const fn new(new_path: String, new_filename: String) -> AnimePathWorking {
-        AnimePathWorking { path: new_path, filename: new_filename, episode: 0, media_id: 0, normalized_levenshtein: 0.0, normalized_levenshtein_name: String::new(), normalized_damerau_levenshtein: 0.0, normalized_damerau_levenshtein_name: String::new(), jaro: 0.0, jaro_name: String::new(), sorensen_dice: 0.0, sorensen_dice_name: String::new(), normalized_damerau_levenshtein_id: 0, jaro_id: 0, sorensen_dice_id: 0, normalized_levenshtein_id: 0 }
+        AnimePathWorking { path: new_path, filename: new_filename, episode: 0, media_id: 0, similarity_score: 0.0 }
     }
+}
+
+pub struct AnimePath {
+    pub path: String,
+    pub similarity_score: f64,
 }
 
 pub async fn parse_file_names(folders: Vec<String>) {
@@ -59,8 +53,10 @@ pub async fn parse_file_names(folders: Vec<String>) {
 
                 let unwrap = file.unwrap();
                 if unwrap.file_type().unwrap().is_dir() {
+
                     sub_folders.push(unwrap.path().to_str().unwrap().to_string());
                 } else {
+
                     file_names.push(AnimePathWorking::new(unwrap.path().to_str().unwrap().to_string(), unwrap.file_name().to_str().unwrap().to_string()));
                 }
             }
@@ -70,25 +66,41 @@ pub async fn parse_file_names(folders: Vec<String>) {
     
         // remove brackets and their contents, the name and episode are unlikely to be here
         file_names.iter_mut().for_each(|name| {
-            name.filename = Regex::new(r"((\[[^\[\]]+\]|\([^\(\)]+\))[ _]*)+").unwrap().replace_all(&name.filename, "").to_string();
+            name.filename = remove_brackets(&name.filename);
         });
 
         identify_episode_number(&mut file_names);
 
-        //file_dump_episode(&mut file_names);
+        irrelevant_information_removal_paths(&mut file_names);
 
-        irrelevant_information_removal(&mut file_names);
-
-        let now = Instant::now();
         string_similarity(&mut file_names).await;
-        let elapsed_time = now.elapsed();
-        println!("Took {} seconds.", elapsed_time.as_secs());
         
-        file_dump_formatted(&mut file_names);
+        let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
+
+        for file in file_names {
+
+            if file.similarity_score > 0.8 {
+
+                let media = file_paths.entry(file.media_id).or_default();
+                if media.contains_key(&file.episode) && media.get(&file.episode).unwrap().similarity_score < file.similarity_score {
+                    media.entry(file.media_id).and_modify(|anime_path| {
+
+                        anime_path.similarity_score = file.similarity_score;
+                        anime_path.path = file.path;
+                    });
+                } else {
+
+                    media.insert(file.episode, AnimePath { path: file.path, similarity_score: file.similarity_score });
+                }
+            }
+            println!("{} {} {} {}", file.filename, file.media_id, file.episode, file.similarity_score);
+        }
     }
 }
 
-
+pub fn remove_brackets(filename: &String) -> String {
+    Regex::new(r"((\[[^\[\]]+\]|\([^\(\)]+\))[ _]*)+").unwrap().replace_all(&filename, "").to_string()
+}
 
 // removes any files that are the wrong file type or extra (openings, endings, etc)
 fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
@@ -123,10 +135,11 @@ fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
 // compares filename to anime titles using multiple string matching algorithms and remembers the most similar title
 async fn string_similarity(paths: &mut Vec<AnimePathWorking>) {
 
-    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    //let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut previous_file_name = String::new();
     let mut counter = 0;
     let total = paths.len();
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
 
     paths.iter_mut().for_each(|path| {
         // skip files that have the same title
@@ -139,87 +152,104 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>) {
             previous_file_name = path.filename.clone();
         }
 
-        anime_data.iter().for_each(|data| {
-            
-            let mut titles: Vec<String> = Vec::new();
-            if data.1.title.english.is_some() { titles.push(data.1.title.english.clone().unwrap().to_ascii_lowercase()) }
-            if data.1.title.romaji.is_some() { titles.push(data.1.title.romaji.clone().unwrap().to_ascii_lowercase()) }
-            if data.1.title.native.is_some() { titles.push(data.1.title.native.clone().unwrap().to_ascii_lowercase()) }
+        let similarity_score = identify_media_id(&path.filename, &anime_data);
+        
+        if similarity_score.1 > 0.8 {
+            path.media_id = similarity_score.0;
+            path.similarity_score = similarity_score.1;
+        }
 
-            for title in titles {
-
-                let normalized_levenshtein_score = strsim::normalized_levenshtein(&path.filename, &title);
-                if normalized_levenshtein_score > path.normalized_levenshtein { path.normalized_levenshtein_name = title.clone(); path.normalized_levenshtein = normalized_levenshtein_score; }
-
-                let normalized_damerau_levenshtein_score = strsim::normalized_damerau_levenshtein(&path.filename, &title);
-                if normalized_damerau_levenshtein_score > path.normalized_damerau_levenshtein { path.normalized_damerau_levenshtein_name = title.clone(); path.normalized_damerau_levenshtein = normalized_damerau_levenshtein_score; }
-
-                let jaro_score = strsim::jaro(&path.filename, &title);
-                if jaro_score > path.jaro { path.jaro_name = title.clone(); path.jaro = jaro_score; }
-
-                let sorensen_dice_score = strsim::sorensen_dice(&path.filename, &title);
-                if sorensen_dice_score > path.sorensen_dice { path.sorensen_dice_name = title; path.sorensen_dice = sorensen_dice_score; }
-            }
-        });
     });
 
     // fill in data for files that were skipped
     for i in 0..paths.len() {
         if i == 0 { continue; }
-        if paths[i].normalized_levenshtein == 0.0 {
-            paths[i].normalized_levenshtein = paths[i - 1].normalized_levenshtein;
-            paths[i].normalized_damerau_levenshtein = paths[i - 1].normalized_damerau_levenshtein;
-            paths[i].jaro = paths[i - 1].jaro;
-            paths[i].sorensen_dice = paths[i - 1].sorensen_dice;
-            paths[i].normalized_levenshtein_name = paths[i - 1].normalized_levenshtein_name.clone();
-            paths[i].normalized_damerau_levenshtein_name = paths[i - 1].normalized_damerau_levenshtein_name.clone();
-            paths[i].jaro_name = paths[i - 1].jaro_name.clone();
-            paths[i].sorensen_dice_name = paths[i - 1].sorensen_dice_name.clone();
+        if paths[i].media_id == 0 {
+            paths[i].similarity_score = paths[i - 1].similarity_score;
+            paths[i].media_id = paths[i - 1].media_id;
         }
     }
 
+}
+
+// returns the media id and similarity score based on the title
+pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>) -> (i32, f64) {
+
+    let mut score = 0.0;
+    let mut media_id = 0;
+    anime_data.iter().for_each(|data| {
+            
+        let mut titles: Vec<String> = Vec::new();
+        if data.1.title.english.is_some() { titles.push(data.1.title.english.clone().unwrap().to_ascii_lowercase()) }
+        if data.1.title.romaji.is_some() { titles.push(data.1.title.romaji.clone().unwrap().to_ascii_lowercase()) }
+        if data.1.title.native.is_some() { titles.push(data.1.title.native.clone().unwrap().to_ascii_lowercase()) }
+
+        for title in titles {
+
+            let normalized_levenshtein_score = strsim::normalized_levenshtein(&filename, &title);
+            if normalized_levenshtein_score > score { media_id = data.1.id; score = normalized_levenshtein_score; }
+        }
+    });
+    (media_id, score)
 }
 
 
 // find the episode number in the filename and store it
 fn identify_episode_number(paths: &mut Vec<AnimePathWorking>) {
 
+    paths.iter_mut().for_each(|name| {
+
+        let episode = identify_number(&name.filename);
+        if episode.1 != 0 {
+            name.episode = episode.1;
+            name.filename = name.filename.replace(episode.0.as_str(), "");
+        }
+    });
+}
+
+// applies multiple regex to find the episode number
+pub fn identify_number(filename: &String) -> (String, i32) {
+
     // remove episode titles with numbers that would be misidentified as episode numbers
     let episode_title_number = Regex::new(r"'.*\d+.*'").unwrap();
-    paths.iter_mut().for_each(|name| {
-        name.filename = episode_title_number.replace_all(&name.filename, "").to_string();
-    });
+    let filename_episode_title_removed = episode_title_number.replace_all(&filename, "").to_string();
 
     // most anime fit this format
-    extract_number(paths, Regex::new(r" - (\d+)").unwrap());
-
+    let num1 = extract_number(&filename_episode_title_removed, Regex::new(r" - (\d+)").unwrap());
+    if num1.1 != 0 {
+        return num1;
+    }
     // less common formats
-    extract_number(paths, Regex::new(r" - Episode (\d+)").unwrap());
-    extract_number(paths, Regex::new(r"[eE][pP] ?(\d+)").unwrap());
-
+    let num2 = extract_number(&filename_episode_title_removed, Regex::new(r" - Episode (\d+)").unwrap());
+    if num2.1 != 0 {
+        return num2;
+    }
+    let num3 = extract_number(&filename_episode_title_removed, Regex::new(r"[eE][pP] ?(\d+)").unwrap());
+    if num3.1 != 0 {
+        return num3;
+    }
     // wider search for numbers, use last number that is not a version or season number
-    extract_number(paths, Regex::new(r"[^vsVS](\d+)").unwrap());
+    let num4 = extract_number(&filename_episode_title_removed, Regex::new(r"[^vsVS](\d+)").unwrap());
+    if num4.1 != 0 {
+        return num4;
+    }
+
+    (String::new(), 0)
 }
 
-fn extract_number(paths: &mut Vec<AnimePathWorking>, regex: Regex) {
+// finds and returns the episode number and wider string according to the regex rules
+fn extract_number(filename: &String, regex: Regex) -> (String, i32) {
 
-    paths.iter_mut().for_each(|name| {
+    let last_match = regex.find_iter(&filename).last();
+    if last_match.is_none() { 
+        return (String::new(),0)
+    }
 
-        if name.episode != 0 {
-            return;
-        }
-
-        let last_match = regex.find_iter(&name.filename).last();
-        if last_match.is_none() { 
-            return;
-        }
-
-        let episode = last_match.unwrap().as_str();
-        let captures = regex.captures(episode).unwrap();
-        name.episode = captures.get(1).unwrap().as_str().parse().unwrap();
-        name.filename = name.filename.replace(episode, "");
-    });
+    let episode = last_match.unwrap().as_str();
+    let captures = regex.captures(episode).unwrap();
+    (episode.to_string(), captures.get(1).unwrap().as_str().parse().unwrap())
 }
+
 
 // write episode number found into a file
 fn file_dump_episode(paths: &mut Vec<AnimePathWorking>) {
@@ -241,121 +271,56 @@ fn file_dump_episode(paths: &mut Vec<AnimePathWorking>) {
     });
 }
 
-// write results into a file
-fn file_dump_formatted(paths: &mut Vec<AnimePathWorking>) {
+
+
+fn irrelevant_information_removal_paths(paths: &mut Vec<AnimePathWorking>) {
     
-    let path = Path::new("match_data.txt");
-    let mut file: File;
-    // create the file
-    file = match File::create(path) {
-        Err(why) => panic!("unable to open, {}", why),
-        Ok(file) => file,
-    };
+    paths.iter_mut().for_each(|name| {
 
-    match write!(&mut file, "--------------------------------------------------------------------------------------------------------------------------------") {
-        Err(why) => panic!("ERROR: {}", why),
-        Ok(file) => file,
-    };
-
-    let mut previous_title = String::new();
-
-    paths.iter().for_each(|name| { 
-        
-        if name.filename == previous_title {
-            return;
-        } else {
-            previous_title = name.filename.clone();
-        }
-
-        match write!(&mut file, "\nnormalized_levenshtein:\t\t\t | {:.4} | {} | {}", name.normalized_levenshtein, name.filename, name.normalized_levenshtein_name) {
-            Err(why) => panic!("ERROR: {}", why),
-            Ok(file) => file,
-        };
-        
-        match write!(&mut file, "\nnormalized_damerau_levenshtein:  | {:.4} | {} | {}", name.normalized_damerau_levenshtein, name.filename, name.normalized_damerau_levenshtein_name) {
-            Err(why) => panic!("ERROR: {}", why),
-            Ok(file) => file,
-        };
-        
-        match write!(&mut file, "\njaro:\t\t\t\t\t\t\t | {:.4} | {} | {}", name.jaro, name.filename, name.jaro_name) {
-            Err(why) => panic!("ERROR: {}", why),
-            Ok(file) => file,
-        };
-        
-        match write!(&mut file, "\nsorensen_dice:\t\t\t\t\t | {:.4} | {} | {}", name.sorensen_dice, name.filename, name.sorensen_dice_name) {
-            Err(why) => panic!("ERROR: {}", why),
-            Ok(file) => file,
-        };
-
-        let scores = vec![name.normalized_levenshtein, name.normalized_damerau_levenshtein, name.jaro, name.sorensen_dice];
-
-        match write!(&mut file, "\nAverage:\t\t\t\t\t\t | {:.4} |", (scores[0] + scores[1] + scores[2] + scores[3]) / 4.0) {
-            Err(why) => panic!("ERROR: {}", why),
-            Ok(file) => file,
-        };
-
-        let mut highest = 0.0;
-        for num in scores.clone() {
-            if num > highest { highest = num};
-        }
-
-        let mut lowest = 1.0;
-        for num in scores {
-            if num < lowest { lowest = num};
-        }
-            
-        match write!(&mut file, "\nDistance:\t\t\t\t\t\t | {:.4} |", highest - lowest) {
-            Err(why) => panic!("ERROR: {}", why),
-            Ok(file) => file,
-        };
-
-    match write!(&mut file, "\n--------------------------------------------------------------------------------------------------------------------------------") {
-        Err(why) => panic!("ERROR: {}", why),
-        Ok(file) => file,
-    };
+        name.filename = irrelevant_information_removal(name.filename.clone());
     });
 }
 
-fn irrelevant_information_removal(paths: &mut Vec<AnimePathWorking>) {
+
+lazy_static! {
+    static ref VERSION: Regex = Regex::new(r"[vV]\d+").unwrap();
+    static ref TRAILING_SPACES: Regex = Regex::new(r" +$").unwrap();
+    static ref TRAILING_DASH: Regex = Regex::new(r" - $").unwrap();
+    static ref TRAILING_DASH2: Regex = Regex::new(r" -$").unwrap();
+    static ref DOTS_AS_SPACES: Regex = Regex::new(r"\w\.\w").unwrap();
+    static ref EPISODE_TITLE: Regex = Regex::new(r"'.+'").unwrap();
+    static ref XVID: Regex = Regex::new(r"[xX][vV][iI][dD]").unwrap();
+}
+pub fn irrelevant_information_removal(filename: String) -> String {
     
-    let version = Regex::new(r"[vV]\d+").unwrap();
-    let trailing_spaces = Regex::new(r" +$").unwrap();
-    let trailing_dash = Regex::new(r" - $").unwrap();
-    let trailing_dash2 = Regex::new(r" -$").unwrap();
-    let dots_as_spaces = Regex::new(r"\w\.\w").unwrap();
-    let episode_title = Regex::new(r"'.+'").unwrap();
-    let xvid = Regex::new(r"[xX][vV][iI][dD]").unwrap();
-    paths.iter_mut().for_each(|name| {
+    // replace underscores with spaces to increase similarity with titles
+    let mut filename_clean = filename.replace("_", " ");
 
-        // replace underscores with spaces to increase similarity with titles
-        name.filename = name.filename.replace("_", " ");
-        
-        // replace dots with spaces to increase similarity with titles
-        if dots_as_spaces.is_match(&name.filename) {
-            name.filename = name.filename.replace(".", " ");
-        }
+    // replace dots with spaces to increase similarity with titles
+    if DOTS_AS_SPACES.is_match(&filename) {
+        filename_clean = filename_clean.replace(".", " ");
+    }
 
-        // remove extra information that is not part of the title
-        name.filename = name.filename.replace("dvd", "");
-        name.filename = name.filename.replace("DVD", "");
-        name.filename = name.filename.replace("Remastered", "");
-        name.filename = name.filename.replace("remastered", "");
-        name.filename = name.filename.replace(" Episode", "");
-        name.filename = name.filename.replace(" Ep", "");
-        name.filename = name.filename.replace(" EP", "");
-        name.filename = name.filename.replace(" E ", "");
-        name.filename = name.filename.replace(" END", "");
-        name.filename = name.filename.replace(" FINAL", "");
+    // remove extra information that is not part of the title
+    filename_clean = filename_clean.replace("dvd", "");
+    filename_clean = filename_clean.replace("DVD", "");
+    filename_clean = filename_clean.replace("Remastered", "");
+    filename_clean = filename_clean.replace("remastered", "");
+    filename_clean = filename_clean.replace(" Episode", "");
+    filename_clean = filename_clean.replace(" Ep", "");
+    filename_clean = filename_clean.replace(" EP", "");
+    filename_clean = filename_clean.replace(" E ", "");
+    filename_clean = filename_clean.replace(" END", "");
+    filename_clean = filename_clean.replace(" FINAL", "");
 
-        name.filename = version.replace_all(&name.filename, "").to_string();
-        name.filename = xvid.replace_all(&name.filename, "").to_string();
-        name.filename = trailing_dash.replace_all(&name.filename, "").to_string();
-        name.filename = trailing_dash2.replace_all(&name.filename, "").to_string();
-        name.filename = episode_title.replace_all(&name.filename, "").to_string();
-        name.filename = trailing_spaces.replace_all(&name.filename, "").to_string();
-        name.filename = trailing_dash2.replace_all(&name.filename, "").to_string();
+    filename_clean = VERSION.replace_all(&filename_clean, "").to_string();
+    filename_clean = XVID.replace_all(&filename_clean, "").to_string();
+    filename_clean = TRAILING_DASH.replace_all(&filename_clean, "").to_string();
+    filename_clean = TRAILING_DASH2.replace_all(&filename_clean, "").to_string();
+    filename_clean = EPISODE_TITLE.replace_all(&filename_clean, "").to_string();
+    filename_clean = TRAILING_SPACES.replace_all(&filename_clean, "").to_string();
+    filename_clean = TRAILING_DASH2.replace_all(&filename_clean, "").to_string();
 
-        // convert title to lowercase so the comparison doesn't think upper/lower case letters are different
-        name.filename = name.filename.to_ascii_lowercase();
-    });
+    // convert title to lowercase so the comparison doesn't think upper/lower case letters are different
+    filename_clean.to_ascii_lowercase()
 }
