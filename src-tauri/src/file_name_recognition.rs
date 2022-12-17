@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs;
 use std::path::Path;
 use std::time::Instant;
 use regex::Regex;
@@ -74,13 +73,9 @@ pub async fn parse_file_names(folders: &Vec<String>, media_id: Option<i32>) {
         identify_episode_number(&mut file_names);
         
         irrelevant_information_removal_paths(&mut file_names);
-        
-        let timer = Instant::now();
 
         string_similarity(&mut file_names, media_id).await;
         
-        let millis = timer.elapsed().as_millis();
-        println!("Time: {}s {}ms", millis / 1000, millis % 1000);
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
 
@@ -274,6 +269,7 @@ fn extract_number(filename: &String, regex: Regex) -> (String, i32) {
 
 
 // write episode number found into a file
+/*
 fn file_dump_episode(paths: &mut Vec<AnimePathWorking>) {
     
     let path = Path::new("data/episode_data.txt");
@@ -292,7 +288,7 @@ fn file_dump_episode(paths: &mut Vec<AnimePathWorking>) {
         };
     });
 }
-
+*/
 
 
 fn irrelevant_information_removal_paths(paths: &mut Vec<AnimePathWorking>) {

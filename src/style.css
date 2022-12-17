@@ -302,26 +302,7 @@ body {
 
 .cover_container button {
   position: absolute;
-  transform: translate(-50%,-50%);
-  -ms-transform: translate(-50%,-50%);
   opacity: 0;
-}
-
-.play_image {
-  position: absolute;
-  transform: translateX(-100%);
-  opacity: 0;
-}
-
-.cover_play_button {
-  left: 68%;
-  top: 0;
-}
-
-.cover_info_button {
-  left: 50%;
-  top: 78%;
-  display: none;
 }
 
 .cover_container:hover button {
@@ -344,8 +325,8 @@ body {
 
 .big_play_button {
   border-radius: 60px;
-  top: 45%;
-  left: 50%;
+  top: 90px;
+  left: 39px;
   padding: 20px;
   display: block;
 }
@@ -379,6 +360,14 @@ body {
   overflow: hidden;
 }
 
+.overlay {
+  position: absolute;
+  top: 0%;
+  width: 100%;
+  height: 300px;
+  text-align: -webkit-center;
+}
+
 .add_buttons {
   position: absolute;
   background-color: var(--background-color2);
@@ -409,15 +398,14 @@ body {
 }
 
 .cover_nav {
-  position: absolute;
+  position: relative;
   background-color: var(--background-color2);
   overflow: hidden;
-  top: 70%;
-  left: 31.5px;
+  top: 235px;
   padding: 6px 6px;
   border-radius: 16px;
   opacity: 0;
-  width: 125px;
+  width: fit-content;
 }
 
 /* Style the links inside the navigation bar */
@@ -428,7 +416,7 @@ body {
   padding: 4px;
   text-decoration: none;
   font-size: 16px;
-  min-width: 33.66px;
+  min-width: 30.5px;
 }
 
 /* Change the color of links on hover */

@@ -16,9 +16,10 @@ extern crate lazy_static;
 use chrono::prelude::*;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
-use tauri::{async_runtime::Mutex};
+use tauri::async_runtime::Mutex;
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread, fmt::format, cell::Ref};
+use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread};
+use open;
 
 use api_calls::{TokenData, UserSettings, FuzzyDate};
 
@@ -99,6 +100,7 @@ async fn set_user_settings(settings: UserSettings) {
 
     if user_settings.username != settings.username {
         GLOBAL_USER_ANIME_LISTS.lock().await.clear();
+        GLOBAL_USER_ANIME_DATA.lock().await.clear();
     }
 
     *user_settings = settings;
@@ -120,17 +122,21 @@ async fn get_user_settings() -> UserSettings {
         *GLOBAL_USER_SETTINGS.lock().await = file_operations::read_file_user_settings();
     }
 
-   GLOBAL_USER_SETTINGS.lock().await.clone()
+    GLOBAL_USER_SETTINGS.lock().await.clone()
 }
 
 // gets anime data for all anime in a specific list
 #[tauri::command]
-async fn get_list(list_name: String) -> Vec<AnimeInfo> {
+async fn get_list(list_name: String) -> (Vec<AnimeInfo>, Option<String>) {
 
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
         
-        api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+        if error_message.is_some() {
+            return (Vec::new(), error_message)
+        }
         file_operations::write_file_anime_info_cache().await;
+        file_operations::write_file_user_info().await;
     }
     
     let anime_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
@@ -141,6 +147,60 @@ async fn get_list(list_name: String) -> Vec<AnimeInfo> {
     let mut list_info: Vec<AnimeInfo> = Vec::new();
     for id in list {
         list_info.push(anime_data.get(id).unwrap().clone());
+    }
+
+    (list_info, None)
+}
+
+
+#[tauri::command]
+async fn get_list_paged(list_name: String, sort: String, page: usize) -> Vec<(AnimeInfo, UserAnimeInfo)> {
+
+    let anime_per_page: usize = 50;
+
+    if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
+        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+        if error_message.is_some() {
+            //return (Vec::new(), error_message)
+        }
+        file_operations::write_file_anime_info_cache().await;
+        file_operations::write_file_user_info().await;
+    }
+
+    let mut anime_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+    let list = anime_lists.get_mut(&list_name).unwrap();
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+
+    if page == 0 {
+        match sort.as_str() {
+            "Alphabetical" => {
+                let user_settings = GLOBAL_USER_SETTINGS.lock().await;
+                match user_settings.title_language.as_str() {
+                    "romaji" => list.sort_by(|i, j| { anime_data.get(i).unwrap().title.romaji.partial_cmp(&anime_data.get(j).unwrap().title.romaji).unwrap() }),
+                    "english" => list.sort_by(|i, j| { anime_data.get(i).unwrap().title.english.partial_cmp(&anime_data.get(j).unwrap().title.english).unwrap() }),
+                    "native" => list.sort_by(|i, j| { anime_data.get(i).unwrap().title.native.partial_cmp(&anime_data.get(j).unwrap().title.native).unwrap() }),
+                    &_ => (),
+                }
+            },
+            "Score" => list.sort_by(|i, j| { anime_data.get(i).unwrap().average_score.partial_cmp(&anime_data.get(j).unwrap().average_score).unwrap() }),
+            "Date" => list.sort_by(|i, j| { anime_data.get(i).unwrap().start_date.partial_cmp(&anime_data.get(j).unwrap().start_date).unwrap() }),
+            "Popularity" => list.sort_by(|i, j| { anime_data.get(i).unwrap().popularity.partial_cmp(&anime_data.get(j).unwrap().popularity).unwrap() }),
+            &_ => (),
+        }
+    }
+
+    let start = page * anime_per_page;
+    let finish = 
+    if (page + 1) * anime_per_page > list.len() {
+        list.len()
+    } else {
+        (page + 1) * anime_per_page
+    };
+
+    let user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+    let mut list_info: Vec<(AnimeInfo, UserAnimeInfo)> = Vec::new();
+    for i in start..finish {
+        list_info.push((anime_data.get(list.get(i).unwrap()).unwrap().clone(), user_data.get(list.get(i).unwrap()).unwrap().clone()));
     }
 
     list_info
@@ -264,6 +324,7 @@ async fn on_startup() {
     *GLOBAL_TOKEN.lock().await = file_operations::read_file_token_data();
     *GLOBAL_USER_SETTINGS.lock().await =  file_operations::read_file_user_settings();
     file_operations::read_file_anime_info_cache().await;
+    file_operations::read_file_user_info().await;
     scan_anime_folder().await;
 }
 
@@ -336,7 +397,7 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
         }
 
         let anime = user_data.get_mut(&anime_id).unwrap();
-        change_episode(anime, anime.progress + change).await;
+        change_episode(anime, anime.progress + change, GLOBAL_ANIME_DATA.lock().await.get(&anime.media_id).unwrap().episodes.unwrap()).await;
 
         let mut delayed_update = GLOBAL_UPDATE_ANIME_DELAYED.lock().await;
         if delayed_update.contains_key(&anime_id) {
@@ -446,11 +507,10 @@ async fn anime_update_delay() {
         if seconds >= delay {
             tracking_info.monitoring = false;
             // update anime
-
+            
             let anime = user_data.get_mut(&media_id).unwrap();
-            change_episode(anime, tracking_info.episode).await;
+            change_episode(anime, tracking_info.episode, anime_data.get(media_id).unwrap().episodes.unwrap()).await;
 
-            //api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), user_data.get(media_id).unwrap().clone()).await;
             update_entries.push(user_data.get(media_id).unwrap().clone());
             *GLOBAL_REFRESH_UI.lock().await = true;
         }
@@ -470,9 +530,9 @@ async fn anime_update_delay() {
     }
 }
 
-async fn change_episode(anime: &mut UserAnimeInfo, episode: i32) {
+// change the episode for the user entry and trigger other changes depending on the episode
+async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: i32) {
 
-    let episodes = GLOBAL_ANIME_DATA.lock().await.get(&anime.media_id).unwrap().episodes.unwrap();
     let progress = anime.progress;
     anime.progress = episode;
 
@@ -487,13 +547,13 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32) {
     }
 
     // add anime to watching if progress increases
-    if episode > progress && episode != episodes && anime.status != "CURRENT"{
+    if episode > progress && episode != max_episodes && anime.status != "CURRENT"{
 
         change_list(anime, String::from("CURRENT")).await;
     }
 
     // add anime to completed if the last episode was watched and set complete date
-    if episode == episodes {
+    if episode == max_episodes {
         let now: DateTime<Local> = Local::now();
         anime.completed_at = Some(FuzzyDate {
             year: Some(now.year()),
@@ -659,7 +719,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
-            add_to_list,remove_anime,episodes_exist_single,get_delay_info])
+            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

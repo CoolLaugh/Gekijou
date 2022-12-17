@@ -1,7 +1,7 @@
 
 
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Instant, cmp::Ordering};
 
 use reqwest::Client;
 use serde::{Serialize, Deserialize};
@@ -36,6 +36,42 @@ pub struct AnilistDate {
     pub month: Option<i32>,
     pub day: Option<i32>
 }
+
+impl Ord for AnilistDate {
+    fn cmp(&self, other: &Self) -> Ordering {
+
+        if self.year.is_none() && other.year.is_some() {  return Ordering::Less }
+        if other.year.is_none() && self.year.is_some() { return Ordering::Greater }
+        if self.year.unwrap() < other.year.unwrap() { return Ordering::Less }
+        if self.year.unwrap() > other.year.unwrap()  { return Ordering::Greater }
+
+        if self.month.is_none() && other.month.is_some() { return Ordering::Less }
+        if other.month.is_none() && self.month.is_some() { return Ordering::Greater } 
+        if self.month.unwrap() < other.month.unwrap() { return Ordering::Less } 
+        if self.month.unwrap() > other.month.unwrap()  { return Ordering::Greater }
+
+        if self.day.is_none() && other.day.is_some() { return Ordering::Less } 
+        if other.day.is_none() && self.day.is_some() { return Ordering::Greater } 
+        if self.day.unwrap() < other.day.unwrap() { return Ordering::Less } 
+        if self.day.unwrap() > other.day.unwrap()  { return Ordering::Greater }
+
+        Ordering::Equal
+    }
+}
+
+impl PartialOrd for AnilistDate {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for AnilistDate {
+    fn eq(&self, other: &Self) -> bool {
+        (self.year, &self.month, &self.day) == (other.year, &other.month, &other.day)
+    }
+}
+
+impl Eq for AnilistDate { }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Node {
@@ -193,6 +229,7 @@ query ($username: String) {
 }";
 
 // query for absolutely all data of a specific anime
+/*
 const ANIME_ALL_INFO_QUERY: &str = "
 query ($id: Int) { # Define which variables will be used in the query (id)
     Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
@@ -210,6 +247,7 @@ query ($id: Int) { # Define which variables will be used in the query (id)
 		siteUrl autoCreateForumThread isRecommendationBlocked isReviewBlocked modNotes
     }
 }";
+*/
 
 // query to return all data based on a criteria of year, season, format, and/or genre
 const ANIME_BROWSE: &str = "
@@ -336,7 +374,8 @@ pub async fn anilist_api_call(id: i32) -> AnimeInfo {
 
 
 // retrieve information on anime using it's anilist id
-pub async fn anilist_get_list(username: String, status: String, access_token: String) {
+// returns a message if a error occurred
+pub async fn anilist_get_list(username: String, status: String, access_token: String) -> Option<String> {
 
     // create query json
     let json = json!({"query": USER_LIST_WITH_MEDIA, "variables": {"userName": username, "status": status}});
@@ -355,7 +394,13 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
         .replace("mediaRecommendation", "media_recommendation")
         .replace("isGeneralSpoiler", "is_general_spoiler")
         .replace("isMediaSpoiler", "is_media_spoiler");
+    
+    let response_json: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap();
 
+    if response_json.is_object() && response_json.get("errors").is_some() {
+        let message = response_json["errors"][0]["message"].as_str().unwrap().to_string();
+        return Some(message)
+    }
     let list: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["MediaListCollection"]["lists"][0]["entries"].take();
 
     let mut anime_user_data = GLOBAL_USER_ANIME_DATA.lock().await;
@@ -381,6 +426,8 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
         anime_user_list.push(media.id);
         anime_data.insert(media.id, media);
     }
+    
+    None
 }
 
 
@@ -563,7 +610,7 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
     }
 
     let json = json!({"query": mutation, "variables": variables});
-
+    
     let mut response = post(&json, Some(&access_token)).await;
     
     response = response.replace("mediaId", "media_id")

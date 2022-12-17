@@ -8,19 +8,19 @@
 </head>
   <body>
     <div class="top_navigation">
-      <a href="#Watching" onclick="show_watching_anime()">Watching<div class="underline" id="underline0" style="visibility: hidden;"></div></a>
-      <a href="#Completed" onclick="show_completed_anime()">Completed<div class="underline" id="underline1" style="visibility: hidden;"></div></a>
-      <a href="#Onhold" onclick="show_paused_anime()">On Hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
-      <a href="#Dropped" onclick="show_dropped_anime()">Dropped<div class="underline" id="underline3" style="visibility: hidden;"></div></a>
-      <a href="#Plantowatch" onclick="show_planning_anime()">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
-      <a href="#Browse" onclick="show_browse_anime()">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
+      <a href="#Watching" onclick="show_watching_anime()" title="See your watching list">Watching<div class="underline" id="underline0" style="visibility: hidden;"></div></a>
+      <a href="#Completed" onclick="show_completed_anime()" title="See your completed list">Completed<div class="underline" id="underline1" style="visibility: hidden;"></div></a>
+      <a href="#Onhold" onclick="show_paused_anime()" title="See your on hold list">On Hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
+      <a href="#Dropped" onclick="show_dropped_anime()" title="See your dropped list">Dropped<div class="underline" id="underline3" style="visibility: hidden;"></div></a>
+      <a href="#Plantowatch" onclick="show_planning_anime()" title="See your plan to watch list">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
+      <a href="#Browse" onclick="show_browse_anime()" title="Browse anilist for anime">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
       <canvas class="recognition_delay" id="recognition_delay" height="52" width="52" title="" onclick="draw_delay_progress()"></canvas>
     </div>
     <div id="cover_panel_id" class="container">
       <div class="sub_navigation">
-        <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="ASC" style="transform: rotate(180deg);">
-        <a class="container_header" href="#sort_order" id="sort_order_text" onclick="change_sort_type()">Alphabetical</a>
+        <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="ASC" style="transform: rotate(180deg);"  title="Sort by ascending or descending">
+        <a class="container_header" href="#sort_order" id="sort_order_text" onclick="change_sort_type()" title="Sorting category">Alphabetical</a>
         <div class="filters" id="browse_filters">
           <select id="genre_select" name="genre_select">
             <option value="">Genre</option>
