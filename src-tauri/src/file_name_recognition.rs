@@ -31,8 +31,10 @@ pub struct AnimePath {
     pub similarity_score: f64,
 }
 
+// scans these folders and subfolders looking for files that match titles in the users anime list
+// found files are then stored in a global list for each anime and episode
 pub async fn parse_file_names(folders: &Vec<String>) {
-
+    
     for folder in folders {
 
         let path = Path::new(&folder);
@@ -60,22 +62,22 @@ pub async fn parse_file_names(folders: &Vec<String>) {
                 }
             }
         }
-
+        
         remove_invalid_files(&mut file_names);
-    
+        
         // remove brackets and their contents, the name and episode are unlikely to be here
         file_names.iter_mut().for_each(|name| {
             name.filename = remove_brackets(&name.filename);
         });
-
+        
         identify_episode_number(&mut file_names);
-
+        
         irrelevant_information_removal_paths(&mut file_names);
-
+        
         let timer = Instant::now();
 
         string_similarity(&mut file_names).await;
-
+        
         let millis = timer.elapsed().as_millis();
         println!("Time: {}s {}ms", millis / 1000, millis % 1000);
         
@@ -97,11 +99,11 @@ pub async fn parse_file_names(folders: &Vec<String>) {
                     media.insert(file.episode, AnimePath { path: file.path, similarity_score: file.similarity_score });
                 }
             }
-            //println!("{} {} {} {}", file.filename, file.media_id, file.episode, file.similarity_score);
         }
     }
 }
 
+// remove all brackets from a filename
 pub fn remove_brackets(filename: &String) -> String {
     Regex::new(r"((\[[^\[\]]+\]|\([^\(\)]+\))[ _]*)+").unwrap().replace_all(&filename, "").to_string()
 }
@@ -110,14 +112,16 @@ pub fn remove_brackets(filename: &String) -> String {
 fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
 
     // remove files that are not video files
-    let valid_file_extentions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
+    let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
     // remove openings, endings, PV, and other non episode videos
+    // spell-checker:disable
     let extra_videos = Regex::new(r"[ _\.][oO][pP]\d*([vV]\d)?[ _\.]|[ _\.]NCOP\d*([vV]\d)?[ _\.]|[ _\.]NCED\d*([vV]\d)?[ _\.]|[ _\.][eE][dD]\d*([vV]\d)?[ _\.]|[ _\.][sS]kit[ _\.]|[eE]nding|[oO]pening|[ _][pP][vV][ _]|[bB][dD] [mM][eE][nN][uU]").unwrap();
+    // spell-checker:enable
 
     // check if they are valid
     let mut to_remove: Vec<usize> = Vec::new();
     for i in 0..paths.len() {
-        if valid_file_extentions.is_match(&paths[i].filename) == false || extra_videos.is_match(&paths[i].filename) == true {
+        if valid_file_extensions.is_match(&paths[i].filename) == false || extra_videos.is_match(&paths[i].filename) == true {
             to_remove.push(i);
         }
     }
@@ -130,7 +134,7 @@ fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
     }
 
     paths.iter_mut().for_each(|path| {
-        path.filename = valid_file_extentions.replace_all(&path.filename, "").to_string();
+        path.filename = valid_file_extensions.replace_all(&path.filename, "").to_string();
     })
 }
 
@@ -259,7 +263,7 @@ fn extract_number(filename: &String, regex: Regex) -> (String, i32) {
 // write episode number found into a file
 fn file_dump_episode(paths: &mut Vec<AnimePathWorking>) {
     
-    let path = Path::new("episode_data.txt");
+    let path = Path::new("data/episode_data.txt");
     let mut file: File;
     // create the file
     file = match File::create(path) {
@@ -286,7 +290,7 @@ fn irrelevant_information_removal_paths(paths: &mut Vec<AnimePathWorking>) {
     });
 }
 
-
+// regex used to filter out useless information
 lazy_static! {
     static ref VERSION: Regex = Regex::new(r"[vV]\d+").unwrap();
     static ref TRAILING_SPACES: Regex = Regex::new(r" +$").unwrap();
@@ -296,6 +300,7 @@ lazy_static! {
     static ref EPISODE_TITLE: Regex = Regex::new(r"'.+'").unwrap();
     static ref XVID: Regex = Regex::new(r"[xX][vV][iI][dD]").unwrap();
 }
+// remove any extra information that will interfere with comparing the filename with the anime title
 pub fn irrelevant_information_removal(filename: String) -> String {
     
     // replace underscores with spaces to increase similarity with titles
@@ -307,16 +312,16 @@ pub fn irrelevant_information_removal(filename: String) -> String {
     }
 
     // remove extra information that is not part of the title
-    filename_clean = filename_clean.replace("dvd", "");
-    filename_clean = filename_clean.replace("DVD", "");
-    filename_clean = filename_clean.replace("Remastered", "");
-    filename_clean = filename_clean.replace("remastered", "");
-    filename_clean = filename_clean.replace(" Episode", "");
-    filename_clean = filename_clean.replace(" Ep", "");
-    filename_clean = filename_clean.replace(" EP", "");
-    filename_clean = filename_clean.replace(" E ", "");
-    filename_clean = filename_clean.replace(" END", "");
-    filename_clean = filename_clean.replace(" FINAL", "");
+    filename_clean = filename_clean.replace("dvd", "")
+        .replace("DVD", "")
+        .replace("Remastered", "")
+        .replace("remastered", "")
+        .replace(" Episode", "")
+        .replace(" Ep", "")
+        .replace(" EP", "")
+        .replace(" E ", "")
+        .replace(" END", "")
+        .replace(" FINAL", "");
 
     filename_clean = VERSION.replace_all(&filename_clean, "").to_string();
     filename_clean = XVID.replace_all(&filename_clean, "").to_string();

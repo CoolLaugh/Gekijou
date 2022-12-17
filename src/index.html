@@ -7,7 +7,7 @@
   <script defer="" src="/main.js" type="module"></script>
 </head>
   <body>
-    <div class="topnav">
+    <div class="top_navigation">
       <a href="#Watching" onclick="show_watching_anime()">Watching<div class="underline" id="underline0" style="visibility: hidden;"></div></a>
       <a href="#Completed" onclick="show_completed_anime()">Completed<div class="underline" id="underline1" style="visibility: hidden;"></div></a>
       <a href="#Onhold" onclick="show_paused_anime()">On Hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
@@ -16,9 +16,9 @@
       <a href="#Browse" onclick="show_browse_anime()">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
     </div>
-    <div id="cover_panal_id" class="container">
-      <div class="subnav">
-        <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="AESC" style="transform: rotate(180deg);">
+    <div id="cover_panel_id" class="container">
+      <div class="sub_navigation">
+        <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="ASC" style="transform: rotate(180deg);">
         <a class="container_header" href="#sort_order" id="sort_order_text" onclick="change_sort_type()">Alphabetical</a>
         <div class="filters" id="browse_filters">
           <select id="genre_select" name="genre_select">
@@ -65,10 +65,10 @@
           <button onclick="browse_update()">Search</button>
         </div>
       </div>
-      <div class="cover_panal" id="cover_panal_grid" style="opacity: 1;">
+      <div class="cover_panel" id="cover_panel_grid" style="opacity: 1;">
         
       </div>
-      <div class="anime_info_panal" id="info_panal">
+      <div class="anime_info_panel" id="info_panel">
         <div class="anime_info_title_row">
           <p id="info_title" maxlength="50">title</p>
           <img class="anime_info_close" height="30" id="info_close_button" onclick="hide_anime_info_window()" src="/assets/close.png" style="float: right;" width="30">
@@ -78,12 +78,12 @@
             <img alt="Cover Image" height="300" id="info_cover" src="/assets/CoverImageTest.png" width="200">
           </div>
           <div>
-            <div class="tabnav">
+            <div class="tab_navigation">
               <a href="#information" onclick="openTab('information', 'underline_tab_0')">Information<div class="tab_underline" id="underline_tab_0" style="visibility: visible;"></div></a>
               <a href="#user_entry" onclick="openTab('user_entry', 'underline_tab_1')">User Entry<div class="tab_underline" id="underline_tab_1"></div></a>
               <a href="#trailer" onclick="openTab('trailer', 'underline_tab_2')" id="trailer_button">Trailer<div class="tab_underline" id="underline_tab_2"></div></a>
             </div>
-            <div class="tabcontent" id="information" style="display: block;">
+            <div class="tab_content" id="information" style="display: block;">
               <div class="anime_info_text">
                 <p id="info_description"></p>
               </div>
@@ -102,7 +102,7 @@
               <div><p>Genres: </p><p id="info_genres"></p></div>
               <div><p>Tags: </p><p id="info_tags"></p></div>
             </div>
-            <div class="tabcontent" id="user_entry">
+            <div class="tab_content" id="user_entry">
               <table style="text-align: left;">
                 <tbody>
                   <tr>
@@ -147,13 +147,13 @@
                 </tbody>
               </table>
             </div>
-            <div class="tabcontent" id="trailer">
+            <div class="tab_content" id="trailer">
               <iframe allow="autoplay; picture-in-picture" allowfullscreen="" frameborder="0" height="293" id="youtube_embed" src="" title="YouTube video player" width="522" allowfullscreen></iframe>
             </div>
           </div>
         </div>
       </div>
-      <div class="anilist_login_panal" id="login_panal" style="border: 2px solid blue; visibility: hidden;">
+      <div class="anilist_login_panel" id="login_panel" style="border: 2px solid blue; visibility: hidden;">
         <table>
           <tbody>
             <tr>
@@ -166,15 +166,15 @@
             </tr>
             <tr>
               <th>
-                <button onclick="open_oauth_window()" type="button">Get Autherization code</button>
+                <button onclick="open_oauth_window()" type="button">Get Authorization code</button>
               </th>
               <th>
-                <input id="oauth_code" onpaste="var e=this; setTimeout(function(){get_oauth_token();}, 4);" onchange="var e=this; setTimeout(function(){get_oauth_token();}, 4);" placeholder="paste code here" type="text">
+                <input id="oauth_code" onpaste="var e=this; setTimeout(function(){get_oauth_token();}, 4);" placeholder="paste code here" type="text">
               </th>
             </tr>
             <tr>
               <th>
-                Title language prefrence: 
+                Title language preference: 
               </th>
               <th>
                 <select id="title_language" name="title_language">
@@ -212,6 +212,7 @@
         </table>
         <button onclick="hide_setting_window()" style="transform: translateX(50%);" type="button">OK</button>
       </div>
+      <p id="Error_text"></p>
     </div>
   </body>
 </html>

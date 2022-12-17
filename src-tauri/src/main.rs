@@ -1,8 +1,8 @@
-#![cfg_attr(
+/*#![cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
 )]
-
+*/
 
 
 pub mod secrets;
@@ -14,9 +14,9 @@ pub mod file_name_recognition;
 extern crate lazy_static;
 
 use regex::Regex;
-use tauri::{async_runtime::Mutex, Event, Manager};
+use tauri::{async_runtime::Mutex};
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread, task::Poll};
+use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread, fmt::format};
 
 use api_calls::{TokenData, UserSettings};
 
@@ -33,13 +33,15 @@ lazy_static! {
     static ref GLOBAL_UPDATE_ANIME_DELAYED: Mutex<HashMap<i32, Instant>> = Mutex::new(HashMap::new());
 }
 
+// takes a oauth code from the user and exchanges it for a oauth access token
 #[tauri::command]
 async fn anilist_oauth_token(code: String) -> (bool, String) {
     
     let token = api_calls::anilist_get_access_token(code).await;
+    let combine = format!("{}\n{}", token.token_type, token.access_token);
 
     if token.access_token.len() == 0 {
-        return (false, token.token_type);
+        return (false, combine);
     }
     else {
         *GLOBAL_TOKEN.lock().await = token;
@@ -50,6 +52,7 @@ async fn anilist_oauth_token(code: String) -> (bool, String) {
     (true, String::new())
 }
 
+// load token data from file
 #[tauri::command]
 async fn read_token_data() {
     
@@ -59,11 +62,13 @@ async fn read_token_data() {
 
 }
 
+// save token data to a file
 #[tauri::command]
 async fn write_token_data() {
     file_operations::write_file_token_data(&*GLOBAL_TOKEN.lock().await);
 }
 
+// get all data for a specific anime
 #[tauri::command]
 async fn get_anime_info_query(id: i32) -> api_calls::AnimeInfo {
     
@@ -72,6 +77,7 @@ async fn get_anime_info_query(id: i32) -> api_calls::AnimeInfo {
     response
 }
 
+// sets the user's settings taken from the settings ui
 #[tauri::command]
 async fn set_user_settings(username: String, title_language: String, show_spoilers: bool, show_adult: bool, folders: Vec<String>) {
 
@@ -86,6 +92,7 @@ async fn set_user_settings(username: String, title_language: String, show_spoile
     file_operations::write_file_user_settings(&*user_settings);
 }
 
+// retrieves user's settings from a file
 #[tauri::command]
 async fn get_user_settings() -> UserSettings {
 
@@ -98,6 +105,7 @@ async fn get_user_settings() -> UserSettings {
    GLOBAL_USER_SETTINGS.lock().await.clone()
 }
 
+// gets anime data for all anime in a specific list
 #[tauri::command]
 async fn get_list(list_name: String) -> Vec<AnimeInfo> {
 
@@ -120,51 +128,7 @@ async fn get_list(list_name: String) -> Vec<AnimeInfo> {
     list_info
 }
 
-#[tauri::command]
-async fn get_watching_list(list_name: String) -> Vec<AnimeInfo> {
-
-    if GLOBAL_USER_ANIME_DATA.lock().await.is_empty() {
-        get_user_data().await;
-    }
-
-    if GLOBAL_ANIME_DATA.lock().await.is_empty() {
-        file_operations::read_file_anime_info_cache().await;
-    }
-
-
-    let mut missing_anime: Vec<i32> = Vec::new();
-
-    {
-        let anime_list = &mut *GLOBAL_ANIME_DATA.lock().await;
-        for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name.clone()).or_insert(Vec::new()) {
-            if anime_list.contains_key(&item) == false || anime_list[&item].cover_image.large.is_empty() {
-                missing_anime.push(item.clone());
-            }
-        }
-    }
-
-    print!("\nmissing anime: {}", missing_anime.len());
-    if missing_anime.len() > 0 {
-            
-        api_calls::anilist_get_anime_info_split(missing_anime).await;
-        file_operations::write_file_anime_info_cache().await;
-    }
-
-    let mut return_data: Vec<AnimeInfo> = Vec::new();
-    {
-        let anime_list = &mut *GLOBAL_ANIME_DATA.lock().await;
-        for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name.clone()).or_insert(Vec::new()) {
-            //print!("\n{} ", item.media_id);
-            let entry = anime_list.entry(item.clone()).or_insert(AnimeInfo::default()).clone();
-            //print!("{}", entry.title.english.unwrap());
-            return_data.push(entry);
-        }
-    }
-
-    print!("\n{}\n", return_data.len());
-    return_data
-}
-
+// get all user data for all anime in a specific list
 #[tauri::command]
 async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
 
@@ -181,6 +145,7 @@ async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
     list
 }
 
+// get user info for a specific anime
 #[tauri::command]
 async fn get_user_info(id: i32) -> UserAnimeInfo {
 
@@ -191,6 +156,7 @@ async fn get_user_info(id: i32) -> UserAnimeInfo {
     GLOBAL_USER_ANIME_DATA.lock().await.entry(id).or_insert(UserAnimeInfo::new()).clone()
 }
 
+// get data for a specific anime
 #[tauri::command]
 async fn get_anime_info(id: i32) -> AnimeInfo {
 
@@ -202,6 +168,7 @@ async fn get_anime_info(id: i32) -> AnimeInfo {
     anime_data
 }
 
+// updates a entry on anilist with new information
 #[tauri::command]
 async fn update_user_entry(anime: UserAnimeInfo) {
 
@@ -255,6 +222,7 @@ async fn update_user_entry(anime: UserAnimeInfo) {
 
 }
 
+// loads data from files and looks for episodes on disk
 #[tauri::command]
 async fn on_startup() {
 
@@ -264,12 +232,15 @@ async fn on_startup() {
     scan_anime_folder().await;
 }
 
+// go ahead with any updates that haven't been completed yet before closing
 #[tauri::command]
 async fn on_shutdown() {
 
     check_delayed_updates(false).await;
 }
 
+// check if enough time has passed before updating the episode of a anime
+// this delay is to prevent spamming or locking when the user increases or decreases the episode count multiple times
 async fn check_delayed_updates(wait: bool) {
     
     let delay = 15;
@@ -283,9 +254,10 @@ async fn check_delayed_updates(wait: bool) {
     GLOBAL_UPDATE_ANIME_DELAYED.lock().await.retain(|_, v| v.elapsed() < Duration::from_secs(delay));
 }
 
+// opens the file for the next episode in the default program
 #[tauri::command]
 async fn play_next_episode(id: i32) {
-    println!("entered function");
+    
     let next_episode = GLOBAL_USER_ANIME_DATA.lock().await.get(&id).unwrap().progress + 1;
     let paths = GLOBAL_ANIME_PATH.lock().await;
 
@@ -308,6 +280,8 @@ async fn play_next_episode(id: i32) {
 
 }
 
+// changes the progress for a anime by +-1
+// anilist api call is delayed to prevent spam/locking
 #[tauri::command]
 async fn increment_decrement_episode(anime_id: i32, change: i32) {
 
@@ -325,9 +299,8 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
             return;
         }
         user_data.entry(anime_id).and_modify(|data| {
-            println!("{}",data.progress);
+            
             data.progress += change;
-            println!("{}",data.progress);
         });
 
         let mut delayed_update = GLOBAL_UPDATE_ANIME_DELAYED.lock().await;
@@ -341,6 +314,7 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
     }
 }
 
+// scan folders for episodes of anime
 #[tauri::command]
 async fn scan_anime_folder() {
     file_name_recognition::parse_file_names(&GLOBAL_USER_SETTINGS.lock().await.folders).await;
@@ -356,12 +330,14 @@ lazy_static! {
     static ref WATCHING_TRACKING: Mutex<HashMap<i32, WatchingTracking>> = Mutex::new(HashMap::new());
 }
 
+// get the titles of all active windows
 fn get_titles() -> Vec<String> {
     let connection = Connection::new();
     let titles: Vec<String> = connection.unwrap().window_titles().unwrap();
     titles
 }
 
+// loops through timed tasks like recognizing playing anime and delayed updates
 #[tauri::command]
 async fn anime_update_delay_loop() {
 
@@ -375,6 +351,7 @@ async fn anime_update_delay_loop() {
     }
 }
 
+// scans for and identifies windows playing anime and sets up a delayed update
 #[tauri::command]
 async fn anime_update_delay() {
 
@@ -430,6 +407,7 @@ async fn anime_update_delay() {
     watching_data.retain(|_, v| v.monitoring == true);
 }
 
+// allows the ui to check if a anime has been updated to determine if the ui will be refreshed
 #[tauri::command]
 async fn get_refresh_ui() -> bool {
     thread::sleep(Duration::from_millis(1000));
@@ -439,6 +417,7 @@ async fn get_refresh_ui() -> bool {
     refresh_clone
 }
 
+// returns a list of what episodes of what anime exist on disk
 #[tauri::command]
 async fn episodes_exist() -> HashMap<i32, Vec<i32>> {
     
@@ -453,6 +432,22 @@ async fn episodes_exist() -> HashMap<i32, Vec<i32>> {
 
             episodes_exist.get_mut(anime_id).unwrap().push(*episode);
         }
+    }
+    episodes_exist
+}
+
+// returns a list of all episodes on disk for a anime
+#[tauri::command]
+async fn episodes_exist_single(id: i32) -> Vec<i32> {
+    
+    let paths = GLOBAL_ANIME_PATH.lock().await;
+
+    let mut episodes_exist: Vec<i32> = Vec::new();
+    if paths.contains_key(&id) {
+
+        paths.get(&id).unwrap().keys().for_each(|key| {
+            episodes_exist.push(*key);
+        });
     }
     episodes_exist
 }
@@ -528,15 +523,16 @@ async fn test() {
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,
-            get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,
-            play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,add_to_list,remove_anime])
+            get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,
+            play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
+            add_to_list,remove_anime,episodes_exist_single])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
 async fn get_user_data() {
 
-    let response = api_calls::anilist_list_quary_call(GLOBAL_USER_SETTINGS.lock().await.username.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+    let response = api_calls::anilist_list_query_call(GLOBAL_USER_SETTINGS.lock().await.username.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
     
     let json: serde_json::Value = serde_json::from_str(&response).unwrap();
 

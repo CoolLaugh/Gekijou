@@ -1,4 +1,4 @@
-use std::fs;
+use std::fs::{self, create_dir};
 use std::fs::File;
 use std::io::{Write, Read};
 use std::path::Path;
@@ -8,10 +8,10 @@ use crate::api_calls::TokenData;
 use crate::api_calls::UserSettings;
 
 
-
+// writes access token data to a file
 pub fn write_file_token_data(token_data: &TokenData) {
 
-    let path = Path::new("token.txt");
+    let path = Path::new("data/token.txt");
     let path_backup = Path::new("token_backup.txt");
     let mut file: File;
 
@@ -33,53 +33,64 @@ pub fn write_file_token_data(token_data: &TokenData) {
         };
     }
 
-    // create the file
-    file = match File::create(path) {
-        Err(why) => panic!("unable to open, {}", why),
-        Ok(file) => file,
-    };
+    if data_folder_exists_or_created() {
 
-    // write token data into file
-    match file.write_all(serde_json::to_string(token_data).unwrap().as_bytes()) {
-        Err(why) => panic!("ERROR: {}", why),
-        Ok(file) => file,
-    };
+        // create the file
+        file = match File::create(path) {
+            Err(why) => panic!("unable to open, {}", why),
+            Ok(file) => file,
+        };
+
+        // write token data into file
+        match file.write_all(serde_json::to_string(token_data).unwrap().as_bytes()) {
+            Err(why) => panic!("ERROR: {}", why),
+            Ok(file) => file,
+        };
+    }
+
 }
 
 
-
+// read access token data from the file
 pub fn read_file_token_data() -> TokenData {
 
-    let path = Path::new("token.txt");
-    let mut file = match File::open(&path) {
-        Err(why) => panic!("unable to open {}", why),
-        Ok(file) => file,
+    let path = Path::new("data/token.txt");
+    let token_data = if path.exists() {
+
+        let mut file = match File::open(&path) {
+            Err(why) => panic!("unable to open {}", why),
+            Ok(file) => file,
+        };
+    
+        let mut buffer = String::new();
+        match file.read_to_string(&mut buffer) {
+            Err(why) => panic!("ERROR: {}", why),
+            Ok(file) => file,
+        };
+    
+        let token_data: TokenData =  serde_json::from_str(&buffer).unwrap();
+        token_data
+    } else {
+        TokenData::new()
     };
 
-    let mut buffer = String::new();
-    match file.read_to_string(&mut buffer) {
-        Err(why) => panic!("ERROR: {}", why),
-        Ok(file) => file,
-    };
-
-    let token_data: TokenData =  serde_json::from_str(&buffer).unwrap();
     token_data
 }
 
 
-
+// returns whether or not token file exists
 pub fn token_data_file_exists() -> bool {
 
-    let path = Path::new("token.txt");
+    let path = Path::new("data/token.txt");
     path.exists()
 }
 
 
-
+// writes user settings to a file
 pub fn write_file_user_settings(settings: &UserSettings) {
 
-    let path = Path::new("user_settings.txt");
-    let path_backup = Path::new("user_settings_backup.txt");
+    let path = Path::new("data/user_settings.txt");
+    let path_backup = Path::new("data/user_settings_backup.txt");
     let mut file: File;
 
     // backup file before replacing it
@@ -99,25 +110,28 @@ pub fn write_file_user_settings(settings: &UserSettings) {
             Ok(file) => file,
         };
     }
-
-    // create the file
-    file = match File::create(path) {
-        Err(why) => panic!("unable to open, {}", why),
-        Ok(file) => file,
-    };
-
-    // write user settings into file
-    match file.write_all(serde_json::to_string(settings).unwrap().as_bytes()) {
-        Err(why) => panic!("ERROR: {}", why),
-        Ok(file) => file,
-    };
+    
+    if data_folder_exists_or_created() {
+        
+        // create the file
+        file = match File::create(path) {
+            Err(why) => panic!("unable to open, {}", why),
+            Ok(file) => file,
+        };
+        
+        // write user settings into file
+        match file.write_all(serde_json::to_string(settings).unwrap().as_bytes()) {
+            Err(why) => panic!("ERROR: {}", why),
+            Ok(file) => file,
+        };
+    }
 }
 
 
-
+// reads user settings out of a file
 pub fn read_file_user_settings() -> UserSettings {
 
-    let path = Path::new("user_settings.txt");
+    let path = Path::new("data/user_settings.txt");
 
     if path.exists() {
 
@@ -141,11 +155,11 @@ pub fn read_file_user_settings() -> UserSettings {
 }
 
 
-
+// writes all held data on anime to a file
 pub async fn write_file_anime_info_cache() {
 
-    let path = Path::new("anime_cache.txt");
-    let path_backup = Path::new("anime_cache_backup.txt");
+    let path = Path::new("data/anime_cache.txt");
+    let path_backup = Path::new("data/anime_cache_backup.txt");
     let mut file: File;
 
     // backup file before replacing it
@@ -166,24 +180,28 @@ pub async fn write_file_anime_info_cache() {
         };
     }
 
-    // create the file
-    file = match File::create(path) {
-        Err(why) => panic!("unable to open, {}", why),
-        Ok(file) => file,
-    };
+    if data_folder_exists_or_created() {
 
-    // write user settings into file
-    match file.write_all(serde_json::to_string(&*GLOBAL_ANIME_DATA.lock().await).unwrap().as_bytes()) {
-        Err(why) => panic!("ERROR: {}", why),
-        Ok(file) => file,
-    };
+        // create the file
+        file = match File::create(path) {
+            Err(why) => panic!("unable to open, {}", why),
+            Ok(file) => file,
+        };
+
+        // write user settings into file
+        match file.write_all(serde_json::to_string(&*GLOBAL_ANIME_DATA.lock().await).unwrap().as_bytes()) {
+            Err(why) => panic!("ERROR: {}", why),
+            Ok(file) => file,
+        };
+    }
+
 }
 
 
-
+// reads all stored data on anime from a file
 pub async fn read_file_anime_info_cache() {
 
-    let path = Path::new("anime_cache.txt");
+    let path = Path::new("data/anime_cache.txt");
 
     if path.exists() {
 
@@ -199,5 +217,18 @@ pub async fn read_file_anime_info_cache() {
         };
     
         *GLOBAL_ANIME_DATA.lock().await = serde_json::from_str(&buffer).unwrap();
+    }
+}
+
+fn data_folder_exists_or_created() -> bool {
+
+    let data_folder = Path::new("data");
+    if data_folder.exists() {
+        true
+    } else {
+        match create_dir("data") {
+            Err(why) => panic!("ERROR: {}", why),
+            Ok(e) => true,
+        }
     }
 }

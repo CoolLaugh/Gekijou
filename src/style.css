@@ -49,7 +49,7 @@ body {
 }
 
 /* Create a top navigation bar with a black background color  */
-.topnav {
+.top_navigation {
   background-color: var(--background-color2);
   overflow: hidden;
   min-width: 722px;
@@ -58,7 +58,7 @@ body {
 }
 
 /* Style the links inside the navigation bar */
-.topnav a {
+.top_navigation a {
   float: left;
   color: var(--text-color);
   text-align: center;
@@ -68,22 +68,21 @@ body {
 }
 
 /* Change the color of links on hover */
-.topnav a:hover {
+.top_navigation a:hover {
   background-color: var(--text-color);
   color: var(--background-color1);
 }
 
 /* Create a right-aligned (split) link inside the navigation bar */
-.topnav a.split {
+.top_navigation a.split {
   float: right;
   background-color: var(--highlight);
   color: white;
 }
 
-.subnav {
+.sub_navigation {
   overflow: hidden;
   min-width: 722px;
-  /* text-align: center; */
   margin-bottom: 8px;
   align-content: center;
 }
@@ -99,7 +98,7 @@ body {
   display: none;
 }
 
-.anime_info_panal {
+.anime_info_panel {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -119,14 +118,14 @@ body {
   background-color:#b83c3c;
 }
 
-.tabnav {
+.tab_navigation {
   background-color: var(--background-color1);
   overflow: hidden;
   min-width: 450px;
 }
 
 /* Style the links inside the navigation bar */
-.tabnav a {
+.tab_navigation a {
   float: left;
   color: var(--text-color);
   text-align: center;
@@ -136,7 +135,7 @@ body {
 }
 
 /* Change the color of links on hover */
-.tabnav a:hover {
+.tab_navigation a:hover {
   background-color: var(--text-color);
   color: var(--background-color1);
 }
@@ -148,35 +147,35 @@ body {
   visibility: hidden;
 }
 
-.tabcontent {
+.tab_content {
   display: none;
 }
 
-.anime_info_panal p {
+.anime_info_panel p {
   margin-block-start: 0px;
   margin-block-end: 0px;
   display: contents;
 }
 
-.anime_info_panal table {
+.anime_info_panel table {
   width: 100%;
   text-align: center;
   table-layout: fixed;
   background-color: var(--background-color1);
 }
 
-.anime_info_panal input {
+.anime_info_panel input {
   background-color: var(--background-color2);
   width: 140px;
   margin-right: 6px;
 }
 
-.anime_info_panal select {
+.anime_info_panel select {
   background-color: var(--background-color2);
   width: 161.2px;
 }
 
-.anime_info_panal_title {
+.anime_info_panel_title {
   border-top: 0px;
   border-bottom: 0px;
   margin-block-end: 0px;
@@ -212,7 +211,7 @@ body {
   Overflow-y: auto;
 }
 
-.anilist_login_panal {
+.anilist_login_panel {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -226,22 +225,22 @@ body {
   visibility: hidden;
 }
 
-.anilist_login_panal textarea {
+.anilist_login_panel textarea {
   width: 250px;
   height: 50px;
   resize: none;
 }
 
-.anilist_login_panal button {
+.anilist_login_panel button {
   height: 39.6px;
   width: 210px;
 }
 
-.anilist_login_panal input {
+.anilist_login_panel input {
   width: 160px;
 }
 
-.anilist_auth_panal {
+.anilist_auth_panel {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -273,7 +272,7 @@ body {
 
 .episodes_exist {transform: translate(-200px, 300px);position: absolute;background: var(--background-color1);}
 
-.cover_panal {
+.cover_panel {
   display: grid;
   grid-gap: 20px 30px;
   grid-template-columns: repeat(auto-fill, 200px);
@@ -282,7 +281,7 @@ body {
   text-align: center;
 }
 
-.cover_panal p {
+.cover_panel p {
   margin-top: 0;
   margin-bottom: 0;
 }
