@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tauri App</title>
+    <script type="module" src="/main.js" defer></script>
+    <style>
+      .logo.vanilla:hover {
+        filter: drop-shadow(0 0 2em #ffe21c);
+      }
+    </style>
+  </head>
+
+
+
+  <body>
+
+    <div class="topnav">
+      <a href="#Watching">Watching</a>
+      <a href="#Completed">Completed</a>
+      <a href="#Onhold">On hold</a>
+      <a href="#Dropped">Dropped</a>
+      <a href="#Plantowatch">Plan to watch</a>
+      <a href="#Browse">Browse</a>
+      <a href="#Settings" class="split">Settings</a>
+    </div> 
+
+    <div class="container">
+
+      <p id="greet-msg"></p>
+      
+      <div class="tab">
+        <button class="tablinks" onclick="exitWindow()">Watching</button>
+        <button class="tablinks" onclick="openCity(event, 'Completed')">Completed</button>
+        <button class="tablinks" onclick="openCity(event, 'On hold')">On hold</button>
+        <button class="tablinks" onclick="openCity(event, 'Dropped')">Dropped</button>
+        <button class="tablinks" onclick="openCity(event, 'Plan to watch')">Plan to watch</button>
+      </div>
+
+      <div>
+
+      </div>
+
+      <div class="cover_panal">
+        <div class="cover_container">
+          <img src="/assets/CoverImageTest.png" id="1" alt="Cover Image" width="200" height="300">
+          <button type="button" onclick="getanime(5114, 1)">Play</button>
+        </div>
+        <div class="cover_container">
+          <img src="/assets/CoverImageTest.png" id="2" alt="Cover Image" width="200" height="300">
+          <button type="button" onclick="getanime(9253, 2)">Play</button>
+        </div>
+        <div class="cover_container">
+          <img src="/assets/CoverImageTest.png" id="3" alt="Cover Image" width="200" height="300">
+          <button type="button" onclick="getanime(21202, 3)">Play</button>
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>
