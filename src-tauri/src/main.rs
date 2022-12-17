@@ -26,6 +26,7 @@ lazy_static! {
     static ref GLOBAL_USER_ANIME_DATA: Mutex<HashMap<i32, UserAnimeInfo>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_ANIME_LISTS: Mutex<HashMap<String, Vec<i32>>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_SETTINGS: Mutex<UserSettings> = Mutex::new(UserSettings::new());
+    static ref GLOBAL_ANIME_PATH: Mutex<HashMap<i32,HashMap<i32,String>>> = Mutex::new(HashMap::new());
 }
 
 #[tauri::command]
@@ -235,6 +236,7 @@ async fn on_startup() {
 #[tauri::command]
 async fn test() -> String {
 
+    //file_name_recognition::parse_file_names(vec![String::from("D:\\anime_test_folder")]).await;
     file_name_recognition::parse_file_names(vec![String::from("D:\\Anime")]).await;
 
     //api_calls::anilist_get_list("Fuzzywuzhe".to_string(), "CURRENT".to_string(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;

@@ -1,0 +1,2649 @@
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2571 | Mind Game  1080p BluRay DTS x264-ZQ | Liz and the Blue Bird
+normalized_damerau_levenshtein:  | 0.2571 | Mind Game  1080p BluRay DTS x264-ZQ | Liz and the Blue Bird
+jaro:							 | 0.6127 | Mind Game  1080p BluRay DTS x264-ZQ | Minami-ke
+jaro_winkler:					 | 0.7289 | Mind Game  1080p BluRay DTS x264-ZQ | Minami-ke
+sorensen_dice:					 | 0.1765 | Mind Game  1080p BluRay DTS x264-ZQ | Gamers!
+Average:						 | 0.4065 |
+Distance:						 | 0.5524 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5625 | Tokyo Godfathers | Tokyo Ravens
+normalized_damerau_levenshtein:  | 0.5625 | Tokyo Godfathers | Tokyo Ravens
+jaro:							 | 0.7708 | Tokyo Godfathers | Tokyo Ravens
+jaro_winkler:					 | 0.9270 | Tokyo Godfathers | Tokyo Ghoul
+sorensen_dice:					 | 0.4348 | Tokyo Godfathers | Tokyo Ghoul
+Average:						 | 0.6515 |
+Distance:						 | 0.4922 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2874 | Mob Psycho  II - Dai Ikkai Rei toka Soudansho Ian Ryokou - Kokoro Mitasu Iyashi no Tabi | Isekai Maou to Shoukan Shoujo no Dorei Majutsu Ω
+normalized_damerau_levenshtein:  | 0.2874 | Mob Psycho  II - Dai Ikkai Rei toka Soudansho Ian Ryokou - Kokoro Mitasu Iyashi no Tabi | Isekai Maou to Shoukan Shoujo no Dorei Majutsu Ω
+jaro:							 | 0.6686 | Mob Psycho  II - Dai Ikkai Rei toka Soudansho Ian Ryokou - Kokoro Mitasu Iyashi no Tabi | Mob Psycho 100 III
+jaro_winkler:					 | 1.0000 | Mob Psycho  II - Dai Ikkai Rei toka Soudansho Ian Ryokou - Kokoro Mitasu Iyashi no Tabi | Mob Psycho 100 II
+sorensen_dice:					 | 0.3276 | Mob Psycho  II - Dai Ikkai Rei toka Soudansho Ian Ryokou - Kokoro Mitasu Iyashi no Tabi | Ookami to Koushinryou II: Ookami to Kohakuiro no Yuuutsu
+Average:						 | 0.5142 |
+Distance:						 | 0.7126 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4737 | Made in Abyss -  Journey's Dawn | Wandering Witch: The Journey of Elaina
+normalized_damerau_levenshtein:  | 0.4737 | Made in Abyss -  Journey's Dawn | Wandering Witch: The Journey of Elaina
+jaro:							 | 0.8065 | Made in Abyss -  Journey's Dawn | Made in Abyss
+jaro_winkler:					 | 1.0000 | Made in Abyss -  Journey's Dawn | Made in Abyss: Dawn of the Deep Soul
+sorensen_dice:					 | 0.5882 | Made in Abyss -  Journey's Dawn | Made in Abyss
+Average:						 | 0.6684 |
+Distance:						 | 0.5263 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4500 | Made in Abyss - Wandering Twilight | Made in Abyss: Fukaki Tamashii no Reimei
+normalized_damerau_levenshtein:  | 0.4500 | Made in Abyss - Wandering Twilight | Made in Abyss: Fukaki Tamashii no Reimei
+jaro:							 | 0.7941 | Made in Abyss - Wandering Twilight | Made in Abyss
+jaro_winkler:					 | 1.0000 | Made in Abyss - Wandering Twilight | Made in Abyss: Dawn of the Deep Soul
+sorensen_dice:					 | 0.5263 | Made in Abyss - Wandering Twilight | Made in Abyss
+Average:						 | 0.6441 |
+Distance:						 | 0.5500 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6875 | Fullmetal Alchemist The Movie | Fullmetal Alchemist: Brotherhood
+normalized_damerau_levenshtein:  | 0.6875 | Fullmetal Alchemist The Movie | Fullmetal Alchemist: Brotherhood
+jaro:							 | 0.8424 | Fullmetal Alchemist The Movie | Fullmetal Alchemist: The Movie - Conqueror of Shamballa
+jaro_winkler:					 | 1.0000 | Fullmetal Alchemist The Movie | Fullmetal Alchemist: The Movie - Conqueror of Shamballa
+sorensen_dice:					 | 0.6667 | Fullmetal Alchemist The Movie | Fullmetal Alchemist: The Movie - Conqueror of Shamballa
+Average:						 | 0.7768 |
+Distance:						 | 0.3333 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3889 | Millennium Actress | Made in Abyss
+normalized_damerau_levenshtein:  | 0.3889 | Millennium Actress | Made in Abyss
+jaro:							 | 0.7075 | Millennium Actress | Digimon Adventure
+jaro_winkler:					 | 0.7075 | Millennium Actress | Digimon Adventure
+sorensen_dice:					 | 0.2941 | Millennium Actress | Children of the Whales
+Average:						 | 0.4974 |
+Distance:						 | 0.4134 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4681 | Higashi no Eden Gekijouban I - The King of Eden | Higashi no Eden Movie II: Paradise Lost
+normalized_damerau_levenshtein:  | 0.4681 | Higashi no Eden Gekijouban I - The King of Eden | Higashi no Eden Movie II: Paradise Lost
+jaro:							 | 0.7730 | Higashi no Eden Gekijouban I - The King of Eden | Higashi no Eden
+jaro_winkler:					 | 1.0000 | Higashi no Eden Gekijouban I - The King of Eden | Higashi no Eden
+sorensen_dice:					 | 0.4898 | Higashi no Eden Gekijouban I - The King of Eden | Higashi no Eden
+Average:						 | 0.6398 |
+Distance:						 | 0.5319 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7556 | Higashi no Eden Gekijouban II - Paradise Lost | Higashi no Eden Movie II: Paradise Lost
+normalized_damerau_levenshtein:  | 0.7556 | Higashi no Eden Gekijouban II - Paradise Lost | Higashi no Eden Movie II: Paradise Lost
+jaro:							 | 0.8614 | Higashi no Eden Gekijouban II - Paradise Lost | Higashi no Eden Movie II: Paradise Lost
+jaro_winkler:					 | 1.0000 | Higashi no Eden Gekijouban II - Paradise Lost | Higashi no Eden
+sorensen_dice:					 | 0.6957 | Higashi no Eden Gekijouban II - Paradise Lost | Higashi no Eden Movie II: Paradise Lost
+Average:						 | 0.8136 |
+Distance:						 | 0.3043 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4706 | Nana to Kaoru OVA | Nekopara OVA
+normalized_damerau_levenshtein:  | 0.4706 | Nana to Kaoru OVA | Nekopara OVA
+jaro:							 | 0.7228 | Nana to Kaoru OVA | Nekopara OVA
+jaro_winkler:					 | 0.7953 | Nana to Kaoru OVA | Nanatsu no Taizai
+sorensen_dice:					 | 0.3448 | Nana to Kaoru OVA | Asagao to Kase-san.
+Average:						 | 0.5608 |
+Distance:						 | 0.4505 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3810 | Magia Record S2 | Mikagura School Suite
+normalized_damerau_levenshtein:  | 0.3810 | Magia Record S2 | Mikagura School Suite
+jaro:							 | 0.7444 | Magia Record S2 | Magic of Stella
+jaro_winkler:					 | 1.0000 | Magia Record S2 | Magia Record: Puella Magi Madoka Magica Side Story
+sorensen_dice:					 | 0.3704 | Magia Record S2 | Magia Record: Puella Magi Madoka Magica Side Story
+Average:						 | 0.5753 |
+Distance:						 | 0.6296 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3810 | Magia Record S2 5 | Mikagura School Suite
+normalized_damerau_levenshtein:  | 0.3810 | Magia Record S2 5 | Mikagura School Suite
+jaro:							 | 0.7183 | Magia Record S2 5 | Magic of Stella
+jaro_winkler:					 | 1.0000 | Magia Record S2 5 | Magia Record: Puella Magi Madoka Magica Side Story
+sorensen_dice:					 | 0.3636 | Magia Record S2 5 | Magia Record: Puella Magi Madoka Magica Side Story
+Average:						 | 0.5688 |
+Distance:						 | 0.6364 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3810 | Magia Record S2 | Mikagura School Suite
+normalized_damerau_levenshtein:  | 0.3810 | Magia Record S2 | Mikagura School Suite
+jaro:							 | 0.7444 | Magia Record S2 | Magic of Stella
+jaro_winkler:					 | 1.0000 | Magia Record S2 | Magia Record: Puella Magi Madoka Magica Side Story
+sorensen_dice:					 | 0.3704 | Magia Record S2 | Magia Record: Puella Magi Madoka Magica Side Story
+Average:						 | 0.5753 |
+Distance:						 | 0.6296 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | Great Teacher Onizuka - Lesson | 進撃の巨人 The Final Season
+normalized_damerau_levenshtein:  | 0.4000 | Great Teacher Onizuka - Lesson | 進撃の巨人 The Final Season
+jaro:							 | 0.6677 | Great Teacher Onizuka - Lesson | Gargantia on the Verdurous Planet
+jaro_winkler:					 | 0.7009 | Great Teacher Onizuka - Lesson | Gargantia on the Verdurous Planet
+sorensen_dice:					 | 0.2745 | Great Teacher Onizuka - Lesson | Code Geass: Fukkatsu no Lelouch
+Average:						 | 0.4886 |
+Distance:						 | 0.4264 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8667 | 86 - Eighty Six | 86: Eighty Six
+normalized_damerau_levenshtein:  | 0.8667 | 86 - Eighty Six | 86: Eighty Six
+jaro:							 | 0.9061 | 86 - Eighty Six | 86: Eighty Six
+jaro_winkler:					 | 0.9249 | 86 - Eighty Six | 86: Eighty Six
+sorensen_dice:					 | 0.8182 | 86 - Eighty Six | 86: Eighty Six
+Average:						 | 0.8765 |
+Distance:						 | 0.1067 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Ah My Goddess TV | So Ra No Wo To
+normalized_damerau_levenshtein:  | 0.3125 | Ah My Goddess TV | So Ra No Wo To
+jaro:							 | 0.6328 | Ah My Goddess TV | Made in Abyss: The Golden City of the Scorching Sun
+jaro_winkler:					 | 0.6371 | Ah My Goddess TV | Asa Made Jugyou chu!
+sorensen_dice:					 | 0.2927 | Ah My Goddess TV | The World God Only Knows: Goddesses
+Average:						 | 0.4375 |
+Distance:						 | 0.3444 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7778 | Ai Mai Mi | Ai-Mai-Mi
+normalized_damerau_levenshtein:  | 0.7778 | Ai Mai Mi | Ai-Mai-Mi
+jaro:							 | 0.8519 | Ai Mai Mi | Ai-Mai-Mi
+jaro_winkler:					 | 0.8815 | Ai Mai Mi | Ai-Mai-Mi
+sorensen_dice:					 | 0.5714 | Ai Mai Mi | Ai-Mai-Mi
+Average:						 | 0.7721 |
+Distance:						 | 0.3101 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | Amaenaide yo!! | Asa Made Jugyou chu!
+normalized_damerau_levenshtein:  | 0.4000 | Amaenaide yo!! | Asa Made Jugyou chu!
+jaro:							 | 0.7106 | Amaenaide yo!! | Akuma no Riddle
+jaro_winkler:					 | 0.7733 | Amaenaide yo!! | Amagami SS
+sorensen_dice:					 | 0.3636 | Amaenaide yo!! | Rozen Maiden
+Average:						 | 0.5295 |
+Distance:						 | 0.4097 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Ah! My Buddha | Akuma no Riddle
+normalized_damerau_levenshtein:  | 0.3333 | Ah! My Buddha | Akuma no Riddle
+jaro:							 | 0.6400 | Ah! My Buddha | Adachi and Shimamura
+jaro_winkler:					 | 0.6760 | Ah! My Buddha | Adachi and Shimamura
+sorensen_dice:					 | 0.1538 | Ah! My Buddha | My Bride is a Mermaid
+Average:						 | 0.4273 |
+Distance:						 | 0.5222 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Aoi Hana | Aoi Hana
+normalized_damerau_levenshtein:  | 1.0000 | Aoi Hana | Aoi Hana
+jaro:							 | 1.0000 | Aoi Hana | Aoi Hana
+jaro_winkler:					 | 1.0000 | Aoi Hana | Aoi Hana
+sorensen_dice:					 | 1.0000 | Aoi Hana | Aoi Hana
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Arpeggio of Blue Steel - Ars Nova | Magic of Stella
+normalized_damerau_levenshtein:  | 0.3333 | Arpeggio of Blue Steel - Ars Nova | Magic of Stella
+jaro:							 | 0.6433 | Arpeggio of Blue Steel - Ars Nova | Grimoire of Zero
+jaro_winkler:					 | 0.6760 | Arpeggio of Blue Steel - Ars Nova | Arifureta: From Commonplace to World's Strongest
+sorensen_dice:					 | 0.2632 | Arpeggio of Blue Steel - Ars Nova | Magic of Stella
+Average:						 | 0.4498 |
+Distance:						 | 0.4128 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3043 | Arpeggio of Blue Steel - Ars Nova - Blue Field | Nausicaä of the Valley of the Wind
+normalized_damerau_levenshtein:  | 0.3043 | Arpeggio of Blue Steel - Ars Nova - Blue Field | Nausicaä of the Valley of the Wind
+jaro:							 | 0.6453 | Arpeggio of Blue Steel - Ars Nova - Blue Field | Yosuga no Sora: In Solitude Where We are Least Alone
+jaro_winkler:					 | 0.6583 | Arpeggio of Blue Steel - Ars Nova - Blue Field | And you thought there is never a girl online?
+sorensen_dice:					 | 0.2353 | Arpeggio of Blue Steel - Ars Nova - Blue Field | Sweet Blue Flowers
+Average:						 | 0.4295 |
+Distance:						 | 0.4230 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2857 | Arpeggio of Blue Steel - Ars Nova - Dawning Light | Into the Forest of Fireflies' Light
+normalized_damerau_levenshtein:  | 0.2857 | Arpeggio of Blue Steel - Ars Nova - Dawning Light | Into the Forest of Fireflies' Light
+jaro:							 | 0.6526 | Arpeggio of Blue Steel - Ars Nova - Dawning Light | And you thought there is never a girl online?
+jaro_winkler:					 | 0.6874 | Arpeggio of Blue Steel - Ars Nova - Dawning Light | And you thought there is never a girl online?
+sorensen_dice:					 | 0.2807 | Arpeggio of Blue Steel - Ars Nova - Dawning Light | Sweetness & Lightning
+Average:						 | 0.4384 |
+Distance:						 | 0.4067 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3077 | Arpeggio of Blue Steel - Ars Nova - Expose | Yosuga no Sora: In Solitude Where We are Least Alone
+normalized_damerau_levenshtein:  | 0.3077 | Arpeggio of Blue Steel - Ars Nova - Expose | Yosuga no Sora: In Solitude Where We are Least Alone
+jaro:							 | 0.6233 | Arpeggio of Blue Steel - Ars Nova - Expose | SHIMONETA: A Boring World Where the Concept of Dirty Jokes Doesn’t Exist
+jaro_winkler:					 | 0.6736 | Arpeggio of Blue Steel - Ars Nova - Expose | Arifureta: From Commonplace to World's Strongest
+sorensen_dice:					 | 0.2222 | Arpeggio of Blue Steel - Ars Nova - Expose | Magic of Stella
+Average:						 | 0.4269 |
+Distance:						 | 0.4514 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2568 | Arpeggio of Blue Steel - Ars Nova - Inapplicability | Higehiro: After Being Rejected, I Shaved and Took in a High School Runaway
+normalized_damerau_levenshtein:  | 0.2745 | Arpeggio of Blue Steel - Ars Nova - Inapplicability | Eden of The East the Movie II: Paradise Lost
+jaro:							 | 0.6469 | Arpeggio of Blue Steel - Ars Nova - Inapplicability | Spice and Wolf II: Wolf and the Amber Melancholy
+jaro_winkler:					 | 0.6972 | Arpeggio of Blue Steel - Ars Nova - Inapplicability | Arifureta Shokugyou de Sekai Saikyou
+sorensen_dice:					 | 0.2222 | Arpeggio of Blue Steel - Ars Nova - Inapplicability | Magic of Stella
+Average:						 | 0.4195 |
+Distance:						 | 0.4750 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2653 | Arpeggio of Blue Steel - Ars Nova - Innocent Blue | Gargantia on the Verdurous Planet
+normalized_damerau_levenshtein:  | 0.2653 | Arpeggio of Blue Steel - Ars Nova - Innocent Blue | Digimon Adventure: Bokura no War Game!
+jaro:							 | 0.6979 | Arpeggio of Blue Steel - Ars Nova - Innocent Blue | Yosuga no Sora: In Solitude Where We are Least Alone
+jaro_winkler:					 | 0.6979 | Arpeggio of Blue Steel - Ars Nova - Innocent Blue | Yosuga no Sora: In Solitude Where We are Least Alone
+sorensen_dice:					 | 0.2222 | Arpeggio of Blue Steel - Ars Nova - Innocent Blue | Sweet Blue Flowers
+Average:						 | 0.4297 |
+Distance:						 | 0.4757 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2982 | Arpeggio of Blue Steel - Ars Nova - Mental | Love, Chunibyo & Other Delusions - Heart Throb - Specials
+normalized_damerau_levenshtein:  | 0.2982 | Arpeggio of Blue Steel - Ars Nova - Mental | Love, Chunibyo & Other Delusions - Heart Throb - Specials
+jaro:							 | 0.6491 | Arpeggio of Blue Steel - Ars Nova - Mental | Yosuga no Sora: In Solitude Where We are Least Alone
+jaro_winkler:					 | 0.6763 | Arpeggio of Blue Steel - Ars Nova - Mental | And you thought there is never a girl online?
+sorensen_dice:					 | 0.2338 | Arpeggio of Blue Steel - Ars Nova - Mental | Kubikiri Cycle: The Blue Savant and the Nonsense User
+Average:						 | 0.4311 |
+Distance:						 | 0.4426 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2791 | Arpeggio of Blue Steel - Ars Nova - Miracle | Time of Eve: The Movie
+normalized_damerau_levenshtein:  | 0.2807 | Arpeggio of Blue Steel - Ars Nova - Miracle | Love, Chunibyo & Other Delusions - Heart Throb - Specials
+jaro:							 | 0.6548 | Arpeggio of Blue Steel - Ars Nova - Miracle | And you thought there is never a girl online?
+jaro_winkler:					 | 0.6893 | Arpeggio of Blue Steel - Ars Nova - Miracle | And you thought there is never a girl online?
+sorensen_dice:					 | 0.2432 | Arpeggio of Blue Steel - Ars Nova - Miracle | A Certain Magical Index: The Miracle of Endymion
+Average:						 | 0.4294 |
+Distance:						 | 0.4461 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3860 | Arpeggio of Blue Steel - Ars Nova - Specials | Love, Chunibyo & Other Delusions - Heart Throb - Specials
+normalized_damerau_levenshtein:  | 0.3860 | Arpeggio of Blue Steel - Ars Nova - Specials | Love, Chunibyo & Other Delusions - Heart Throb - Specials
+jaro:							 | 0.6652 | Arpeggio of Blue Steel - Ars Nova - Specials | Love, Chunibyo & Other Delusions - Heart Throb - Specials
+jaro_winkler:					 | 0.6721 | Arpeggio of Blue Steel - Ars Nova - Specials | Arifureta Shokugyou de Sekai Saikyou
+sorensen_dice:					 | 0.3043 | Arpeggio of Blue Steel - Ars Nova - Specials | sola Specials
+Average:						 | 0.4827 |
+Distance:						 | 0.3677 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2857 | Arpeggio of Blue Steel - Ars Nova - Toremoro | Alice or Alice: Siscon Niisan to Futago no Imouto
+normalized_damerau_levenshtein:  | 0.2857 | Arpeggio of Blue Steel - Ars Nova - Toremoro | Alice or Alice: Siscon Niisan to Futago no Imouto
+jaro:							 | 0.6578 | Arpeggio of Blue Steel - Ars Nova - Toremoro | Arifureta: From Commonplace to World's Strongest
+jaro_winkler:					 | 0.7263 | Arpeggio of Blue Steel - Ars Nova - Toremoro | Arifureta: From Commonplace to World's Strongest
+sorensen_dice:					 | 0.2222 | Arpeggio of Blue Steel - Ars Nova - Toremoro | Blue Literature Series
+Average:						 | 0.4355 |
+Distance:						 | 0.5040 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Assassination Classroom | Assassination Classroom
+normalized_damerau_levenshtein:  | 1.0000 | Assassination Classroom | Assassination Classroom
+jaro:							 | 1.0000 | Assassination Classroom | Assassination Classroom
+jaro_winkler:					 | 1.0000 | Assassination Classroom | Assassination Classroom
+sorensen_dice:					 | 1.0000 | Assassination Classroom | Assassination Classroom
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4444 | Bartender | Harmonie
+normalized_damerau_levenshtein:  | 0.4444 | Bartender | Harmonie
+jaro:							 | 0.7037 | Bartender | Fate/Zero
+jaro_winkler:					 | 0.7407 | Bartender | Barakamon
+sorensen_dice:					 | 0.5185 | Bartender | Hanamaru Kindergarten
+Average:						 | 0.5704 |
+Distance:						 | 0.2963 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Binchou-tan-02 | Nichijou no 0-wa
+normalized_damerau_levenshtein:  | 0.3125 | Binchou-tan-02 | Nichijou no 0-wa
+jaro:							 | 0.6645 | Binchou-tan-02 | Hakone-chan
+jaro_winkler:					 | 0.7333 | Binchou-tan-02 | Binbougami ga!
+sorensen_dice:					 | 0.2857 | Binchou-tan-02 | Danchigai
+Average:						 | 0.4617 |
+Distance:						 | 0.4476 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Binchou-tan-04 | Nichijou no 0-wa
+normalized_damerau_levenshtein:  | 0.3125 | Binchou-tan-04 | Nichijou no 0-wa
+jaro:							 | 0.6645 | Binchou-tan-04 | Hakone-chan
+jaro_winkler:					 | 0.7333 | Binchou-tan-04 | Binbougami ga!
+sorensen_dice:					 | 0.2857 | Binchou-tan-04 | Danchigai
+Average:						 | 0.4617 |
+Distance:						 | 0.4476 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Binchou-tan-06 | Nichijou no 0-wa
+normalized_damerau_levenshtein:  | 0.3125 | Binchou-tan-06 | Nichijou no 0-wa
+jaro:							 | 0.6645 | Binchou-tan-06 | Hakone-chan
+jaro_winkler:					 | 0.7333 | Binchou-tan-06 | Binbougami ga!
+sorensen_dice:					 | 0.2857 | Binchou-tan-06 | Danchigai
+Average:						 | 0.4617 |
+Distance:						 | 0.4476 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Binchou-tan-08 | Nichijou no 0-wa
+normalized_damerau_levenshtein:  | 0.3125 | Binchou-tan-08 | Nichijou no 0-wa
+jaro:							 | 0.6645 | Binchou-tan-08 | Hakone-chan
+jaro_winkler:					 | 0.7333 | Binchou-tan-08 | Binbougami ga!
+sorensen_dice:					 | 0.2857 | Binchou-tan-08 | Danchigai
+Average:						 | 0.4617 |
+Distance:						 | 0.4476 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Binchou-tan-10 | Nichijou no 0-wa
+normalized_damerau_levenshtein:  | 0.3125 | Binchou-tan-10 | Nichijou no 0-wa
+jaro:							 | 0.6645 | Binchou-tan-10 | Hakone-chan
+jaro_winkler:					 | 0.7333 | Binchou-tan-10 | Binbougami ga!
+sorensen_dice:					 | 0.2857 | Binchou-tan-10 | Danchigai
+Average:						 | 0.4617 |
+Distance:						 | 0.4476 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Binchou-tan-12 | Nichijou no 0-wa
+normalized_damerau_levenshtein:  | 0.3125 | Binchou-tan-12 | Nichijou no 0-wa
+jaro:							 | 0.6645 | Binchou-tan-12 | Hakone-chan
+jaro_winkler:					 | 0.7333 | Binchou-tan-12 | Binbougami ga!
+sorensen_dice:					 | 0.2857 | Binchou-tan-12 | Danchigai
+Average:						 | 0.4617 |
+Distance:						 | 0.4476 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Boogiepop Phantom | Boogiepop Phantom
+normalized_damerau_levenshtein:  | 1.0000 | Boogiepop Phantom | Boogiepop Phantom
+jaro:							 | 1.0000 | Boogiepop Phantom | Boogiepop Phantom
+jaro_winkler:					 | 1.0000 | Boogiepop Phantom | Boogiepop Phantom
+sorensen_dice:					 | 1.0000 | Boogiepop Phantom | Boogiepop Phantom
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9474 | Cossette No Shouzou | Cossette no Shouzou
+normalized_damerau_levenshtein:  | 0.9474 | Cossette No Shouzou | Cossette no Shouzou
+jaro:							 | 0.9649 | Cossette No Shouzou | Cossette no Shouzou
+jaro_winkler:					 | 0.9965 | Cossette No Shouzou | Cossette no Shouzou
+sorensen_dice:					 | 0.8750 | Cossette No Shouzou | Cossette no Shouzou
+Average:						 | 0.9462 |
+Distance:						 | 0.1215 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8182 | Cossette No Shouzou mv | Cossette no Shouzou
+normalized_damerau_levenshtein:  | 0.8182 | Cossette No Shouzou mv | Cossette no Shouzou
+jaro:							 | 0.9219 | Cossette No Shouzou mv | Cossette no Shouzou
+jaro_winkler:					 | 0.9922 | Cossette No Shouzou mv | Cossette no Shouzou
+sorensen_dice:					 | 0.8235 | Cossette No Shouzou mv | Cossette no Shouzou
+Average:						 | 0.8748 |
+Distance:						 | 0.1740 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8333 | cowboy bebop | Cowboy Bebop
+normalized_damerau_levenshtein:  | 0.8333 | cowboy bebop | Cowboy Bebop
+jaro:							 | 0.8556 | cowboy bebop | Cowboy Bebop
+jaro_winkler:					 | 0.8556 | cowboy bebop | Cowboy Bebop
+sorensen_dice:					 | 0.7000 | cowboy bebop | Cowboy Bebop
+Average:						 | 0.8156 |
+Distance:						 | 0.1556 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Death Note | Death Note
+normalized_damerau_levenshtein:  | 1.0000 | Death Note | Death Note
+jaro:							 | 1.0000 | Death Note | Death Note
+jaro_winkler:					 | 1.0000 | Death Note | Death Note
+sorensen_dice:					 | 1.0000 | Death Note | Death Note
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Dennou Coil | Dennou Coil
+normalized_damerau_levenshtein:  | 1.0000 | Dennou Coil | Dennou Coil
+jaro:							 | 1.0000 | Dennou Coil | Dennou Coil
+jaro_winkler:					 | 1.0000 | Dennou Coil | Dennou Coil
+sorensen_dice:					 | 1.0000 | Dennou Coil | Dennou Coil
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5000 | Denpa Kyoushi | Ansatsu Kyoushitsu
+normalized_damerau_levenshtein:  | 0.5000 | Denpa Kyoushi | Ansatsu Kyoushitsu
+jaro:							 | 0.7083 | Denpa Kyoushi | Ansatsu Kyoushitsu
+jaro_winkler:					 | 0.8762 | Denpa Kyoushi | Denpa Onna to Seishun Otoko
+sorensen_dice:					 | 0.4444 | Denpa Kyoushi | Ansatsu Kyoushitsu
+Average:						 | 0.6058 |
+Distance:						 | 0.4318 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4667 | Diebuster | Little Busters!
+normalized_damerau_levenshtein:  | 0.4667 | Diebuster | Little Busters!
+jaro:							 | 0.7005 | Diebuster | Little Busters!
+jaro_winkler:					 | 0.7059 | Diebuster | Didn't I Say to Make My Abilities Average in the Next Life?!
+sorensen_dice:					 | 0.4286 | Diebuster | Monster
+Average:						 | 0.5537 |
+Distance:						 | 0.2774 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4286 | Eat-Man | Canaan
+normalized_damerau_levenshtein:  | 0.4286 | Eat-Man | Canaan
+jaro:							 | 0.6429 | Eat-Man | Canaan
+jaro_winkler:					 | 0.6429 | Eat-Man | Canaan
+sorensen_dice:					 | 0.3333 | Eat-Man | Iron Man
+Average:						 | 0.4952 |
+Distance:						 | 0.3095 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9355 | Enen no Shouboutai - Ni no Shou | Enen no Shouboutai: Ni no Shou
+normalized_damerau_levenshtein:  | 0.9355 | Enen no Shouboutai - Ni no Shou | Enen no Shouboutai: Ni no Shou
+jaro:							 | 0.9444 | Enen no Shouboutai - Ni no Shou | Enen no Shouboutai: Ni no Shou
+jaro_winkler:					 | 1.0000 | Enen no Shouboutai - Ni no Shou | Enen no Shouboutai: Ni no Shou
+sorensen_dice:					 | 0.9167 | Enen no Shouboutai - Ni no Shou | Enen no Shouboutai: Ni no Shou
+Average:						 | 0.9464 |
+Distance:						 | 0.0833 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | Eureka Seven Psalms of Planets | The Seven Deadly Sins
+normalized_damerau_levenshtein:  | 0.4000 | Eureka Seven Psalms of Planets | The Seven Deadly Sins
+jaro:							 | 0.6902 | Eureka Seven Psalms of Planets | serial experiments lain
+jaro_winkler:					 | 0.6902 | Eureka Seven Psalms of Planets | serial experiments lain
+sorensen_dice:					 | 0.2857 | Eureka Seven Psalms of Planets | Planetarian
+Average:						 | 0.4932 |
+Distance:						 | 0.4045 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | FLCL | FLCL
+normalized_damerau_levenshtein:  | 1.0000 | FLCL | FLCL
+jaro:							 | 1.0000 | FLCL | FLCL
+jaro_winkler:					 | 1.0000 | FLCL | FLCL
+sorensen_dice:					 | 1.0000 | FLCL | FLCL
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3750 | Fortune Arterial | Soul Eater
+normalized_damerau_levenshtein:  | 0.3750 | Fortune Arterial | Soul Eater
+jaro:							 | 0.7311 | Fortune Arterial | Mouretsu Pirates
+jaro_winkler:					 | 0.7311 | Fortune Arterial | Mouretsu Pirates
+sorensen_dice:					 | 0.3158 | Fortune Arterial | Kabaneri of the Iron Fortress
+Average:						 | 0.5056 |
+Distance:						 | 0.4153 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3111 | Gantz - It's the Beginning of a Brand New Day | Horizon in the Middle of Nowhere
+normalized_damerau_levenshtein:  | 0.3111 | Gantz - It's the Beginning of a Brand New Day | Horizon in the Middle of Nowhere
+jaro:							 | 0.6963 | Gantz - It's the Beginning of a Brand New Day | Gate
+jaro_winkler:					 | 0.7570 | Gantz - It's the Beginning of a Brand New Day | Gate
+sorensen_dice:					 | 0.3846 | Gantz - It's the Beginning of a Brand New Day | Darling in the Franxx
+Average:						 | 0.4920 |
+Distance:						 | 0.4459 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3600 | Gantz - They Aren't Human | When They Cry Kai
+normalized_damerau_levenshtein:  | 0.3600 | Gantz - They Aren't Human | When They Cry Kai
+jaro:							 | 0.7200 | Gantz - They Aren't Human | Gate
+jaro_winkler:					 | 0.7760 | Gantz - They Aren't Human | Gate
+sorensen_dice:					 | 0.2857 | Gantz - They Aren't Human | Now and Then, Here and There
+Average:						 | 0.5003 |
+Distance:						 | 0.4903 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3214 | Gantz - Kei, You're Awesome! | NHK ni Youkoso!
+normalized_damerau_levenshtein:  | 0.3214 | Gantz - Kei, You're Awesome! | NHK ni Youkoso!
+jaro:							 | 0.7143 | Gantz - Kei, You're Awesome! | Gate
+jaro_winkler:					 | 0.7714 | Gantz - Kei, You're Awesome! | Gate
+sorensen_dice:					 | 0.2353 | Gantz - Kei, You're Awesome! | Bloom Into You
+Average:						 | 0.4728 |
+Distance:						 | 0.5361 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3684 | Gantz - Ok, Here Are Your Scores | Listen to Me, Girls. I Am Your Father!
+normalized_damerau_levenshtein:  | 0.3684 | Gantz - Ok, Here Are Your Scores | Listen to Me, Girls. I Am Your Father!
+jaro:							 | 0.7083 | Gantz - Ok, Here Are Your Scores | Gate
+jaro_winkler:					 | 0.7667 | Gantz - Ok, Here Are Your Scores | Gate
+sorensen_dice:					 | 0.2609 | Gantz - Ok, Here Are Your Scores | I Want to Eat Your Pancreas
+Average:						 | 0.4945 |
+Distance:						 | 0.5058 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3250 | Gantz - Then That Means, at That Time... | Date A Live: Date to Date
+normalized_damerau_levenshtein:  | 0.3250 | Gantz - Then That Means, at That Time... | Date A Live: Date to Date
+jaro:							 | 0.7000 | Gantz - Then That Means, at That Time... | Gate
+jaro_winkler:					 | 0.7600 | Gantz - Then That Means, at That Time... | Gate
+sorensen_dice:					 | 0.2807 | Gantz - Then That Means, at That Time... | The Girl Who Leapt Through Time
+Average:						 | 0.4781 |
+Distance:						 | 0.4793 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3889 | Gantz - All Right! | Fate/stay night
+normalized_damerau_levenshtein:  | 0.3889 | Gantz - All Right! | Fate/stay night
+jaro:							 | 0.6618 | Gantz - All Right! | Call of the Night
+jaro_winkler:					 | 0.7111 | Gantz - All Right! | Gate
+sorensen_dice:					 | 0.2963 | Gantz - All Right! | Call of the Night
+Average:						 | 0.4894 |
+Distance:						 | 0.4148 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Gantz - We're After You | Phantom: Requiem for the Phantom
+normalized_damerau_levenshtein:  | 0.3125 | Gantz - We're After You | Phantom: Requiem for the Phantom
+jaro:							 | 0.7246 | Gantz - We're After You | Gate
+jaro_winkler:					 | 0.7797 | Gantz - We're After You | Gate
+sorensen_dice:					 | 0.3125 | Gantz - We're After You | See Me After Class
+Average:						 | 0.4884 |
+Distance:						 | 0.4672 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3529 | Gantz - Uh-oh! | Hayate no Gotoku!
+normalized_damerau_levenshtein:  | 0.3529 | Gantz - Uh-oh! | Hayate no Gotoku!
+jaro:							 | 0.6548 | Gantz - Uh-oh! | Gate
+jaro_winkler:					 | 0.7238 | Gantz - Uh-oh! | Gate
+sorensen_dice:					 | 0.2222 | Gantz - Uh-oh! | Suisei no Gargantia
+Average:						 | 0.4613 |
+Distance:						 | 0.5016 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3750 | Gantz - Kill It There! | Panty & Stocking with Garterbelt
+normalized_damerau_levenshtein:  | 0.3750 | Gantz - Kill It There! | Panty & Stocking with Garterbelt
+jaro:							 | 0.6818 | Gantz - Kill It There! | AkaKill! Theater
+jaro_winkler:					 | 0.7030 | Gantz - Kill It There! | Gate
+sorensen_dice:					 | 0.3871 | Gantz - Kill It There! | AkaKill! Theater
+Average:						 | 0.5044 |
+Distance:						 | 0.3280 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4091 | Gantz - Yuuzou-kun | Tonari no Kaibutsu-kun
+normalized_damerau_levenshtein:  | 0.4091 | Gantz - Yuuzou-kun | Tonari no Kaibutsu-kun
+jaro:							 | 0.6389 | Gantz - Yuuzou-kun | Gate
+jaro_winkler:					 | 0.7111 | Gantz - Yuuzou-kun | Gate
+sorensen_dice:					 | 0.2778 | Gantz - Yuuzou-kun | Toilet-bound Hanako-kun
+Average:						 | 0.4892 |
+Distance:						 | 0.4333 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3600 | Gantz - I Can't Shoot Him | Dantalian no Shoka
+normalized_damerau_levenshtein:  | 0.3600 | Gantz - I Can't Shoot Him | Dantalian no Shoka
+jaro:							 | 0.6613 | Gantz - I Can't Shoot Him | That Time I Got Reincarnated as a Slime
+jaro_winkler:					 | 0.6987 | Gantz - I Can't Shoot Him | Gate
+sorensen_dice:					 | 0.2941 | Gantz - I Can't Shoot Him | Dantalian no Shoka
+Average:						 | 0.4748 |
+Distance:						 | 0.4045 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3429 | Gantz - Please stay here, Katou-kun | Please tell me! Galko-chan
+normalized_damerau_levenshtein:  | 0.3429 | Gantz - Please stay here, Katou-kun | Please tell me! Galko-chan
+jaro:							 | 0.7048 | Gantz - Please stay here, Katou-kun | Gate
+jaro_winkler:					 | 0.7638 | Gantz - Please stay here, Katou-kun | Gate
+sorensen_dice:					 | 0.3200 | Gantz - Please stay here, Katou-kun | I Want to Eat Your Pancreas
+Average:						 | 0.4949 |
+Distance:						 | 0.4438 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Gantz - Please Die... | Cat Planet Cuties
+normalized_damerau_levenshtein:  | 0.3333 | Gantz - Please Die... | Cat Planet Cuties
+jaro:							 | 0.7302 | Gantz - Please Die... | Gate
+jaro_winkler:					 | 0.7841 | Gantz - Please Die... | Gate
+sorensen_dice:					 | 0.3590 | Gantz - Please Die... | Please tell me! Galko-chan
+Average:						 | 0.5080 |
+Distance:						 | 0.4508 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3143 | Gantz - Goodbye... | Sankarea: I, Too, Am... A Zombie...
+normalized_damerau_levenshtein:  | 0.3143 | Gantz - Goodbye... | Sankarea: I, Too, Am... A Zombie...
+jaro:							 | 0.6406 | Gantz - Goodbye... | You and Me.
+jaro_winkler:					 | 0.7111 | Gantz - Goodbye... | Gate
+sorensen_dice:					 | 0.2273 | Gantz - Goodbye... | Sankarea: I, Too, Am... A Zombie...
+Average:						 | 0.4415 |
+Distance:						 | 0.4838 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4375 | Gantz - Go Fast! | Pani Poni Dash!
+normalized_damerau_levenshtein:  | 0.4375 | Gantz - Go Fast! | Pani Poni Dash!
+jaro:							 | 0.6767 | Gantz - Go Fast! | Uzaki-chan Wants to Hang Out!
+jaro_winkler:					 | 0.7167 | Gantz - Go Fast! | Gate
+sorensen_dice:					 | 0.2424 | Gantz - Go Fast! | Grimgar of Fantasy and Ash
+Average:						 | 0.5022 |
+Distance:						 | 0.4742 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Gantz - It's Me! | Date A Live III
+normalized_damerau_levenshtein:  | 0.3125 | Gantz - It's Me! | Date A Live III
+jaro:							 | 0.6458 | Gantz - It's Me! | Gate
+jaro_winkler:					 | 0.7167 | Gantz - It's Me! | Gate
+sorensen_dice:					 | 0.2308 | Gantz - It's Me! | Heaven's Memo Pad
+Average:						 | 0.4437 |
+Distance:						 | 0.4859 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Gantz - Is It Ok to Shoot Them | Baka to Test to Shoukanjuu
+normalized_damerau_levenshtein:  | 0.3333 | Gantz - Is It Ok to Shoot Them | Baka to Test to Shoukanjuu
+jaro:							 | 0.6362 | Gantz - Is It Ok to Shoot Them | Genjitsu Shugi Yuusha no Oukoku Saikenki Part 2
+jaro_winkler:					 | 0.6933 | Gantz - Is It Ok to Shoot Them | Gate
+sorensen_dice:					 | 0.2703 | Gantz - Is It Ok to Shoot Them | Dantalian no Shoka
+Average:						 | 0.4533 |
+Distance:						 | 0.4231 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3600 | Gantz - Welcome Back | Dance in the Vampire Bund
+normalized_damerau_levenshtein:  | 0.3600 | Gantz - Welcome Back | Dance in the Vampire Bund
+jaro:							 | 0.7333 | Gantz - Welcome Back | Gate
+jaro_winkler:					 | 0.7867 | Gantz - Welcome Back | Gate
+sorensen_dice:					 | 0.3750 | Gantz - Welcome Back | Welcome to the N-H-K
+Average:						 | 0.5230 |
+Distance:						 | 0.4267 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3448 | Gantz - What the Hell is This | Ghost in the Shell 2.0
+normalized_damerau_levenshtein:  | 0.3448 | Gantz - What the Hell is This | Ghost in the Shell 2.0
+jaro:							 | 0.7126 | Gantz - What the Hell is This | Gate
+jaro_winkler:					 | 0.7701 | Gantz - What the Hell is This | Gate
+sorensen_dice:					 | 0.3111 | Gantz - What the Hell is This | The Rising of the Shield Hero
+Average:						 | 0.4967 |
+Distance:						 | 0.4590 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3478 | Gantz - Shoot Me | Black★Rock Shooter (TV)
+normalized_damerau_levenshtein:  | 0.3478 | Gantz - Shoot Me | Black★Rock Shooter (TV)
+jaro:							 | 0.6798 | Gantz - Shoot Me | Sora no Method
+jaro_winkler:					 | 0.7167 | Gantz - Shoot Me | Gate
+sorensen_dice:					 | 0.2963 | Gantz - Shoot Me | Dantalian no Shoka
+Average:						 | 0.4777 |
+Distance:						 | 0.4204 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4375 | Gantz - Brother | Macross Frontier
+normalized_damerau_levenshtein:  | 0.4375 | Gantz - Brother | Macross Frontier
+jaro:							 | 0.6934 | Gantz - Brother | Gargantia on the Verdurous Planet
+jaro_winkler:					 | 0.7547 | Gantz - Brother | Gargantia on the Verdurous Planet
+sorensen_dice:					 | 0.4444 | Gantz - Brother | Another
+Average:						 | 0.5535 |
+Distance:						 | 0.3172 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3714 | Gantz - Don't Ever Say That Again | Anohana: The Flower We Saw That Day
+normalized_damerau_levenshtein:  | 0.3714 | Gantz - Don't Ever Say That Again | Anohana: The Flower We Saw That Day
+jaro:							 | 0.7071 | Gantz - Don't Ever Say That Again | Gate
+jaro_winkler:					 | 0.7657 | Gantz - Don't Ever Say That Again | Gate
+sorensen_dice:					 | 0.2903 | Gantz - Don't Ever Say That Again | I Can't Understand What My Husband Is Saying
+Average:						 | 0.5012 |
+Distance:						 | 0.4753 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3636 | Gantz - Kurono Alien | Gargantia on the Verdurous Planet
+normalized_damerau_levenshtein:  | 0.3636 | Gantz - Kurono Alien | Gargantia on the Verdurous Planet
+jaro:							 | 0.6991 | Gantz - Kurono Alien | Gargantia on the Verdurous Planet
+jaro_winkler:					 | 0.7593 | Gantz - Kurono Alien | Gargantia on the Verdurous Planet
+sorensen_dice:					 | 0.2917 | Gantz - Kurono Alien | Digimon Adventure: Bokura no War Game!
+Average:						 | 0.4955 |
+Distance:						 | 0.4676 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4167 | Gantz - No Labyrinth is Inescapable! | Magi: The Labyrinth of Magic
+normalized_damerau_levenshtein:  | 0.4167 | Gantz - No Labyrinth is Inescapable! | Magi: The Labyrinth of Magic
+jaro:							 | 0.6573 | Gantz - No Labyrinth is Inescapable! | Komori-san Can't Decline!
+jaro_winkler:					 | 0.7030 | Gantz - No Labyrinth is Inescapable! | Gargantia on the Verdurous Planet
+sorensen_dice:					 | 0.3019 | Gantz - No Labyrinth is Inescapable! | Magi: The Labyrinth of Magic
+Average:						 | 0.4991 |
+Distance:						 | 0.4011 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Gantz - Let's Go Back Alive | Maria†Holic Alive
+normalized_damerau_levenshtein:  | 0.3333 | Gantz - Let's Go Back Alive | Maria†Holic Alive
+jaro:							 | 0.7160 | Gantz - Let's Go Back Alive | Gate
+jaro_winkler:					 | 0.7728 | Gantz - Let's Go Back Alive | Gate
+sorensen_dice:					 | 0.2143 | Gantz - Let's Go Back Alive | Baccano!
+Average:						 | 0.4740 |
+Distance:						 | 0.5586 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | Gantz - Please Live! | Date A Live
+normalized_damerau_levenshtein:  | 0.4000 | Gantz - Please Live! | Date A Live
+jaro:							 | 0.7333 | Gantz - Please Live! | Gate
+jaro_winkler:					 | 0.7867 | Gantz - Please Live! | Gate
+sorensen_dice:					 | 0.4211 | Gantz - Please Live! | Please tell me! Galko-chan
+Average:						 | 0.5482 |
+Distance:						 | 0.3867 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6957 | Gekijouban Steins;Gate Fuka Ryouiki no Deja vu | Steins;Gate: Fuka Ryouiki no Déjà vu
+normalized_damerau_levenshtein:  | 0.6957 | Gekijouban Steins;Gate Fuka Ryouiki no Deja vu | Steins;Gate: Fuka Ryouiki no Déjà vu
+jaro:							 | 0.7568 | Gekijouban Steins;Gate Fuka Ryouiki no Deja vu | Steins;Gate: Fuka Ryouiki no Déjà vu
+jaro_winkler:					 | 0.7568 | Gekijouban Steins;Gate Fuka Ryouiki no Deja vu | Steins;Gate: Fuka Ryouiki no Déjà vu
+sorensen_dice:					 | 0.6761 | Gekijouban Steins;Gate Fuka Ryouiki no Deja vu | Steins;Gate: Fuka Ryouiki no Déjà vu
+Average:						 | 0.7162 |
+Distance:						 | 0.0808 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8182 | Ghost Hunt | Ghost Hound
+normalized_damerau_levenshtein:  | 0.8182 | Ghost Hunt | Ghost Hound
+jaro:							 | 0.9061 | Ghost Hunt | Ghost Hound
+jaro_winkler:					 | 0.9718 | Ghost Hunt | Ghost Hound
+sorensen_dice:					 | 0.7059 | Ghost Hunt | Ghost Hound
+Average:						 | 0.8440 |
+Distance:						 | 0.2659 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4444 | Gilgamesh | Gamers!
+normalized_damerau_levenshtein:  | 0.4444 | Gilgamesh | Gamers!
+jaro:							 | 0.7566 | Gilgamesh | Gamers!
+jaro_winkler:					 | 0.7810 | Gilgamesh | Gamers!
+sorensen_dice:					 | 0.4211 | Gilgamesh | Akame ga Kill!
+Average:						 | 0.5695 |
+Distance:						 | 0.3599 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4545 | Gintama-002 | Minami-ke
+normalized_damerau_levenshtein:  | 0.4545 | Gintama-002 | Minami-ke
+jaro:							 | 0.6700 | Gintama-002 | Minami-ke
+jaro_winkler:					 | 0.6700 | Gintama-002 | Minami-ke
+sorensen_dice:					 | 0.3000 | Gintama-002 | Hinamatsuri
+Average:						 | 0.5098 |
+Distance:						 | 0.3700 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | Gintama | Maid-Sama!
+normalized_damerau_levenshtein:  | 0.4000 | Gintama | Maid-Sama!
+jaro:							 | 0.7453 | Gintama | Hinamatsuri
+jaro_winkler:					 | 0.7453 | Gintama | Hinamatsuri
+sorensen_dice:					 | 0.3750 | Gintama | Hinamatsuri
+Average:						 | 0.5331 |
+Distance:						 | 0.3703 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3030 | Gintama - SP Jump Anime Tour 2005 | Ima, Soko ni Iru Boku
+normalized_damerau_levenshtein:  | 0.3030 | Gintama - SP Jump Anime Tour 2005 | Ima, Soko ni Iru Boku
+jaro:							 | 0.6457 | Gintama - SP Jump Anime Tour 2005 | Yama no Susume
+jaro_winkler:					 | 0.6998 | Gintama - SP Jump Anime Tour 2005 | Ginga Eiyuu Densetsu
+sorensen_dice:					 | 0.2500 | Gintama - SP Jump Anime Tour 2005 | Ore, Twintail ni Narimasu.
+Average:						 | 0.4403 |
+Distance:						 | 0.4498 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7879 | Gochuumon wa Usagi Desuka Bloom | Gochuumon wa Usagi desu ka? BLOOM
+normalized_damerau_levenshtein:  | 0.7879 | Gochuumon wa Usagi Desuka Bloom | Gochuumon wa Usagi desu ka? BLOOM
+jaro:							 | 0.8975 | Gochuumon wa Usagi Desuka Bloom | Gochuumon wa Usagi desu ka?
+jaro_winkler:					 | 1.0000 | Gochuumon wa Usagi Desuka Bloom | Gochuumon wa Usagi desu ka??
+sorensen_dice:					 | 0.7917 | Gochuumon wa Usagi Desuka Bloom | Gochuumon wa Usagi desu ka?
+Average:						 | 0.8530 |
+Distance:						 | 0.2121 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Gokujo. | Gokujo.
+normalized_damerau_levenshtein:  | 1.0000 | Gokujo. | Gokujo.
+jaro:							 | 1.0000 | Gokujo. | Gokujo.
+jaro_winkler:					 | 1.0000 | Gokujo. | Gokujo.
+sorensen_dice:					 | 1.0000 | Gokujo. | Gokujo.
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4667 | Grenadier Hohoemi no Senshi | Queen's Blade: Rurou no Senshi
+normalized_damerau_levenshtein:  | 0.4667 | Grenadier Hohoemi no Senshi | Queen's Blade: Rurou no Senshi
+jaro:							 | 0.6913 | Grenadier Hohoemi no Senshi | Queen's Blade: Rurou no Senshi
+jaro_winkler:					 | 0.7520 | Grenadier Hohoemi no Senshi | Grave of the Fireflies
+sorensen_dice:					 | 0.3750 | Grenadier Hohoemi no Senshi | Queen's Blade: Rurou no Senshi
+Average:						 | 0.5503 |
+Distance:						 | 0.3770 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4118 | Grenadier Omake | Genshiken Nidaime
+normalized_damerau_levenshtein:  | 0.4118 | Grenadier Omake | Genshiken Nidaime
+jaro:							 | 0.7026 | Grenadier Omake | Genshiken Nidaime
+jaro_winkler:					 | 0.7691 | Grenadier Omake | Green Green
+sorensen_dice:					 | 0.3158 | Grenadier Omake | Kurenai
+Average:						 | 0.5222 |
+Distance:						 | 0.4534 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5556 | Gunbuster | Monster
+normalized_damerau_levenshtein:  | 0.5556 | Gunbuster | Monster
+jaro:							 | 0.7566 | Gunbuster | Monster
+jaro_winkler:					 | 0.7822 | Gunbuster | Gunslinger Girl
+sorensen_dice:					 | 0.4286 | Gunbuster | Monster
+Average:						 | 0.6157 |
+Distance:						 | 0.3537 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4194 | Gunbuster Science Lesson | Monogatari Series Second Season
+normalized_damerau_levenshtein:  | 0.4194 | Gunbuster Science Lesson | Monogatari Series Second Season
+jaro:							 | 0.7083 | Gunbuster Science Lesson | Student Council's Discretion Level 2
+jaro_winkler:					 | 0.7349 | Gunbuster Science Lesson | Gunslinger Girl
+sorensen_dice:					 | 0.3243 | Gunbuster Science Lesson | Terror in Resonance
+Average:						 | 0.5213 |
+Distance:						 | 0.4106 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3514 | Gunbuster Special Cosmic Space Battle | Hayate the Combat Butler
+normalized_damerau_levenshtein:  | 0.3514 | Gunbuster Special Cosmic Space Battle | Hayate the Combat Butler
+jaro:							 | 0.7309 | Gunbuster Special Cosmic Space Battle | When Supernatural Battles Became Commonplace
+jaro_winkler:					 | 0.7309 | Gunbuster Special Cosmic Space Battle | When Supernatural Battles Became Commonplace
+sorensen_dice:					 | 0.3556 | Gunbuster Special Cosmic Space Battle | Little Busters!
+Average:						 | 0.5040 |
+Distance:						 | 0.3795 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3143 | Gunbuster Special Good Morning OGH! | Genshiken Second Generation
+normalized_damerau_levenshtein:  | 0.3143 | Gunbuster Special Good Morning OGH! | Genshiken Second Generation
+jaro:							 | 0.6980 | Gunbuster Special Good Morning OGH! | Hai to Gensou no Grimgar
+jaro_winkler:					 | 0.7417 | Gunbuster Special Good Morning OGH! | Gunslinger Girl
+sorensen_dice:					 | 0.3243 | Gunbuster Special Good Morning OGH! | Special A
+Average:						 | 0.4785 |
+Distance:						 | 0.4274 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3939 | Gunbuster Special Sizzler Project | Love Live! School Idol Project
+normalized_damerau_levenshtein:  | 0.3939 | Gunbuster Special Sizzler Project | Love Live! School Idol Project
+jaro:							 | 0.6688 | Gunbuster Special Sizzler Project | Special A
+jaro_winkler:					 | 0.7465 | Gunbuster Special Sizzler Project | Gunslinger Girl
+sorensen_dice:					 | 0.3333 | Gunbuster Special Sizzler Project | Special A
+Average:						 | 0.5073 |
+Distance:						 | 0.4132 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5263 | Hataraku Saibou | Hataraku Maou-sama!
+normalized_damerau_levenshtein:  | 0.5263 | Hataraku Saibou | Hataraku Maou-sama!
+jaro:							 | 0.8105 | Hataraku Saibou | Hataraku Maou-sama!
+jaro_winkler:					 | 0.9811 | Hataraku Saibou | Hataraku Maou-sama!
+sorensen_dice:					 | 0.5333 | Hataraku Saibou | Hataraku Maou-sama!
+Average:						 | 0.6755 |
+Distance:						 | 0.4547 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8095 | Hellsing Ultimate OVA | Hellsing Ultimate
+normalized_damerau_levenshtein:  | 0.8095 | Hellsing Ultimate OVA | Hellsing Ultimate
+jaro:							 | 0.9365 | Hellsing Ultimate OVA | Hellsing Ultimate
+jaro_winkler:					 | 1.0000 | Hellsing Ultimate OVA | Hellsing Ultimate
+sorensen_dice:					 | 0.9091 | Hellsing Ultimate OVA | Hellsing Ultimate
+Average:						 | 0.8929 |
+Distance:						 | 0.1905 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Hige wo Soru. Soshite Joshikousei wo Hirou. | Hige wo Soru. Soshite Joshikousei wo Hirou.
+normalized_damerau_levenshtein:  | 1.0000 | Hige wo Soru. Soshite Joshikousei wo Hirou. | Hige wo Soru. Soshite Joshikousei wo Hirou.
+jaro:							 | 1.0000 | Hige wo Soru. Soshite Joshikousei wo Hirou. | Hige wo Soru. Soshite Joshikousei wo Hirou.
+jaro_winkler:					 | 1.0000 | Hige wo Soru. Soshite Joshikousei wo Hirou. | Hige wo Soru. Soshite Joshikousei wo Hirou.
+sorensen_dice:					 | 1.0000 | Hige wo Soru. Soshite Joshikousei wo Hirou. | Hige wo Soru. Soshite Joshikousei wo Hirou.
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6667 | HimawariXviD | Himawari!
+normalized_damerau_levenshtein:  | 0.6667 | HimawariXviD | Himawari!
+jaro:							 | 0.8519 | HimawariXviD | Himawari!
+jaro_winkler:					 | 0.9704 | HimawariXviD | Himawari!
+sorensen_dice:					 | 0.7368 | HimawariXviD | Himawari!
+Average:						 | 0.7785 |
+Distance:						 | 0.3037 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4375 | honey and clover | You and Me.
+normalized_damerau_levenshtein:  | 0.4375 | honey and clover | You and Me.
+jaro:							 | 0.6818 | honey and clover | Sankarea: Undying Love
+jaro_winkler:					 | 0.6818 | honey and clover | Sankarea: Undying Love
+sorensen_dice:					 | 0.3000 | honey and clover | Overlord
+Average:						 | 0.5077 |
+Distance:						 | 0.3818 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3462 | honey and clover chapter f | The Idol Master
+normalized_damerau_levenshtein:  | 0.3462 | honey and clover chapter f | The Idol Master
+jaro:							 | 0.6969 | honey and clover chapter f | The Executioner and Her Way of Life
+jaro_winkler:					 | 0.6969 | honey and clover chapter f | The Executioner and Her Way of Life
+sorensen_dice:					 | 0.3226 | honey and clover chapter f | Hakone-chan
+Average:						 | 0.4817 |
+Distance:						 | 0.3743 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3462 | honey and clover chapter l | Ghost in the Shell
+normalized_damerau_levenshtein:  | 0.3462 | honey and clover chapter l | Ghost in the Shell
+jaro:							 | 0.6712 | honey and clover chapter l | Violet Evergarden: Special
+jaro_winkler:					 | 0.6712 | honey and clover chapter l | Violet Evergarden: Special
+sorensen_dice:					 | 0.3226 | honey and clover chapter l | Hakone-chan
+Average:						 | 0.4715 |
+Distance:						 | 0.3486 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Horimiya | Horimiya
+normalized_damerau_levenshtein:  | 1.0000 | Horimiya | Horimiya
+jaro:							 | 1.0000 | Horimiya | Horimiya
+jaro_winkler:					 | 1.0000 | Horimiya | Horimiya
+sorensen_dice:					 | 1.0000 | Horimiya | Horimiya
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | Inukami! . | Inuyashiki
+normalized_damerau_levenshtein:  | 0.4000 | Inukami! . | Inuyashiki
+jaro:							 | 0.6667 | Inukami! . | Inuyashiki
+jaro_winkler:					 | 0.7667 | Inukami! . | Inuyashiki
+sorensen_dice:					 | 0.4138 | Inukami! . | Inu to Hasami wa Tsukaiyou
+Average:						 | 0.5294 |
+Distance:						 | 0.3667 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9600 | Jigoku Shoujo Futakomori | Jigoku Shoujo: Futakomori
+normalized_damerau_levenshtein:  | 0.9600 | Jigoku Shoujo Futakomori | Jigoku Shoujo: Futakomori
+jaro:							 | 0.9867 | Jigoku Shoujo Futakomori | Jigoku Shoujo: Futakomori
+jaro_winkler:					 | 1.0000 | Jigoku Shoujo Futakomori | Jigoku Shoujo: Futakomori
+sorensen_dice:					 | 0.9302 | Jigoku Shoujo Futakomori | Jigoku Shoujo: Futakomori
+Average:						 | 0.9674 |
+Distance:						 | 0.0698 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Kaiba | Kaiba
+normalized_damerau_levenshtein:  | 1.0000 | Kaiba | Kaiba
+jaro:							 | 1.0000 | Kaiba | Kaiba
+jaro_winkler:					 | 1.0000 | Kaiba | Kaiba
+sorensen_dice:					 | 1.0000 | Kaiba | Kaiba
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Kamisama ni Natta Hi | Kamisama ni Natta Hi
+normalized_damerau_levenshtein:  | 1.0000 | Kamisama ni Natta Hi | Kamisama ni Natta Hi
+jaro:							 | 1.0000 | Kamisama ni Natta Hi | Kamisama ni Natta Hi
+jaro_winkler:					 | 1.0000 | Kamisama ni Natta Hi | Kamisama no Inai Nichiyoubi: Kioku
+sorensen_dice:					 | 1.0000 | Kamisama ni Natta Hi | Kamisama ni Natta Hi
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Kannagi | Kannagi
+normalized_damerau_levenshtein:  | 1.0000 | Kannagi | Kannagi
+jaro:							 | 1.0000 | Kannagi | Kannagi
+jaro_winkler:					 | 1.0000 | Kannagi | Kannagi
+sorensen_dice:					 | 1.0000 | Kannagi | Kannagi
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4375 | Kannagi Play All | Kannagi
+normalized_damerau_levenshtein:  | 0.4375 | Kannagi Play All | Kannagi
+jaro:							 | 0.8125 | Kannagi Play All | Kannagi
+jaro_winkler:					 | 0.9437 | Kannagi Play All | Kannagi
+sorensen_dice:					 | 0.6316 | Kannagi Play All | Kannagi
+Average:						 | 0.6526 |
+Distance:						 | 0.5062 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4138 | Kannagi Play All No OPED | Kannagi: Crazy Shrine Maidens
+normalized_damerau_levenshtein:  | 0.4138 | Kannagi Play All No OPED | Kannagi: Crazy Shrine Maidens
+jaro:							 | 0.7639 | Kannagi Play All No OPED | Kannagi
+jaro_winkler:					 | 0.9292 | Kannagi Play All No OPED | Kannagi
+sorensen_dice:					 | 0.4800 | Kannagi Play All No OPED | Kannagi
+Average:						 | 0.6001 |
+Distance:						 | 0.5154 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4483 | Kannagi Play All No Previews | Kannagi: Crazy Shrine Maidens
+normalized_damerau_levenshtein:  | 0.4483 | Kannagi Play All No Previews | Kannagi: Crazy Shrine Maidens
+jaro:							 | 0.7500 | Kannagi Play All No Previews | Kannagi
+jaro_winkler:					 | 0.9250 | Kannagi Play All No Previews | Kannagi
+sorensen_dice:					 | 0.4138 | Kannagi Play All No Previews | Kannagi
+Average:						 | 0.5971 |
+Distance:						 | 0.5112 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4167 | Kanokon  - My First Time | Pokémon: The First Movie
+normalized_damerau_levenshtein:  | 0.4167 | Kanokon  - My First Time | Pokémon: The First Movie
+jaro:							 | 0.7639 | Kanokon  - My First Time | Kanokon
+jaro_winkler:					 | 0.9292 | Kanokon  - My First Time | Kanokon
+sorensen_dice:					 | 0.5000 | Kanokon  - My First Time | Kanokon
+Average:						 | 0.6053 |
+Distance:						 | 0.5125 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3871 | Kanokon  - Are We Becoming One | Kanokon: The Girl Who Cried Fox
+normalized_damerau_levenshtein:  | 0.3871 | Kanokon  - Are We Becoming One | Kanokon: The Girl Who Cried Fox
+jaro:							 | 0.7444 | Kanokon  - Are We Becoming One | Kanokon
+jaro_winkler:					 | 0.9233 | Kanokon  - Are We Becoming One | Kanokon
+sorensen_dice:					 | 0.4138 | Kanokon  - Are We Becoming One | Kanokon
+Average:						 | 0.5712 |
+Distance:						 | 0.5362 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4167 | Kanokon  - I'm Going To Feast On You | Kanokon: The Girl Who Cried Fox
+normalized_damerau_levenshtein:  | 0.4167 | Kanokon  - I'm Going To Feast On You | Kanokon: The Girl Who Cried Fox
+jaro:							 | 0.7315 | Kanokon  - I'm Going To Feast On You | Kanokon
+jaro_winkler:					 | 0.9194 | Kanokon  - I'm Going To Feast On You | Kanokon
+sorensen_dice:					 | 0.3636 | Kanokon  - I'm Going To Feast On You | Kanokon
+Average:						 | 0.5696 |
+Distance:						 | 0.5558 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3269 | Kanokon  - Can't Take It Off Anymore | Hayate the Combat Butler: Can't Take My Eyes Off You
+normalized_damerau_levenshtein:  | 0.3269 | Kanokon  - Can't Take It Off Anymore | Hayate the Combat Butler: Can't Take My Eyes Off You
+jaro:							 | 0.7315 | Kanokon  - Can't Take It Off Anymore | Kanokon
+jaro_winkler:					 | 0.9194 | Kanokon  - Can't Take It Off Anymore | Kanokon
+sorensen_dice:					 | 0.3529 | Kanokon  - Can't Take It Off Anymore | Kanokon
+Average:						 | 0.5315 |
+Distance:						 | 0.5925 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3235 | Kanokon  - It Doesn't Work Anymore | Gake no Ue no Ponyo
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  - It Doesn't Work Anymore | Kino no Tabi -the Beautiful World- the Animated Series
+jaro:							 | 0.7353 | Kanokon  - It Doesn't Work Anymore | Kanokon
+jaro_winkler:					 | 0.9206 | Kanokon  - It Doesn't Work Anymore | Kanokon
+sorensen_dice:					 | 0.3636 | Kanokon  - It Doesn't Work Anymore | Kanokon
+Average:						 | 0.5353 |
+Distance:						 | 0.5971 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3750 | Kanokon  - Can I Ask This Of You | Kanokon: The Girl Who Cried Fox
+normalized_damerau_levenshtein:  | 0.3750 | Kanokon  - Can I Ask This Of You | Kanokon: The Girl Who Cried Fox
+jaro:							 | 0.7396 | Kanokon  - Can I Ask This Of You | Kanokon
+jaro_winkler:					 | 0.9219 | Kanokon  - Can I Ask This Of You | Kanokon
+sorensen_dice:					 | 0.4138 | Kanokon  - Can I Ask This Of You | Kanokon
+Average:						 | 0.5651 |
+Distance:						 | 0.5469 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3548 | Kanokon  - Let Me Warm You Up | Kanokon: The Girl Who Cried Fox
+normalized_damerau_levenshtein:  | 0.3548 | Kanokon  - Let Me Warm You Up | Kanokon: The Girl Who Cried Fox
+jaro:							 | 0.7471 | Kanokon  - Let Me Warm You Up | Kanokon
+jaro_winkler:					 | 0.9241 | Kanokon  - Let Me Warm You Up | Kanokon
+sorensen_dice:					 | 0.4444 | Kanokon  - Let Me Warm You Up | Kanokon
+Average:						 | 0.5651 |
+Distance:						 | 0.5693 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3824 | Kanokon  - Shall We Enter Together | Kanokon: The Girl Who Cried Fox
+normalized_damerau_levenshtein:  | 0.3824 | Kanokon  - Shall We Enter Together | Kanokon: The Girl Who Cried Fox
+jaro:							 | 0.7353 | Kanokon  - Shall We Enter Together | Kanokon
+jaro_winkler:					 | 0.9206 | Kanokon  - Shall We Enter Together | Kanokon
+sorensen_dice:					 | 0.3636 | Kanokon  - Shall We Enter Together | Kanokon
+Average:						 | 0.5568 |
+Distance:						 | 0.5570 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4167 | Kanokon  - The Sensation Is Too Much | Kanokon: The Girl Who Cried Fox
+normalized_damerau_levenshtein:  | 0.4167 | Kanokon  - The Sensation Is Too Much | Kanokon: The Girl Who Cried Fox
+jaro:							 | 0.7315 | Kanokon  - The Sensation Is Too Much | Kanokon
+jaro_winkler:					 | 0.9194 | Kanokon  - The Sensation Is Too Much | Kanokon
+sorensen_dice:					 | 0.3929 | Kanokon  - The Sensation Is Too Much | Miss Monochrome - The Animation - 2
+Average:						 | 0.5754 |
+Distance:						 | 0.5266 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3429 | Kanokon  - Should I Restrain Myself | Mahou Shoujo Tokushusen Asuka
+normalized_damerau_levenshtein:  | 0.3429 | Kanokon  - Should I Restrain Myself | Mahou Shoujo Tokushusen Asuka
+jaro:							 | 0.7333 | Kanokon  - Should I Restrain Myself | Kanokon
+jaro_winkler:					 | 0.9200 | Kanokon  - Should I Restrain Myself | Kanokon
+sorensen_dice:					 | 0.3529 | Kanokon  - Should I Restrain Myself | Kanokon
+Average:						 | 0.5384 |
+Distance:						 | 0.5771 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4194 | Kanokon  - Wet Already | Kanokon: The Girl Who Cried Fox
+normalized_damerau_levenshtein:  | 0.4194 | Kanokon  - Wet Already | Kanokon: The Girl Who Cried Fox
+jaro:							 | 0.7727 | Kanokon  - Wet Already | Kanokon
+jaro_winkler:					 | 0.9318 | Kanokon  - Wet Already | Kanokon
+sorensen_dice:					 | 0.5217 | Kanokon  - Wet Already | Kanokon
+Average:						 | 0.6130 |
+Distance:						 | 0.5125 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3750 | Kanokon  - Are We Finally Going To Do It | Kanokon: The Girl Who Cried Fox
+normalized_damerau_levenshtein:  | 0.3750 | Kanokon  - Are We Finally Going To Do It | Kanokon: The Girl Who Cried Fox
+jaro:							 | 0.7250 | Kanokon  - Are We Finally Going To Do It | Kanokon
+jaro_winkler:					 | 0.9175 | Kanokon  - Are We Finally Going To Do It | Kanokon
+sorensen_dice:					 | 0.3333 | Kanokon  - Are We Finally Going To Do It | Kanokon
+Average:						 | 0.5452 |
+Distance:						 | 0.5842 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3448 | Kanokon  Vol. - Eizou Tokuten | Enen no Shouboutai
+normalized_damerau_levenshtein:  | 0.3448 | Kanokon  Vol. - Eizou Tokuten | Enen no Shouboutai
+jaro:							 | 0.7471 | Kanokon  Vol. - Eizou Tokuten | Kanokon
+jaro_winkler:					 | 0.9241 | Kanokon  Vol. - Eizou Tokuten | Kanokon
+sorensen_dice:					 | 0.4444 | Kanokon  Vol. - Eizou Tokuten | Uchouten Kazoku
+Average:						 | 0.5611 |
+Distance:						 | 0.5793 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 2 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 1 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3448 | Kanokon  Vol. - Eizou Tokuten | Enen no Shouboutai
+normalized_damerau_levenshtein:  | 0.3448 | Kanokon  Vol. - Eizou Tokuten | Enen no Shouboutai
+jaro:							 | 0.7471 | Kanokon  Vol. - Eizou Tokuten | Kanokon
+jaro_winkler:					 | 0.9241 | Kanokon  Vol. - Eizou Tokuten | Kanokon
+sorensen_dice:					 | 0.4444 | Kanokon  Vol. - Eizou Tokuten | Uchouten Kazoku
+Average:						 | 0.5611 |
+Distance:						 | 0.5793 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 1 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 2 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 1 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 2 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 1 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 2 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 1 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 1 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 1 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 2 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 2 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 2 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Kanokon  Vol. - Eizou Tokuten 3 | Kanojo to Kanojo no Neko: Everything Flows
+normalized_damerau_levenshtein:  | 0.3333 | Kanokon  Vol. - Eizou Tokuten 3 | Kanojo to Kanojo no Neko: Everything Flows
+jaro:							 | 0.7419 | Kanokon  Vol. - Eizou Tokuten 3 | Kanokon
+jaro_winkler:					 | 0.9226 | Kanokon  Vol. - Eizou Tokuten 3 | Kanokon
+sorensen_dice:					 | 0.4324 | Kanokon  Vol. - Eizou Tokuten 3 | Uchouten Kazoku
+Average:						 | 0.5527 |
+Distance:						 | 0.5892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6176 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba: Mugen Ressha-hen
+normalized_damerau_levenshtein:  | 0.6176 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba: Mugen Ressha-hen
+jaro:							 | 0.8444 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba
+jaro_winkler:					 | 1.0000 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba: Mugen Ressha-hen
+sorensen_dice:					 | 0.6842 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba
+Average:						 | 0.7528 |
+Distance:						 | 0.3824 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9643 | Komi-san wa, Comyushou desu. | Komi-san wa, Komyushou desu.
+normalized_damerau_levenshtein:  | 0.9643 | Komi-san wa, Comyushou desu. | Komi-san wa, Komyushou desu.
+jaro:							 | 0.9762 | Komi-san wa, Comyushou desu. | Komi-san wa, Komyushou desu.
+jaro_winkler:					 | 1.0000 | Komi-san wa, Comyushou desu. | Komi-san wa, Komyushou desu.
+sorensen_dice:					 | 0.9167 | Komi-san wa, Comyushou desu. | Komi-san wa, Komyushou desu.
+Average:						 | 0.9643 |
+Distance:						 | 0.0833 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9333 | Kubikiri Cycle Aoiro Savant to Zaregototsukai | Kubikiri Cycle: Aoiro Savant to Zaregotozukai
+normalized_damerau_levenshtein:  | 0.9333 | Kubikiri Cycle Aoiro Savant to Zaregototsukai | Kubikiri Cycle: Aoiro Savant to Zaregotozukai
+jaro:							 | 0.9704 | Kubikiri Cycle Aoiro Savant to Zaregototsukai | Kubikiri Cycle: Aoiro Savant to Zaregotozukai
+jaro_winkler:					 | 1.0000 | Kubikiri Cycle Aoiro Savant to Zaregototsukai | Kubikiri Cycle: The Blue Savant and the Nonsense User
+sorensen_dice:					 | 0.8974 | Kubikiri Cycle Aoiro Savant to Zaregototsukai | Kubikiri Cycle: Aoiro Savant to Zaregotozukai
+Average:						 | 0.9469 |
+Distance:						 | 0.1026 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6250 | Kurokami | Kurenai
+normalized_damerau_levenshtein:  | 0.6250 | Kurokami | Kurenai
+jaro:							 | 0.7798 | Kurokami | Kurenai
+jaro_winkler:					 | 0.8458 | Kurokami | Kurenai
+sorensen_dice:					 | 0.4211 | Kurokami | Ookami Kakushi
+Average:						 | 0.6593 |
+Distance:						 | 0.4248 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5000 | Kurokami OVA | Nekopara OVA
+normalized_damerau_levenshtein:  | 0.5000 | Kurokami OVA | Nekopara OVA
+jaro:							 | 0.7963 | Kurokami OVA | Kamichu! OVA
+jaro_winkler:					 | 0.8167 | Kurokami OVA | Kamichu! OVA
+sorensen_dice:					 | 0.4000 | Kurokami OVA | Kamichu! OVA
+Average:						 | 0.6026 |
+Distance:						 | 0.4167 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6500 | Kuttsukiboshi - Part | Kuttsukiboshi
+normalized_damerau_levenshtein:  | 0.6500 | Kuttsukiboshi - Part | Kuttsukiboshi
+jaro:							 | 0.8833 | Kuttsukiboshi - Part | Kuttsukiboshi
+jaro_winkler:					 | 1.0000 | Kuttsukiboshi - Part | Kuttsukiboshi
+sorensen_dice:					 | 0.8276 | Kuttsukiboshi - Part | Kuttsukiboshi
+Average:						 | 0.8022 |
+Distance:						 | 0.3500 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Kuttsukiboshi | Kuttsukiboshi
+normalized_damerau_levenshtein:  | 1.0000 | Kuttsukiboshi | Kuttsukiboshi
+jaro:							 | 1.0000 | Kuttsukiboshi | Kuttsukiboshi
+jaro_winkler:					 | 1.0000 | Kuttsukiboshi | Kuttsukiboshi
+sorensen_dice:					 | 1.0000 | Kuttsukiboshi | Kuttsukiboshi
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6000 | Love Live! | Love Hina
+normalized_damerau_levenshtein:  | 0.6000 | Love Live! | Love Hina
+jaro:							 | 0.7833 | Love Live! | Love Lab
+jaro_winkler:					 | 1.0000 | Love Live! | Love Live! School Idol Project
+sorensen_dice:					 | 0.5714 | Love Live! | Love Lab
+Average:						 | 0.7110 |
+Distance:						 | 0.4286 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6957 | Macademi Wasshoi -isode | Macademi Wasshoi!
+normalized_damerau_levenshtein:  | 0.6957 | Macademi Wasshoi -isode | Macademi Wasshoi!
+jaro:							 | 0.8789 | Macademi Wasshoi -isode | Macademi Wasshoi!
+jaro_winkler:					 | 1.0000 | Macademi Wasshoi -isode | Macademi Wasshoi!
+sorensen_dice:					 | 0.8000 | Macademi Wasshoi -isode | Macademi Wasshoi!
+Average:						 | 0.8140 |
+Distance:						 | 0.3043 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5000 | Machikado Mazoku | Uchouten Kazoku
+normalized_damerau_levenshtein:  | 0.5000 | Machikado Mazoku | Uchouten Kazoku
+jaro:							 | 0.6838 | Machikado Mazoku | Uchouten Kazoku
+jaro_winkler:					 | 0.8214 | Machikado Mazoku | Machine-Doll wa Kizutsukanai
+sorensen_dice:					 | 0.3750 | Machikado Mazoku | Boku dake ga Inai Machi
+Average:						 | 0.5760 |
+Distance:						 | 0.4464 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4324 | Macross Frontier  - Broadcast Edition | Macross Frontier
+normalized_damerau_levenshtein:  | 0.4324 | Macross Frontier  - Broadcast Edition | Macross Frontier
+jaro:							 | 0.8108 | Macross Frontier  - Broadcast Edition | Macross Frontier
+jaro_winkler:					 | 1.0000 | Macross Frontier  - Broadcast Edition | Macross Frontier
+sorensen_dice:					 | 0.6222 | Macross Frontier  - Broadcast Edition | Macross Frontier
+Average:						 | 0.6596 |
+Distance:						 | 0.5676 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4324 | Macross Frontier  - Deculture Edition | Macross Frontier
+normalized_damerau_levenshtein:  | 0.4324 | Macross Frontier  - Deculture Edition | Macross Frontier
+jaro:							 | 0.8108 | Macross Frontier  - Deculture Edition | Macross Frontier
+jaro_winkler:					 | 1.0000 | Macross Frontier  - Deculture Edition | Macross Frontier
+sorensen_dice:					 | 0.6222 | Macross Frontier  - Deculture Edition | Macross Frontier
+Average:						 | 0.6596 |
+Distance:						 | 0.5676 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4706 | Macross Frontier  - Yack Deculture | Macross Frontier
+normalized_damerau_levenshtein:  | 0.4706 | Macross Frontier  - Yack Deculture | Macross Frontier
+jaro:							 | 0.8235 | Macross Frontier  - Yack Deculture | Macross Frontier
+jaro_winkler:					 | 1.0000 | Macross Frontier  - Yack Deculture | Macross Frontier
+sorensen_dice:					 | 0.6667 | Macross Frontier  - Yack Deculture | Macross Frontier
+Average:						 | 0.6863 |
+Distance:						 | 0.5294 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Macross Frontier | Macross Frontier
+normalized_damerau_levenshtein:  | 1.0000 | Macross Frontier | Macross Frontier
+jaro:							 | 1.0000 | Macross Frontier | Macross Frontier
+jaro_winkler:					 | 1.0000 | Macross Frontier | Macross Frontier
+sorensen_dice:					 | 1.0000 | Macross Frontier | Macross Frontier
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Magic Knight Rayearth | Magic Knight Rayearth
+normalized_damerau_levenshtein:  | 1.0000 | Magic Knight Rayearth | Magic Knight Rayearth
+jaro:							 | 1.0000 | Magic Knight Rayearth | Magic Knight Rayearth
+jaro_winkler:					 | 1.0000 | Magic Knight Rayearth | Magic Knight Rayearth
+sorensen_dice:					 | 1.0000 | Magic Knight Rayearth | Magic Knight Rayearth
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Magical Girl Lyrical Nanoha | Magical Girl Lyrical Nanoha
+normalized_damerau_levenshtein:  | 1.0000 | Magical Girl Lyrical Nanoha | Magical Girl Lyrical Nanoha
+jaro:							 | 1.0000 | Magical Girl Lyrical Nanoha | Magical Girl Lyrical Nanoha
+jaro_winkler:					 | 1.0000 | Magical Girl Lyrical Nanoha | Magical Girl Spec-Ops Asuka
+sorensen_dice:					 | 1.0000 | Magical Girl Lyrical Nanoha | Magical Girl Lyrical Nanoha
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3889 | Mahoromatic | Michiko to Hatchin
+normalized_damerau_levenshtein:  | 0.3889 | Mahoromatic | Michiko to Hatchin
+jaro:							 | 0.7100 | Mahoromatic | Maria†Holic
+jaro_winkler:					 | 0.7909 | Mahoromatic | Mahou Shoujo Tai Arusu
+sorensen_dice:					 | 0.3750 | Mahoromatic | Promare
+Average:						 | 0.5307 |
+Distance:						 | 0.4159 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &02 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &02 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &02 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &02 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &02 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &04 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &04 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &04 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &04 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &04 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &06 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &06 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &06 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &06 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &06 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &08 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &08 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &08 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &08 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &08 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &10 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &10 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &10 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &10 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &10 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &12 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &12 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &12 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &12 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &12 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &14 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &14 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &14 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &14 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &14 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &16 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &16 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &16 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &16 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &16 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &18 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &18 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &18 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &18 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &18 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &20 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &20 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &20 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &20 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &20 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &22 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &22 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &22 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &22 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &22 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &24 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &24 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &24 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &24 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &24 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &26 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &26 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &26 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &26 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &26 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &28 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &28 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &28 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &28 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &28 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &30 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &30 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &30 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &30 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &30 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &32 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &32 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &32 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &32 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &32 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &34 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &34 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &34 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &34 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &34 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &36 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &36 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &36 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &36 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &36 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &38 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &38 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &38 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &38 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &38 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Mahou Shoujotai - &40 | Mahou Shoujo Tai Arusu
+normalized_damerau_levenshtein:  | 0.6818 | Mahou Shoujotai - &40 | Mahou Shoujo Tai Arusu
+jaro:							 | 0.8089 | Mahou Shoujotai - &40 | Mahou Shoujo Tai Arusu
+jaro_winkler:					 | 1.0000 | Mahou Shoujotai - &40 | Mahou Shoujo Madoka☆Magica
+sorensen_dice:					 | 0.6286 | Mahou Shoujotai - &40 | Mahou Shoujo Tai Arusu
+Average:						 | 0.7602 |
+Distance:						 | 0.3714 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Mai Mai Miracle - THORA | A Certain Magical Index: The Miracle of Endymion
+normalized_damerau_levenshtein:  | 0.3333 | Mai Mai Miracle - THORA | A Certain Magical Index: The Miracle of Endymion
+jaro:							 | 0.6470 | Mai Mai Miracle - THORA | Magical Girl Spec-Ops Asuka
+jaro_winkler:					 | 0.7176 | Mai Mai Miracle - THORA | Magical Girl Spec-Ops Asuka
+sorensen_dice:					 | 0.2963 | Mai Mai Miracle - THORA | Mirai Nikki
+Average:						 | 0.4655 |
+Distance:						 | 0.4213 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3636 | Memories1 - Magnetic Rose - THORA | Modern Magic Made Simple
+normalized_damerau_levenshtein:  | 0.3636 | Memories1 - Magnetic Rose - THORA | Modern Magic Made Simple
+jaro:							 | 0.6712 | Memories1 - Magnetic Rose - THORA | Plastic Memories
+jaro_winkler:					 | 0.6762 | Memories1 - Magnetic Rose - THORA | My Teen Romantic Comedy SNAFU TOO!
+sorensen_dice:					 | 0.4390 | Memories1 - Magnetic Rose - THORA | Plastic Memories
+Average:						 | 0.5027 |
+Distance:						 | 0.3126 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3000 | Memories2 - Stink Bomb - THORA | Evangelion Shin Movie: Ha
+normalized_damerau_levenshtein:  | 0.3000 | Memories2 - Stink Bomb - THORA | Evangelion Shin Movie: Ha
+jaro:							 | 0.6611 | Memories2 - Stink Bomb - THORA | Kemono Friends 2
+jaro_winkler:					 | 0.6844 | Memories2 - Stink Bomb - THORA | Metropolis
+sorensen_dice:					 | 0.4211 | Memories2 - Stink Bomb - THORA | Plastic Memories
+Average:						 | 0.4733 |
+Distance:						 | 0.3844 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Memories3 - Cannon Fodder - THORA | Komori-san Can't Decline!
+normalized_damerau_levenshtein:  | 0.3333 | Memories3 - Cannon Fodder - THORA | Komori-san Can't Decline!
+jaro:							 | 0.6972 | Memories3 - Cannon Fodder - THORA | Kemono Friends
+jaro_winkler:					 | 0.6972 | Memories3 - Cannon Fodder - THORA | Kemono Friends
+sorensen_dice:					 | 0.3415 | Memories3 - Cannon Fodder - THORA | Plastic Memories
+Average:						 | 0.4805 |
+Distance:						 | 0.3639 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5000 | Memories | Plastic Memories
+normalized_damerau_levenshtein:  | 0.5000 | Memories | Plastic Memories
+jaro:							 | 0.7917 | Memories | Kemono Friends
+jaro_winkler:					 | 0.7917 | Memories | Kemono Friends
+sorensen_dice:					 | 0.6667 | Memories | Plastic Memories
+Average:						 | 0.6500 |
+Distance:						 | 0.2917 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Michiko to Hatchin | Michiko to Hatchin
+normalized_damerau_levenshtein:  | 1.0000 | Michiko to Hatchin | Michiko to Hatchin
+jaro:							 | 1.0000 | Michiko to Hatchin | Michiko to Hatchin
+jaro_winkler:					 | 1.0000 | Michiko to Hatchin | Michiko to Hatchin
+sorensen_dice:					 | 1.0000 | Michiko to Hatchin | Michiko to Hatchin
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6957 | The Future Diary Redial | The Future Diary
+normalized_damerau_levenshtein:  | 0.6957 | The Future Diary Redial | The Future Diary
+jaro:							 | 0.8986 | The Future Diary Redial | The Future Diary
+jaro_winkler:					 | 1.0000 | The Future Diary Redial | The Future Diary
+sorensen_dice:					 | 0.8125 | The Future Diary Redial | The Future Diary
+Average:						 | 0.8205 |
+Distance:						 | 0.3043 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4054 | Mnemosyne - Mnemosyne no Musume-tachi | Heion Sedai no Idaten-tachi
+normalized_damerau_levenshtein:  | 0.4054 | Mnemosyne - Mnemosyne no Musume-tachi | Heion Sedai no Idaten-tachi
+jaro:							 | 0.6376 | Mnemosyne - Mnemosyne no Musume-tachi | Pocket Monsters: Mewtwo no Gyakushuu
+jaro_winkler:					 | 0.6479 | Mnemosyne - Mnemosyne no Musume-tachi | My Wife is the Student Council President
+sorensen_dice:					 | 0.2807 | Mnemosyne - Mnemosyne no Musume-tachi | Charlotte: Tsuyoimono-tachi
+Average:						 | 0.4754 |
+Distance:						 | 0.3672 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7273 | Mouretsu Space Pirates | Mouretsu Pirates
+normalized_damerau_levenshtein:  | 0.7273 | Mouretsu Space Pirates | Mouretsu Pirates
+jaro:							 | 0.8883 | Mouretsu Space Pirates | Mouretsu Pirates
+jaro_winkler:					 | 0.9888 | Mouretsu Space Pirates | Mouretsu Pirates
+sorensen_dice:					 | 0.7879 | Mouretsu Space Pirates | Mouretsu Pirates
+Average:						 | 0.8239 |
+Distance:						 | 0.2616 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9545 | Okusama Wa Joshikousei | Okusama wa Joshikousei
+normalized_damerau_levenshtein:  | 0.9545 | Okusama Wa Joshikousei | Okusama wa Joshikousei
+jaro:							 | 0.9697 | Okusama Wa Joshikousei | Okusama wa Joshikousei
+jaro_winkler:					 | 0.9939 | Okusama Wa Joshikousei | Okusama wa Joshikousei
+sorensen_dice:					 | 0.8947 | Okusama Wa Joshikousei | Okusama wa Joshikousei
+Average:						 | 0.9535 |
+Distance:						 | 0.0992 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | My-HiME | Ai-Mai-Mi
+normalized_damerau_levenshtein:  | 0.3333 | My-HiME | Ai-Mai-Mi
+jaro:							 | 0.6159 | My-HiME | He is My Master
+jaro_winkler:					 | 0.6818 | My-HiME | My Little Monster
+sorensen_dice:					 | 0.1667 | My-HiME | GAMERS!
+Average:						 | 0.4262 |
+Distance:						 | 0.5151 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | Narutaru Mukuro Naru Hoshi Tama Taru Ko | Mahoutsukai no Yome: Hoshi Matsu Hito
+normalized_damerau_levenshtein:  | 0.3333 | Narutaru Mukuro Naru Hoshi Tama Taru Ko | Mahoutsukai no Yome: Hoshi Matsu Hito
+jaro:							 | 0.6698 | Narutaru Mukuro Naru Hoshi Tama Taru Ko | Nakitai Watashi wa Neko wo Kaburu
+jaro_winkler:					 | 0.7741 | Narutaru Mukuro Naru Hoshi Tama Taru Ko | Naruto: Shippuden
+sorensen_dice:					 | 0.3462 | Narutaru Mukuro Naru Hoshi Tama Taru Ko | Higurashi no Naku Koro ni
+Average:						 | 0.4913 |
+Distance:						 | 0.4408 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3529 | Nerawareta Gakuen | Gurren Lagann
+normalized_damerau_levenshtein:  | 0.3529 | Nerawareta Gakuen | Strawberry Panic
+jaro:							 | 0.6650 | Nerawareta Gakuen | Perfect Blue
+jaro_winkler:					 | 0.6703 | Nerawareta Gakuen | Needless+: Saint Lily Gakuen no Himitsu
+sorensen_dice:					 | 0.4444 | Nerawareta Gakuen | Utawarerumono
+Average:						 | 0.4971 |
+Distance:						 | 0.3173 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5625 | Nurarihyon no Mago Sennen Makyou | Nurarihyon no Mago
+normalized_damerau_levenshtein:  | 0.5625 | Nurarihyon no Mago Sennen Makyou | Nurarihyon no Mago
+jaro:							 | 0.8542 | Nurarihyon no Mago Sennen Makyou | Nurarihyon no Mago
+jaro_winkler:					 | 1.0000 | Nurarihyon no Mago Sennen Makyou | Nurarihyon no Mago
+sorensen_dice:					 | 0.7143 | Nurarihyon no Mago Sennen Makyou | Nurarihyon no Mago
+Average:						 | 0.7387 |
+Distance:						 | 0.4375 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4211 | Oda Nobuna no Yabou | Stella no Mahou
+normalized_damerau_levenshtein:  | 0.4211 | Oda Nobuna no Yabou | Stella no Mahou
+jaro:							 | 0.6965 | Oda Nobuna no Yabou | Nagato Yuki-chan no Shoushitsu
+jaro_winkler:					 | 0.6965 | Oda Nobuna no Yabou | Nagato Yuki-chan no Shoushitsu
+sorensen_dice:					 | 0.4800 | Oda Nobuna no Yabou | Munou na Nana
+Average:						 | 0.5430 |
+Distance:						 | 0.2754 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Outlaw Star | Outlaw Star
+normalized_damerau_levenshtein:  | 1.0000 | Outlaw Star | Outlaw Star
+jaro:							 | 1.0000 | Outlaw Star | Outlaw Star
+jaro_winkler:					 | 1.0000 | Outlaw Star | Outlaw Star
+sorensen_dice:					 | 1.0000 | Outlaw Star | Outlaw Star
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5200 | Boku no Hero Academia OVA  - Sukue! Kyuujo Kunren! | Boku no Hero Academia THE MOVIE: Futari no Hero
+normalized_damerau_levenshtein:  | 0.5200 | Boku no Hero Academia OVA  - Sukue! Kyuujo Kunren! | Boku no Hero Academia THE MOVIE: Futari no Hero
+jaro:							 | 0.8067 | Boku no Hero Academia OVA  - Sukue! Kyuujo Kunren! | Boku no Hero Academia
+jaro_winkler:					 | 1.0000 | Boku no Hero Academia OVA  - Sukue! Kyuujo Kunren! | Boku no Hero Academia
+sorensen_dice:					 | 0.5965 | Boku no Hero Academia OVA  - Sukue! Kyuujo Kunren! | Boku no Hero Academia
+Average:						 | 0.6886 |
+Distance:						 | 0.4800 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5306 | Boku no Hero Academia OVA  - Training of the Dead | Boku no Hero Academia THE MOVIE: Futari no Hero
+normalized_damerau_levenshtein:  | 0.5306 | Boku no Hero Academia OVA  - Training of the Dead | Boku no Hero Academia THE MOVIE: Futari no Hero
+jaro:							 | 0.8095 | Boku no Hero Academia OVA  - Training of the Dead | Boku no Hero Academia
+jaro_winkler:					 | 1.0000 | Boku no Hero Academia OVA  - Training of the Dead | Boku no Hero Academia
+sorensen_dice:					 | 0.6182 | Boku no Hero Academia OVA  - Training of the Dead | Boku no Hero Academia
+Average:						 | 0.6978 |
+Distance:						 | 0.4694 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4769 | Boku no Hero Academia OVA  - Ikinokore! Kesshi no Survival Kunren | Boku no Hero Academia THE MOVIE: World Heroes' Mission
+normalized_damerau_levenshtein:  | 0.4769 | Boku no Hero Academia OVA  - Ikinokore! Kesshi no Survival Kunren | Boku no Hero Academia THE MOVIE: World Heroes' Mission
+jaro:							 | 0.7744 | Boku no Hero Academia OVA  - Ikinokore! Kesshi no Survival Kunren | Boku no Hero Academia
+jaro_winkler:					 | 1.0000 | Boku no Hero Academia OVA  - Ikinokore! Kesshi no Survival Kunren | Boku no Hero Academia
+sorensen_dice:					 | 0.4857 | Boku no Hero Academia OVA  - Ikinokore! Kesshi no Survival Kunren | Boku no Hero Academia
+Average:						 | 0.6428 |
+Distance:						 | 0.5231 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7333 | PaniPoniDash! . | Pani Poni Dash!
+normalized_damerau_levenshtein:  | 0.7333 | PaniPoniDash! . | Pani Poni Dash!
+jaro:							 | 0.9317 | PaniPoniDash! . | Pani Poni Dash!
+jaro_winkler:					 | 0.9590 | PaniPoniDash! . | Pani Poni Dash!
+sorensen_dice:					 | 0.9600 | PaniPoniDash! . | Pani Poni Dash!
+Average:						 | 0.8635 |
+Distance:						 | 0.2267 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9333 | Pani Poni Dash | Pani Poni Dash!
+normalized_damerau_levenshtein:  | 0.9333 | Pani Poni Dash | Pani Poni Dash!
+jaro:							 | 0.9778 | Pani Poni Dash | Pani Poni Dash!
+jaro_winkler:					 | 1.0000 | Pani Poni Dash | Pani Poni Dash!
+sorensen_dice:					 | 0.9565 | Pani Poni Dash | Pani Poni Dash!
+Average:						 | 0.9602 |
+Distance:						 | 0.0667 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7000 | Pani Poni Dash - OVA | Pani Poni Dash!
+normalized_damerau_levenshtein:  | 0.7000 | Pani Poni Dash - OVA | Pani Poni Dash!
+jaro:							 | 0.8778 | Pani Poni Dash - OVA | Pani Poni Dash!
+jaro_winkler:					 | 1.0000 | Pani Poni Dash - OVA | Pani Poni Dash!
+sorensen_dice:					 | 0.8148 | Pani Poni Dash - OVA | Pani Poni Dash!
+Average:						 | 0.8185 |
+Distance:						 | 0.3000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9333 | Pani Poni Dash | Pani Poni Dash!
+normalized_damerau_levenshtein:  | 0.9333 | Pani Poni Dash | Pani Poni Dash!
+jaro:							 | 0.9778 | Pani Poni Dash | Pani Poni Dash!
+jaro_winkler:					 | 1.0000 | Pani Poni Dash | Pani Poni Dash!
+sorensen_dice:					 | 0.9565 | Pani Poni Dash | Pani Poni Dash!
+Average:						 | 0.9602 |
+Distance:						 | 0.0667 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5882 | Princess Lover! | Princess Mononoke
+normalized_damerau_levenshtein:  | 0.5882 | Princess Lover! | Princess Mononoke
+jaro:							 | 0.7935 | Princess Lover! | Princess Mononoke
+jaro_winkler:					 | 0.9793 | Princess Lover! | Princess Mononoke
+sorensen_dice:					 | 0.5000 | Princess Lover! | Princess Mononoke
+Average:						 | 0.6899 |
+Distance:						 | 0.4793 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5294 | Princess Tutu . | Princess Mononoke
+normalized_damerau_levenshtein:  | 0.5294 | Princess Tutu . | Princess Mononoke
+jaro:							 | 0.7524 | Princess Tutu . | Princess Resurrection
+jaro_winkler:					 | 0.9752 | Princess Tutu . | Princess Resurrection
+sorensen_dice:					 | 0.5185 | Princess Tutu . | Princess Mononoke
+Average:						 | 0.6610 |
+Distance:						 | 0.4567 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4186 | Princess Tutu Japanese Pre-Production Video | Princess Resurrection
+normalized_damerau_levenshtein:  | 0.4186 | Princess Tutu Japanese Pre-Production Video | Princess Resurrection
+jaro:							 | 0.7558 | Princess Tutu Japanese Pre-Production Video | Princess Resurrection
+jaro_winkler:					 | 0.9756 | Princess Tutu Japanese Pre-Production Video | Princess Resurrection
+sorensen_dice:					 | 0.4561 | Princess Tutu Japanese Pre-Production Video | Princess Resurrection
+Average:						 | 0.6050 |
+Distance:						 | 0.5570 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8529 | Renkin San-kyuu Magical Pokaan OVA | Renkin San-kyuu Magical? Pokaan
+normalized_damerau_levenshtein:  | 0.8529 | Renkin San-kyuu Magical Pokaan OVA | Renkin San-kyuu Magical? Pokaan
+jaro:							 | 0.9500 | Renkin San-kyuu Magical Pokaan OVA | Renkin San-kyuu Magical? Pokaan
+jaro_winkler:					 | 1.0000 | Renkin San-kyuu Magical Pokaan OVA | Renkin San-kyuu Magical? Pokaan
+sorensen_dice:					 | 0.8929 | Renkin San-kyuu Magical Pokaan OVA | Renkin San-kyuu Magical? Pokaan
+Average:						 | 0.9098 |
+Distance:						 | 0.1471 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Revolutionary Girl Utena | Revolutionary Girl Utena
+normalized_damerau_levenshtein:  | 1.0000 | Revolutionary Girl Utena | Revolutionary Girl Utena
+jaro:							 | 1.0000 | Revolutionary Girl Utena | Revolutionary Girl Utena
+jaro_winkler:					 | 1.0000 | Revolutionary Girl Utena | Revolutionary Girl Utena
+sorensen_dice:					 | 1.0000 | Revolutionary Girl Utena | Revolutionary Girl Utena
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Sailor Moon | Sailor Moon
+normalized_damerau_levenshtein:  | 1.0000 | Sailor Moon | Sailor Moon
+jaro:							 | 1.0000 | Sailor Moon | Sailor Moon
+jaro_winkler:					 | 1.0000 | Sailor Moon | Sailor Moon
+sorensen_dice:					 | 1.0000 | Sailor Moon | Sailor Moon
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Sasameki Koto | Sasameki Koto
+normalized_damerau_levenshtein:  | 1.0000 | Sasameki Koto | Sasameki Koto
+jaro:							 | 1.0000 | Sasameki Koto | Sasameki Koto
+jaro_winkler:					 | 1.0000 | Sasameki Koto | Sasameki Koto
+sorensen_dice:					 | 1.0000 | Sasameki Koto | Sasameki Koto
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Scrapped Princess | Scrapped Princess
+normalized_damerau_levenshtein:  | 1.0000 | Scrapped Princess | Scrapped Princess
+jaro:							 | 1.0000 | Scrapped Princess | Scrapped Princess
+jaro_winkler:					 | 1.0000 | Scrapped Princess | Scrapped Princess
+sorensen_dice:					 | 1.0000 | Scrapped Princess | Scrapped Princess
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4595 | Scrapped Princess - Copyright Notices | Scrapped Princess
+normalized_damerau_levenshtein:  | 0.4595 | Scrapped Princess - Copyright Notices | Scrapped Princess
+jaro:							 | 0.8198 | Scrapped Princess - Copyright Notices | Scrapped Princess
+jaro_winkler:					 | 1.0000 | Scrapped Princess - Copyright Notices | Scrapped Princess
+sorensen_dice:					 | 0.6383 | Scrapped Princess - Copyright Notices | Scrapped Princess
+Average:						 | 0.6754 |
+Distance:						 | 0.5405 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3125 | Seirei no Moribito  - Balsa the Female Bodyguard | Kino no Tabi: the Beautiful World
+normalized_damerau_levenshtein:  | 0.3125 | Seirei no Moribito  - Balsa the Female Bodyguard | Made in Abyss: Dawn of the Deep Soul
+jaro:							 | 0.6877 | Seirei no Moribito  - Balsa the Female Bodyguard | Zettai Karen Children: The Unlimited - Hyoubu Kyousuke
+jaro_winkler:					 | 0.7592 | Seirei no Moribito  - Balsa the Female Bodyguard | Seitokai Yakuindomo the Movie
+sorensen_dice:					 | 0.3824 | Seirei no Moribito  - Balsa the Female Bodyguard | Hitoribocchi no Marumaru Seikatsu
+Average:						 | 0.4908 |
+Distance:						 | 0.4467 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3542 | Seirei no Moribito  - The Hunters and the Hunted | Josee, the Tiger and the Fish
+normalized_damerau_levenshtein:  | 0.3542 | Seirei no Moribito  - The Hunters and the Hunted | Josee, the Tiger and the Fish
+jaro:							 | 0.7085 | Seirei no Moribito  - The Hunters and the Hunted | Kino no Tabi -the Beautiful World- the Animated Series
+jaro_winkler:					 | 0.7286 | Seirei no Moribito  - The Hunters and the Hunted | Sekirei
+sorensen_dice:					 | 0.3448 | Seirei no Moribito  - The Hunters and the Hunted | Dance in the Vampire Bund
+Average:						 | 0.4981 |
+Distance:						 | 0.3837 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3571 | Seirei no Moribito  - Fight to the Death | Gurren Lagann The Movie: The Lights in the Sky are Stars
+normalized_damerau_levenshtein:  | 0.3571 | Seirei no Moribito  - Fight to the Death | Gurren Lagann The Movie: The Lights in the Sky are Stars
+jaro:							 | 0.6690 | Seirei no Moribito  - Fight to the Death | Sekirei
+jaro_winkler:					 | 0.7352 | Seirei no Moribito  - Fight to the Death | Sekirei
+sorensen_dice:					 | 0.4000 | Seirei no Moribito  - Fight to the Death | Into the Forest of Fireflies' Light
+Average:						 | 0.5037 |
+Distance:						 | 0.3781 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7931 | Shakugan no Shana Final | Shakugan no Shana III (Final)
+normalized_damerau_levenshtein:  | 0.7931 | Shakugan no Shana Final | Shakugan no Shana III (Final)
+jaro:							 | 0.9310 | Shakugan no Shana Final | Shakugan no Shana III (Final)
+jaro_winkler:					 | 1.0000 | Shakugan no Shana Final | Shakugan no Shana: Season III
+sorensen_dice:					 | 0.8485 | Shakugan no Shana Final | Shakugan no Shana
+Average:						 | 0.8731 |
+Distance:						 | 0.2069 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9355 | Strike Witches - Road to Berlin | Strike Witches: Road to Berlin
+normalized_damerau_levenshtein:  | 0.9355 | Strike Witches - Road to Berlin | Strike Witches: Road to Berlin
+jaro:							 | 0.9444 | Strike Witches - Road to Berlin | Strike Witches: Road to Berlin
+jaro_winkler:					 | 1.0000 | Strike Witches - Road to Berlin | Strike Witches
+sorensen_dice:					 | 0.9200 | Strike Witches - Road to Berlin | Strike Witches: Road to Berlin
+Average:						 | 0.9471 |
+Distance:						 | 0.0800 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | Tailenders | Rail Wars!
+normalized_damerau_levenshtein:  | 0.4000 | Tailenders | Rail Wars!
+jaro:							 | 0.7222 | Tailenders | Talentless Nana
+jaro_winkler:					 | 0.7778 | Tailenders | Talentless Nana
+sorensen_dice:					 | 0.4286 | Tailenders | Blend S
+Average:						 | 0.5457 |
+Distance:						 | 0.3778 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7619 | Tetsuwan Birdy Decode | Tetsuwan Birdy DECODE
+normalized_damerau_levenshtein:  | 0.7619 | Tetsuwan Birdy Decode | Tetsuwan Birdy DECODE
+jaro:							 | 0.8413 | Tetsuwan Birdy Decode | Tetsuwan Birdy DECODE
+jaro_winkler:					 | 1.0000 | Tetsuwan Birdy Decode | Tetsuwan Birdy DECODE
+sorensen_dice:					 | 0.7222 | Tetsuwan Birdy Decode | Tetsuwan Birdy DECODE
+Average:						 | 0.8175 |
+Distance:						 | 0.2778 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Tetsuwan Birdy  OVA 01 | Tetsuwan Birdy DECODE
+normalized_damerau_levenshtein:  | 0.6818 | Tetsuwan Birdy  OVA 01 | Tetsuwan Birdy DECODE
+jaro:							 | 0.8297 | Tetsuwan Birdy  OVA 01 | Tetsuwan Birdy DECODE
+jaro_winkler:					 | 1.0000 | Tetsuwan Birdy  OVA 01 | Tetsuwan Birdy DECODE
+sorensen_dice:					 | 0.6857 | Tetsuwan Birdy  OVA 01 | Tetsuwan Birdy DECODE
+Average:						 | 0.7758 |
+Distance:						 | 0.3182 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Tetsuwan Birdy  OVA 02 | Tetsuwan Birdy DECODE
+normalized_damerau_levenshtein:  | 0.6818 | Tetsuwan Birdy  OVA 02 | Tetsuwan Birdy DECODE
+jaro:							 | 0.8297 | Tetsuwan Birdy  OVA 02 | Tetsuwan Birdy DECODE
+jaro_winkler:					 | 1.0000 | Tetsuwan Birdy  OVA 02 | Tetsuwan Birdy DECODE
+sorensen_dice:					 | 0.6857 | Tetsuwan Birdy  OVA 02 | Tetsuwan Birdy DECODE
+Average:						 | 0.7758 |
+Distance:						 | 0.3182 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Tetsuwan Birdy  OVA 03 | Tetsuwan Birdy DECODE
+normalized_damerau_levenshtein:  | 0.6818 | Tetsuwan Birdy  OVA 03 | Tetsuwan Birdy DECODE
+jaro:							 | 0.8297 | Tetsuwan Birdy  OVA 03 | Tetsuwan Birdy DECODE
+jaro_winkler:					 | 1.0000 | Tetsuwan Birdy  OVA 03 | Tetsuwan Birdy DECODE
+sorensen_dice:					 | 0.6857 | Tetsuwan Birdy  OVA 03 | Tetsuwan Birdy DECODE
+Average:						 | 0.7758 |
+Distance:						 | 0.3182 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6818 | Tetsuwan Birdy  OVA 04 | Tetsuwan Birdy DECODE
+normalized_damerau_levenshtein:  | 0.6818 | Tetsuwan Birdy  OVA 04 | Tetsuwan Birdy DECODE
+jaro:							 | 0.8297 | Tetsuwan Birdy  OVA 04 | Tetsuwan Birdy DECODE
+jaro_winkler:					 | 1.0000 | Tetsuwan Birdy  OVA 04 | Tetsuwan Birdy DECODE
+sorensen_dice:					 | 0.6857 | Tetsuwan Birdy  OVA 04 | Tetsuwan Birdy DECODE
+Average:						 | 0.7758 |
+Distance:						 | 0.3182 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Texhnolyze | Texhnolyze
+normalized_damerau_levenshtein:  | 1.0000 | Texhnolyze | Texhnolyze
+jaro:							 | 1.0000 | Texhnolyze | Texhnolyze
+jaro_winkler:					 | 1.0000 | Texhnolyze | Texhnolyze
+sorensen_dice:					 | 1.0000 | Texhnolyze | Texhnolyze
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9615 | Toaru Majutsu no Index III | Toaru Majutsu no Index II
+normalized_damerau_levenshtein:  | 0.9615 | Toaru Majutsu no Index III | Toaru Majutsu no Index II
+jaro:							 | 0.9872 | Toaru Majutsu no Index III | Toaru Majutsu no Index II
+jaro_winkler:					 | 1.0000 | Toaru Majutsu no Index III | Toaru Majutsu no Index: Endymion no Kiseki
+sorensen_dice:					 | 0.9756 | Toaru Majutsu no Index III | Toaru Majutsu no Index II
+Average:						 | 0.9772 |
+Distance:						 | 0.0385 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5625 | Tokyo Godfathers | Tokyo Ravens
+normalized_damerau_levenshtein:  | 0.5625 | Tokyo Godfathers | Tokyo Ravens
+jaro:							 | 0.7708 | Tokyo Godfathers | Tokyo Ravens
+jaro_winkler:					 | 0.9270 | Tokyo Godfathers | Tokyo Ghoul
+sorensen_dice:					 | 0.4348 | Tokyo Godfathers | Tokyo Ghoul
+Average:						 | 0.6515 |
+Distance:						 | 0.4922 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Tonikaku Kawaii | Tonikaku Kawaii
+normalized_damerau_levenshtein:  | 1.0000 | Tonikaku Kawaii | Tonikaku Kawaii
+jaro:							 | 1.0000 | Tonikaku Kawaii | Tonikaku Kawaii
+jaro_winkler:					 | 1.0000 | Tonikaku Kawaii | Tonikaku Kawaii
+sorensen_dice:					 | 1.0000 | Tonikaku Kawaii | Tonikaku Kawaii
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Trigun | Trigun
+normalized_damerau_levenshtein:  | 1.0000 | Trigun | Trigun
+jaro:							 | 1.0000 | Trigun | Trigun
+jaro_winkler:					 | 1.0000 | Trigun | Trigun
+sorensen_dice:					 | 1.0000 | Trigun | Trigun
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Vinland Saga | Vinland Saga
+normalized_damerau_levenshtein:  | 1.0000 | Vinland Saga | Vinland Saga
+jaro:							 | 1.0000 | Vinland Saga | Vinland Saga
+jaro_winkler:					 | 1.0000 | Vinland Saga | Vinland Saga
+sorensen_dice:					 | 1.0000 | Vinland Saga | Vinland Saga
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3810 | Witchblade | Little Witch Academia
+normalized_damerau_levenshtein:  | 0.3810 | Witchblade | Little Witch Academia
+jaro:							 | 0.6651 | Witchblade | Little Witch Academia
+jaro_winkler:					 | 0.6657 | Witchblade | Wandering Witch: The Journey of Elaina
+sorensen_dice:					 | 0.4444 | Witchblade | Little Witch Academia
+Average:						 | 0.5074 |
+Distance:						 | 0.2847 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4167 | WitchBlade | Bamboo Blade
+normalized_damerau_levenshtein:  | 0.4167 | WitchBlade | Bamboo Blade
+jaro:							 | 0.6853 | WitchBlade | Liz and the Blue Bird
+jaro_winkler:					 | 0.6853 | WitchBlade | Liz and the Blue Bird
+sorensen_dice:					 | 0.4444 | WitchBlade | Blade & Soul
+Average:						 | 0.5297 |
+Distance:						 | 0.2687 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3810 | Witchblade | Little Witch Academia
+normalized_damerau_levenshtein:  | 0.3810 | Witchblade | Little Witch Academia
+jaro:							 | 0.6651 | Witchblade | Little Witch Academia
+jaro_winkler:					 | 0.6657 | Witchblade | Wandering Witch: The Journey of Elaina
+sorensen_dice:					 | 0.4444 | Witchblade | Little Witch Academia
+Average:						 | 0.5074 |
+Distance:						 | 0.2847 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4167 | WitchBlade | Bamboo Blade
+normalized_damerau_levenshtein:  | 0.4167 | WitchBlade | Bamboo Blade
+jaro:							 | 0.6853 | WitchBlade | Liz and the Blue Bird
+jaro_winkler:					 | 0.6853 | WitchBlade | Liz and the Blue Bird
+sorensen_dice:					 | 0.4444 | WitchBlade | Blade & Soul
+Average:						 | 0.5297 |
+Distance:						 | 0.2687 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3810 | Witchblade | Little Witch Academia
+normalized_damerau_levenshtein:  | 0.3810 | Witchblade | Little Witch Academia
+jaro:							 | 0.6651 | Witchblade | Little Witch Academia
+jaro_winkler:					 | 0.6657 | Witchblade | Wandering Witch: The Journey of Elaina
+sorensen_dice:					 | 0.4444 | Witchblade | Little Witch Academia
+Average:						 | 0.5074 |
+Distance:						 | 0.2847 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3784 | Yozakura Shijuusou ~Yozakura Quartet~ | Yozakura Quartet: Hana no Uta
+normalized_damerau_levenshtein:  | 0.3784 | Yozakura Shijuusou ~Yozakura Quartet~ | Yozakura Quartet: Hana no Uta
+jaro:							 | 0.6469 | Yozakura Shijuusou ~Yozakura Quartet~ | Shoujo Shuumatsu Ryokou
+jaro_winkler:					 | 0.9647 | Yozakura Shijuusou ~Yozakura Quartet~ | Yozakura Quartet: Hana no Uta
+sorensen_dice:					 | 0.5172 | Yozakura Shijuusou ~Yozakura Quartet~ | Yozakura Quartet: Hoshi no Umi
+Average:						 | 0.5771 |
+Distance:						 | 0.5863 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5641 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Garan no Dou
+normalized_damerau_levenshtein:  | 0.5641 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Garan no Dou
+jaro:							 | 0.7865 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Garan no Dou
+jaro_winkler:					 | 1.0000 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Fukan Fuukei
+sorensen_dice:					 | 0.5926 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Garan no Dou
+Average:						 | 0.7015 |
+Distance:						 | 0.4359 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5227 | Kara no Kyoukai - The Garden of Sinners  OVA | Kara no Kyoukai: Garan no Dou
+normalized_damerau_levenshtein:  | 0.5227 | Kara no Kyoukai - The Garden of Sinners  OVA | Kara no Kyoukai: Garan no Dou
+jaro:							 | 0.7632 | Kara no Kyoukai - The Garden of Sinners  OVA | Kara no Kyoukai: Garan no Dou
+jaro_winkler:					 | 1.0000 | Kara no Kyoukai - The Garden of Sinners  OVA | Kara no Kyoukai: Fukan Fuukei
+sorensen_dice:					 | 0.5614 | Kara no Kyoukai - The Garden of Sinners  OVA | Kara no Kyoukai: Garan no Dou
+Average:						 | 0.6740 |
+Distance:						 | 0.4773 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5111 | Kara no Kyoukai - The Garden of Sinners Remix | Kara no Kyoukai: Garan no Dou
+normalized_damerau_levenshtein:  | 0.5111 | Kara no Kyoukai - The Garden of Sinners Remix | Kara no Kyoukai: Garan no Dou
+jaro:							 | 0.7592 | Kara no Kyoukai - The Garden of Sinners Remix | Kara no Kyoukai: Garan no Dou
+jaro_winkler:					 | 1.0000 | Kara no Kyoukai - The Garden of Sinners Remix | Kara no Kyoukai: Fukan Fuukei
+sorensen_dice:					 | 0.5424 | Kara no Kyoukai - The Garden of Sinners Remix | Kara no Kyoukai: Garan no Dou
+Average:						 | 0.6648 |
+Distance:						 | 0.4889 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5000 | Kud Wafter | Soul Eater
+normalized_damerau_levenshtein:  | 0.5000 | Kud Wafter | Soul Eater
+jaro:							 | 0.7333 | Kud Wafter | Soul Eater
+jaro_winkler:					 | 0.7333 | Kud Wafter | Soul Eater
+sorensen_dice:					 | 0.3158 | Kud Wafter | After the Rain
+Average:						 | 0.5565 |
+Distance:						 | 0.4175 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2857 | FLCL Alternative -  - Flying Memory | 5 Centimeters per Second
+normalized_damerau_levenshtein:  | 0.2857 | FLCL Alternative -  - Flying Memory | 5 Centimeters per Second
+jaro:							 | 0.7048 | FLCL Alternative -  - Flying Memory | FLCL
+jaro_winkler:					 | 0.8229 | FLCL Alternative -  - Flying Memory | FLCL
+sorensen_dice:					 | 0.2791 | FLCL Alternative -  - Flying Memory | Hellsing Ultimate
+Average:						 | 0.4756 |
+Distance:						 | 0.5438 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2830 | FLCL Alternative -  - Grown-Up Wannabe | CLANNAD: After Story - Mou Hitotsu no Sekai, Kyou-hen
+normalized_damerau_levenshtein:  | 0.2830 | FLCL Alternative -  - Grown-Up Wannabe | CLANNAD: After Story - Mou Hitotsu no Sekai, Kyou-hen
+jaro:							 | 0.7018 | FLCL Alternative -  - Grown-Up Wannabe | FLCL
+jaro_winkler:					 | 0.8211 | FLCL Alternative -  - Grown-Up Wannabe | FLCL
+sorensen_dice:					 | 0.2083 | FLCL Alternative -  - Grown-Up Wannabe | Clannad: After Story
+Average:						 | 0.4594 |
+Distance:						 | 0.6127 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3617 | FLCL Alternative -  - Freestyle Collection | Fullmetal Alchemist: Brotherhood OVA Collection
+normalized_damerau_levenshtein:  | 0.3617 | FLCL Alternative -  - Freestyle Collection | Fullmetal Alchemist: Brotherhood OVA Collection
+jaro:							 | 0.6984 | FLCL Alternative -  - Freestyle Collection | FLCL
+jaro_winkler:					 | 0.8190 | FLCL Alternative -  - Freestyle Collection | FLCL
+sorensen_dice:					 | 0.3529 | FLCL Alternative -  - Freestyle Collection | Sengoku Collection
+Average:						 | 0.5188 |
+Distance:						 | 0.4661 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2903 | FLCL Alternative -  - Pit-a-Pat | Blue Literature Series
+normalized_damerau_levenshtein:  | 0.2903 | FLCL Alternative -  - Pit-a-Pat | Blue Literature Series
+jaro:							 | 0.7097 | FLCL Alternative -  - Pit-a-Pat | FLCL
+jaro_winkler:					 | 0.8258 | FLCL Alternative -  - Pit-a-Pat | FLCL
+sorensen_dice:					 | 0.2632 | FLCL Alternative -  - Pit-a-Pat | Patema Inverted
+Average:						 | 0.4759 |
+Distance:						 | 0.5626 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2941 | FLCL Alternative -  - Shake It Off | The Anthem of the Heart
+normalized_damerau_levenshtein:  | 0.3043 | FLCL Alternative -  - Shake It Off | Amagi Brilliant Park: No Time to Take It Easy!
+jaro:							 | 0.7059 | FLCL Alternative -  - Shake It Off | FLCL
+jaro_winkler:					 | 0.8235 | FLCL Alternative -  - Shake It Off | FLCL
+sorensen_dice:					 | 0.2778 | FLCL Alternative -  - Shake It Off | Date A Live II
+Average:						 | 0.4811 |
+Distance:						 | 0.5458 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2903 | FLCL Alternative -  - Full Flat | The Anthem of the Heart
+normalized_damerau_levenshtein:  | 0.2903 | FLCL Alternative -  - Full Flat | The Anthem of the Heart
+jaro:							 | 0.7097 | FLCL Alternative -  - Full Flat | FLCL
+jaro_winkler:					 | 0.8258 | FLCL Alternative -  - Full Flat | FLCL
+sorensen_dice:					 | 0.2564 | FLCL Alternative -  - Full Flat | Hellsing Ultimate
+Average:						 | 0.4745 |
+Distance:						 | 0.5694 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3030 | FLCL Progressive -  - RE Start | The Troubled Life of Miss Kotoura
+normalized_damerau_levenshtein:  | 0.3030 | FLCL Progressive -  - RE Start | The Troubled Life of Miss Kotoura
+jaro:							 | 0.7111 | FLCL Progressive -  - RE Start | FLCL
+jaro_winkler:					 | 0.8267 | FLCL Progressive -  - RE Start | FLCL
+sorensen_dice:					 | 0.3125 | FLCL Progressive -  - RE Start | Star Driver
+Average:						 | 0.4913 |
+Distance:						 | 0.5236 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3143 | FLCL Progressive -  - Freebie Honey | Princess Resurrection
+normalized_damerau_levenshtein:  | 0.3143 | FLCL Progressive -  - Freebie Honey | Princess Resurrection
+jaro:							 | 0.7048 | FLCL Progressive -  - Freebie Honey | FLCL
+jaro_winkler:					 | 0.8229 | FLCL Progressive -  - Freebie Honey | FLCL
+sorensen_dice:					 | 0.2800 | FLCL Progressive -  - Freebie Honey | Princess Connect! Re:Dive
+Average:						 | 0.4872 |
+Distance:						 | 0.5429 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3019 | FLCL Progressive -  - Stone Skipping | Violet Evergarden Gaiden: Eien to Jidou Shuki Ningyou
+normalized_damerau_levenshtein:  | 0.3019 | FLCL Progressive -  - Stone Skipping | Violet Evergarden Gaiden: Eien to Jidou Shuki Ningyou
+jaro:							 | 0.7037 | FLCL Progressive -  - Stone Skipping | FLCL
+jaro_winkler:					 | 0.8222 | FLCL Progressive -  - Stone Skipping | FLCL
+sorensen_dice:					 | 0.3158 | FLCL Progressive -  - Stone Skipping | Happiness!
+Average:						 | 0.4891 |
+Distance:						 | 0.5203 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3030 | FLCL Progressive -  - LooPQR | The Troubled Life of Miss Kotoura
+normalized_damerau_levenshtein:  | 0.3030 | FLCL Progressive -  - LooPQR | The Troubled Life of Miss Kotoura
+jaro:							 | 0.7143 | FLCL Progressive -  - LooPQR | FLCL
+jaro_winkler:					 | 0.8286 | FLCL Progressive -  - LooPQR | FLCL
+sorensen_dice:					 | 0.2553 | FLCL Progressive -  - LooPQR | Love Live! School Idol Project
+Average:						 | 0.4808 |
+Distance:						 | 0.5733 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3500 | FLCL Progressive -  - Fool on the Planet | Love Live! School Idol Project
+normalized_damerau_levenshtein:  | 0.3500 | FLCL Progressive -  - Fool on the Planet | Love Live! School Idol Project
+jaro:							 | 0.7000 | FLCL Progressive -  - Fool on the Planet | FLCL
+jaro_winkler:					 | 0.8200 | FLCL Progressive -  - Fool on the Planet | FLCL
+sorensen_dice:					 | 0.3636 | FLCL Progressive -  - Fool on the Planet | Kabaneri of the Iron Fortress
+Average:						 | 0.5167 |
+Distance:						 | 0.4700 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | FLCL Progressive -  - Our Running | My Dress-Up Darling
+normalized_damerau_levenshtein:  | 0.3333 | FLCL Progressive -  - Our Running | My Dress-Up Darling
+jaro:							 | 0.7071 | FLCL Progressive -  - Our Running | FLCL
+jaro_winkler:					 | 0.8242 | FLCL Progressive -  - Our Running | FLCL
+sorensen_dice:					 | 0.2917 | FLCL Progressive -  - Our Running | Princess Connect! Re:Dive
+Average:						 | 0.4979 |
+Distance:						 | 0.5326 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Koi wa Ameagari no You ni | Koi wa Ameagari no You ni
+normalized_damerau_levenshtein:  | 1.0000 | Koi wa Ameagari no You ni | Koi wa Ameagari no You ni
+jaro:							 | 1.0000 | Koi wa Ameagari no You ni | Koi wa Ameagari no You ni
+jaro_winkler:					 | 1.0000 | Koi wa Ameagari no You ni | Koi wa Ameagari no You ni
+sorensen_dice:					 | 1.0000 | Koi wa Ameagari no You ni | Koi wa Ameagari no You ni
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5714 | FLCL ED | FLCL
+normalized_damerau_levenshtein:  | 0.5714 | FLCL ED | FLCL
+jaro:							 | 0.8571 | FLCL ED | FLCL
+jaro_winkler:					 | 0.9143 | FLCL ED | FLCL
+sorensen_dice:					 | 0.7500 | FLCL ED | FLCL
+Average:						 | 0.7329 |
+Distance:						 | 0.3429 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | FLCL | FLCL
+normalized_damerau_levenshtein:  | 1.0000 | FLCL | FLCL
+jaro:							 | 1.0000 | FLCL | FLCL
+jaro_winkler:					 | 1.0000 | FLCL | FLCL
+sorensen_dice:					 | 1.0000 | FLCL | FLCL
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4706 | The Tatami Galaxy | The Future Diary
+normalized_damerau_levenshtein:  | 0.4706 | The Tatami Galaxy | The Future Diary
+jaro:							 | 0.7020 | The Tatami Galaxy | The Eccentric Family
+jaro_winkler:					 | 0.8212 | The Tatami Galaxy | The Eccentric Family
+sorensen_dice:					 | 0.4167 | The Tatami Galaxy | Galaxy Angel
+Average:						 | 0.5762 |
+Distance:						 | 0.4046 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4722 | Black Lagoon - Roberta's Blood Trail | Black Lagoon: The Second Barrage
+normalized_damerau_levenshtein:  | 0.4722 | Black Lagoon - Roberta's Blood Trail | Black Lagoon: The Second Barrage
+jaro:							 | 0.7778 | Black Lagoon - Roberta's Blood Trail | Black Lagoon
+jaro_winkler:					 | 1.0000 | Black Lagoon - Roberta's Blood Trail | Black Lagoon
+sorensen_dice:					 | 0.5000 | Black Lagoon - Roberta's Blood Trail | Black Lagoon
+Average:						 | 0.6444 |
+Distance:						 | 0.5278 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8333 | Strike Witches - 501 Butai Hasshin Shimasu! | Strike Witches: 501 Butai Hasshin Shimasu! Movie
+normalized_damerau_levenshtein:  | 0.8333 | Strike Witches - 501 Butai Hasshin Shimasu! | Strike Witches: 501 Butai Hasshin Shimasu! Movie
+jaro:							 | 0.9188 | Strike Witches - 501 Butai Hasshin Shimasu! | Strike Witches: 501 Butai Hasshin Shimasu! Movie
+jaro_winkler:					 | 1.0000 | Strike Witches - 501 Butai Hasshin Shimasu! | Strike Witches
+sorensen_dice:					 | 0.8831 | Strike Witches - 501 Butai Hasshin Shimasu! | Strike Witches: 501 Butai Hasshin Shimasu! Movie
+Average:						 | 0.8937 |
+Distance:						 | 0.1667 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Dimension W | Dimension W
+normalized_damerau_levenshtein:  | 1.0000 | Dimension W | Dimension W
+jaro:							 | 1.0000 | Dimension W | Dimension W
+jaro_winkler:					 | 1.0000 | Dimension W | Dimension W
+sorensen_dice:					 | 1.0000 | Dimension W | Dimension W
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Gatchaman Crowds | Gatchaman Crowds
+normalized_damerau_levenshtein:  | 1.0000 | Gatchaman Crowds | Gatchaman Crowds
+jaro:							 | 1.0000 | Gatchaman Crowds | Gatchaman Crowds
+jaro_winkler:					 | 1.0000 | Gatchaman Crowds | Gatchaman Crowds
+sorensen_dice:					 | 1.0000 | Gatchaman Crowds | Gatchaman Crowds
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | Gintama | Maid-Sama!
+normalized_damerau_levenshtein:  | 0.4000 | Gintama | Maid-Sama!
+jaro:							 | 0.7453 | Gintama | Hinamatsuri
+jaro_winkler:					 | 0.7453 | Gintama | Hinamatsuri
+sorensen_dice:					 | 0.3750 | Gintama | Hinamatsuri
+Average:						 | 0.5331 |
+Distance:						 | 0.3703 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | ReLIFE | ReLIFE
+normalized_damerau_levenshtein:  | 1.0000 | ReLIFE | ReLIFE
+jaro:							 | 1.0000 | ReLIFE | ReLIFE
+jaro_winkler:					 | 1.0000 | ReLIFE | ReLIFE
+sorensen_dice:					 | 1.0000 | ReLIFE | ReLIFE
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9032 | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai. Movie | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.
+normalized_damerau_levenshtein:  | 0.9032 | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai. Movie | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.
+jaro:							 | 0.9677 | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai. Movie | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.
+jaro_winkler:					 | 1.0000 | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai. Movie | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.
+sorensen_dice:					 | 0.9474 | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai. Movie | Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.
+Average:						 | 0.9443 |
+Distance:						 | 0.0968 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2805 | Aoki Hagane no Arpeggio Ars nova Cadenza - Arpeggio of Blue Steel Ars Nova Cadenza | Yosuga no Sora: In Solitude Where We are Least Alone
+normalized_damerau_levenshtein:  | 0.2805 | Aoki Hagane no Arpeggio Ars nova Cadenza - Arpeggio of Blue Steel Ars Nova Cadenza | Yosuga no Sora: In Solitude Where We are Least Alone
+jaro:							 | 0.6789 | Aoki Hagane no Arpeggio Ars nova Cadenza - Arpeggio of Blue Steel Ars Nova Cadenza | Air
+jaro_winkler:					 | 0.7260 | Aoki Hagane no Arpeggio Ars nova Cadenza - Arpeggio of Blue Steel Ars Nova Cadenza | Aoi Hana
+sorensen_dice:					 | 0.2037 | Aoki Hagane no Arpeggio Ars nova Cadenza - Arpeggio of Blue Steel Ars Nova Cadenza | Hagane no Renkinjutsushi: Milos no Seinaru Hoshi
+Average:						 | 0.4339 |
+Distance:						 | 0.5223 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6923 | Kaizoku Oujo | Kaibutsu Oujo
+normalized_damerau_levenshtein:  | 0.6923 | Kaizoku Oujo | Kaibutsu Oujo
+jaro:							 | 0.7771 | Kaizoku Oujo | Kaibutsu Oujo
+jaro_winkler:					 | 0.8439 | Kaizoku Oujo | Kaibutsu Oujo
+sorensen_dice:					 | 0.5714 | Kaizoku Oujo | Kaibutsu Oujo
+Average:						 | 0.7154 |
+Distance:						 | 0.2725 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6176 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba: Mugen Ressha-hen
+normalized_damerau_levenshtein:  | 0.6176 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba: Mugen Ressha-hen
+jaro:							 | 0.8444 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba
+jaro_winkler:					 | 1.0000 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba: Mugen Ressha-hen
+sorensen_dice:					 | 0.6842 | Kimetsu no Yaiba - Yuukaku-hen | Kimetsu no Yaiba
+Average:						 | 0.7528 |
+Distance:						 | 0.3824 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4444 | Odd Taxi | Tari Tari
+normalized_damerau_levenshtein:  | 0.4444 | Odd Taxi | Tari Tari
+jaro:							 | 0.6481 | Odd Taxi | Tari Tari
+jaro_winkler:					 | 0.6481 | Odd Taxi | Tari Tari
+sorensen_dice:					 | 0.1739 | Odd Taxi | Parasyte -the maxim-
+Average:						 | 0.4718 |
+Distance:						 | 0.4742 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Ousama Ranking | Ousama Ranking
+normalized_damerau_levenshtein:  | 1.0000 | Ousama Ranking | Ousama Ranking
+jaro:							 | 1.0000 | Ousama Ranking | Ousama Ranking
+jaro_winkler:					 | 1.0000 | Ousama Ranking | Ousama Ranking
+sorensen_dice:					 | 1.0000 | Ousama Ranking | Ousama Ranking
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6250 | Sakugan | Bakuman.
+normalized_damerau_levenshtein:  | 0.6250 | Sakugan | Bakuman.
+jaro:							 | 0.8039 | Sakugan | Shakugan no Shana
+jaro_winkler:					 | 0.8262 | Sakugan | Sakura Trick
+sorensen_dice:					 | 0.5000 | Sakugan | Shakugan no Shana
+Average:						 | 0.6760 |
+Distance:						 | 0.3262 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3750 | Senpai ga Uzai Kouhai no Hanashi | Cardcaptor Sakura: Kero-chan ni Omakase!
+normalized_damerau_levenshtein:  | 0.3750 | Senpai ga Uzai Kouhai no Hanashi | Cardcaptor Sakura: Kero-chan ni Omakase!
+jaro:							 | 0.6750 | Senpai ga Uzai Kouhai no Hanashi | Kono Sekai no Katasumi ni
+jaro_winkler:					 | 0.7665 | Senpai ga Uzai Kouhai no Hanashi | Sen to Chihiro no Kamikakushi
+sorensen_dice:					 | 0.4211 | Senpai ga Uzai Kouhai no Hanashi | Higashi no Eden
+Average:						 | 0.5225 |
+Distance:						 | 0.3915 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4348 | Natsume Yuujinchou | Mitsudomoe Zouryouchuu!
+normalized_damerau_levenshtein:  | 0.4348 | Natsume Yuujinchou | Mitsudomoe Zouryouchuu!
+jaro:							 | 0.7017 | Natsume Yuujinchou | Mitsudomoe Zouryouchuu!
+jaro_winkler:					 | 0.7115 | Natsume Yuujinchou | Nanatsu no Taizai
+sorensen_dice:					 | 0.4444 | Natsume Yuujinchou | Shoujo Shuumatsu Ryokou
+Average:						 | 0.5454 |
+Distance:						 | 0.2768 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Carnival Phantasm | Carnival Phantasm
+normalized_damerau_levenshtein:  | 1.0000 | Carnival Phantasm | Carnival Phantasm
+jaro:							 | 1.0000 | Carnival Phantasm | Carnival Phantasm
+jaro_winkler:					 | 1.0000 | Carnival Phantasm | Carnival Phantasm
+sorensen_dice:					 | 1.0000 | Carnival Phantasm | Carnival Phantasm
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5862 | Carnival Phantasm - EX Season | Carnival Phantasm
+normalized_damerau_levenshtein:  | 0.5862 | Carnival Phantasm - EX Season | Carnival Phantasm
+jaro:							 | 0.8621 | Carnival Phantasm - EX Season | Carnival Phantasm
+jaro_winkler:					 | 1.0000 | Carnival Phantasm - EX Season | Carnival Phantasm
+sorensen_dice:					 | 0.7692 | Carnival Phantasm - EX Season | Carnival Phantasm
+Average:						 | 0.7607 |
+Distance:						 | 0.4138 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4359 | Carnival Phantasm - Ilya Castle Special | Carnival Phantasm
+normalized_damerau_levenshtein:  | 0.4359 | Carnival Phantasm - Ilya Castle Special | Carnival Phantasm
+jaro:							 | 0.8120 | Carnival Phantasm - Ilya Castle Special | Carnival Phantasm
+jaro_winkler:					 | 1.0000 | Carnival Phantasm - Ilya Castle Special | Carnival Phantasm
+sorensen_dice:					 | 0.6250 | Carnival Phantasm - Ilya Castle Special | Carnival Phantasm
+Average:						 | 0.6618 |
+Distance:						 | 0.5641 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5000 | Carnival Phantasm - Special Season | Carnival Phantasm
+normalized_damerau_levenshtein:  | 0.5000 | Carnival Phantasm - Special Season | Carnival Phantasm
+jaro:							 | 0.8333 | Carnival Phantasm - Special Season | Carnival Phantasm
+jaro_winkler:					 | 1.0000 | Carnival Phantasm - Special Season | Carnival Phantasm
+sorensen_dice:					 | 0.6818 | Carnival Phantasm - Special Season | Carnival Phantasm
+Average:						 | 0.7030 |
+Distance:						 | 0.5000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4286 | Fate Prototype | Fate/Apocrypha
+normalized_damerau_levenshtein:  | 0.4286 | Fate Prototype | Fate/Apocrypha
+jaro:							 | 0.6984 | Fate Prototype | Fate/Zero
+jaro_winkler:					 | 0.8190 | Fate Prototype | Fate/Zero
+sorensen_dice:					 | 0.4000 | Fate Prototype | Fate/Zero
+Average:						 | 0.5549 |
+Distance:						 | 0.4190 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3571 | FLCL Come Down | Log Horizon
+normalized_damerau_levenshtein:  | 0.3571 | FLCL Come Down | Log Horizon
+jaro:							 | 0.7619 | FLCL Come Down | FLCL
+jaro_winkler:					 | 0.8571 | FLCL Come Down | FLCL
+sorensen_dice:					 | 0.4286 | FLCL Come Down | FLCL
+Average:						 | 0.5524 |
+Distance:						 | 0.5000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3000 | FLCL English Outtake | Girlish Number
+normalized_damerau_levenshtein:  | 0.3000 | FLCL English Outtake | Girlish Number
+jaro:							 | 0.7333 | FLCL English Outtake | FLCL
+jaro_winkler:					 | 0.8400 | FLCL English Outtake | FLCL
+sorensen_dice:					 | 0.3000 | FLCL English Outtake | FLCL
+Average:						 | 0.4947 |
+Distance:						 | 0.5400 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3889 | FLCL Last Dinosaur | Girls' Last Tour
+normalized_damerau_levenshtein:  | 0.3889 | FLCL Last Dinosaur | Girls' Last Tour
+jaro:							 | 0.7407 | FLCL Last Dinosaur | FLCL
+jaro_winkler:					 | 0.8444 | FLCL Last Dinosaur | FLCL
+sorensen_dice:					 | 0.3333 | FLCL Last Dinosaur | FLCL
+Average:						 | 0.5393 |
+Distance:						 | 0.5111 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6842 | FLCL Little Busters | Little Busters!
+normalized_damerau_levenshtein:  | 0.6842 | FLCL Little Busters | Little Busters!
+jaro:							 | 0.8662 | FLCL Little Busters | Little Busters!
+jaro_winkler:					 | 0.8662 | FLCL Little Busters | Little Busters!
+sorensen_dice:					 | 0.8276 | FLCL Little Busters | Little Busters!
+Average:						 | 0.7857 |
+Distance:						 | 0.1820 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3846 | FLCL One Life | Date A Live
+normalized_damerau_levenshtein:  | 0.3846 | FLCL One Life | Date A Live
+jaro:							 | 0.7692 | FLCL One Life | FLCL
+jaro_winkler:					 | 0.8615 | FLCL One Life | FLCL
+sorensen_dice:					 | 0.4615 | FLCL One Life | FLCL
+Average:						 | 0.5723 |
+Distance:						 | 0.4769 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3214 | FLCL Ride On Shooting Star | Nura: Rise of the Yokai Clan
+normalized_damerau_levenshtein:  | 0.3214 | FLCL Ride On Shooting Star | Nura: Rise of the Yokai Clan
+jaro:							 | 0.7179 | FLCL Ride On Shooting Star | FLCL
+jaro_winkler:					 | 0.8308 | FLCL Ride On Shooting Star | FLCL
+sorensen_dice:					 | 0.3000 | FLCL Ride On Shooting Star | The Ancient Magus' Bride: Those Awaiting a Star
+Average:						 | 0.4983 |
+Distance:						 | 0.5308 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3438 | FLCL Ride On Shooting Star Video | Omoide no Marnie
+normalized_damerau_levenshtein:  | 0.3438 | FLCL Ride On Shooting Star Video | Omoide no Marnie
+jaro:							 | 0.7083 | FLCL Ride On Shooting Star Video | FLCL
+jaro_winkler:					 | 0.8250 | FLCL Ride On Shooting Star Video | FLCL
+sorensen_dice:					 | 0.2769 | FLCL Ride On Shooting Star Video | The Ancient Magus' Bride: Those Awaiting a Star
+Average:						 | 0.4996 |
+Distance:						 | 0.5481 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5938 | Fullmetal Alchemist | Fullmetal Alchemist: Brotherhood
+normalized_damerau_levenshtein:  | 0.5938 | Fullmetal Alchemist | Fullmetal Alchemist: Brotherhood
+jaro:							 | 0.8646 | Fullmetal Alchemist | Fullmetal Alchemist: Brotherhood
+jaro_winkler:					 | 1.0000 | Fullmetal Alchemist | Fullmetal Alchemist: The Movie - Conqueror of Shamballa
+sorensen_dice:					 | 0.7391 | Fullmetal Alchemist | Fullmetal Alchemist: Brotherhood
+Average:						 | 0.7582 |
+Distance:						 | 0.4062 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.9688 | Fullmetal Alchemist Brotherhood | Fullmetal Alchemist: Brotherhood
+normalized_damerau_levenshtein:  | 0.9688 | Fullmetal Alchemist Brotherhood | Fullmetal Alchemist: Brotherhood
+jaro:							 | 0.9896 | Fullmetal Alchemist Brotherhood | Fullmetal Alchemist: Brotherhood
+jaro_winkler:					 | 1.0000 | Fullmetal Alchemist Brotherhood | Fullmetal Alchemist: The Movie - Conqueror of Shamballa
+sorensen_dice:					 | 0.9474 | Fullmetal Alchemist Brotherhood | Fullmetal Alchemist: Brotherhood
+Average:						 | 0.9749 |
+Distance:						 | 0.0526 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8108 | Fullmetal Alchemist Brotherhood Intro | Fullmetal Alchemist: Brotherhood
+normalized_damerau_levenshtein:  | 0.8108 | Fullmetal Alchemist Brotherhood Intro | Fullmetal Alchemist: Brotherhood
+jaro:							 | 0.9355 | Fullmetal Alchemist Brotherhood Intro | Fullmetal Alchemist: Brotherhood
+jaro_winkler:					 | 1.0000 | Fullmetal Alchemist Brotherhood Intro | Fullmetal Alchemist: The Movie - Conqueror of Shamballa
+sorensen_dice:					 | 0.8710 | Fullmetal Alchemist Brotherhood Intro | Fullmetal Alchemist: Brotherhood
+Average:						 | 0.8856 |
+Distance:						 | 0.1892 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8571 | Fullmetal Alchemist Brotherhood OVA | Fullmetal Alchemist: Brotherhood
+normalized_damerau_levenshtein:  | 0.8571 | Fullmetal Alchemist Brotherhood OVA | Fullmetal Alchemist: Brotherhood
+jaro:							 | 0.9515 | Fullmetal Alchemist Brotherhood OVA | Fullmetal Alchemist: Brotherhood
+jaro_winkler:					 | 1.0000 | Fullmetal Alchemist Brotherhood OVA | Fullmetal Alchemist: The Movie - Conqueror of Shamballa
+sorensen_dice:					 | 0.9000 | Fullmetal Alchemist Brotherhood OVA | Fullmetal Alchemist: Brotherhood
+Average:						 | 0.9132 |
+Distance:						 | 0.1429 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Steins;Gate | Steins;Gate
+normalized_damerau_levenshtein:  | 1.0000 | Steins;Gate | Steins;Gate
+jaro:							 | 1.0000 | Steins;Gate | Steins;Gate
+jaro_winkler:					 | 1.0000 | Steins;Gate | Steins;Gate The Movie – Load Region of Déjà Vu
+sorensen_dice:					 | 1.0000 | Steins;Gate | Steins;Gate
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4545 | hack GIFT | .hack//SIGN
+normalized_damerau_levenshtein:  | 0.4545 | hack GIFT | .hack//SIGN
+jaro:							 | 0.6818 | hack GIFT | .hack//SIGN
+jaro_winkler:					 | 0.6818 | hack GIFT | .hack//SIGN
+sorensen_dice:					 | 0.3529 | hack GIFT | .hack//Sign
+Average:						 | 0.5251 |
+Distance:						 | 0.3289 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3636 | dot hack GU - returner | Attack on Titan
+normalized_damerau_levenshtein:  | 0.3636 | dot hack GU - returner | Attack on Titan
+jaro:							 | 0.6656 | dot hack GU - returner | Mardock Scramble: The Third Exhaust
+jaro_winkler:					 | 0.6656 | dot hack GU - returner | Mardock Scramble: The Third Exhaust
+sorensen_dice:					 | 0.3226 | dot hack GU - returner | Darker than Black
+Average:						 | 0.4762 |
+Distance:						 | 0.3431 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4815 | Hack Legend of the Twilight | Call of the Night
+normalized_damerau_levenshtein:  | 0.4815 | Hack Legend of the Twilight | Call of the Night
+jaro:							 | 0.6718 | Hack Legend of the Twilight | Call of the Night
+jaro_winkler:					 | 0.8015 | Hack Legend of the Twilight | Hackadoll the Animation
+sorensen_dice:					 | 0.4783 | Hack Legend of the Twilight | Legend of the Galactic Heroes
+Average:						 | 0.5829 |
+Distance:						 | 0.3233 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.2857 | .hack Twilight Bracelet- Lets meet offline | Attack on Titan: Lost Girls
+normalized_damerau_levenshtein:  | 0.2857 | .hack Twilight Bracelet- Lets meet offline | Attack on Titan: Lost Girls
+jaro:							 | 0.6750 | .hack Twilight Bracelet- Lets meet offline | キノの旅 -the Beautiful World- the Animated Series
+jaro_winkler:					 | 0.8005 | .hack Twilight Bracelet- Lets meet offline | .hack//Sign
+sorensen_dice:					 | 0.2740 | .hack Twilight Bracelet- Lets meet offline | The Familiar of Zero: Knight of the Twin Moons
+Average:						 | 0.4642 |
+Distance:						 | 0.5265 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3478 | Hack Liminality | Hackadoll the Animation
+normalized_damerau_levenshtein:  | 0.3478 | Hack Liminality | Hackadoll the Animation
+jaro:							 | 0.6906 | Hack Liminality | Hackadoll the Animation
+jaro_winkler:					 | 0.8143 | Hack Liminality | Hackadoll the Animation
+sorensen_dice:					 | 0.3333 | Hack Liminality | Attack on Titan Final Season
+Average:						 | 0.5068 |
+Distance:						 | 0.4810 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3478 | dot Hack Roots | Bodacious Space Pirates
+normalized_damerau_levenshtein:  | 0.3478 | dot Hack Roots | Bodacious Space Pirates
+jaro:							 | 0.6637 | dot Hack Roots | Hackadoll the Animation
+jaro_winkler:					 | 0.6637 | dot Hack Roots | Hackadoll the Animation
+sorensen_dice:					 | 0.3030 | dot Hack Roots | Black★Rock Shooter (TV)
+Average:						 | 0.4652 |
+Distance:						 | 0.3607 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3243 | dot Hack Roots  xXxtreme Quality | How Heavy Are the Dumbbells You Lift?
+normalized_damerau_levenshtein:  | 0.3243 | dot Hack Roots  xXxtreme Quality | How Heavy Are the Dumbbells You Lift?
+jaro:							 | 0.6546 | dot Hack Roots  xXxtreme Quality | Strike Witches: Road to Berlin
+jaro_winkler:					 | 0.6546 | dot Hack Roots  xXxtreme Quality | Strike Witches: Road to Berlin
+sorensen_dice:					 | 0.2083 | dot Hack Roots  xXxtreme Quality | Black★Rock Shooter (TV)
+Average:						 | 0.4333 |
+Distance:						 | 0.4463 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4545 | dot Hack Roots  Zidane | Attack on Titan
+normalized_damerau_levenshtein:  | 0.4545 | dot Hack Roots  Zidane | Attack on Titan
+jaro:							 | 0.6938 | dot Hack Roots  Zidane | Attack on Titan Season 2
+jaro_winkler:					 | 0.6938 | dot Hack Roots  Zidane | Attack on Titan Season 2
+sorensen_dice:					 | 0.2564 | dot Hack Roots  Zidane | Black★Rock Shooter (TV)
+Average:						 | 0.5106 |
+Distance:						 | 0.4374 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3438 | dot Hack Roots  Samuel L Jackson | Bodacious Space Pirates
+normalized_damerau_levenshtein:  | 0.3438 | dot Hack Roots  Samuel L Jackson | Bodacious Space Pirates
+jaro:							 | 0.6668 | dot Hack Roots  Samuel L Jackson | Wotakoi: Love is Hard for Otaku
+jaro_winkler:					 | 0.6668 | dot Hack Roots  Samuel L Jackson | Wotakoi: Love is Hard for Otaku
+sorensen_dice:					 | 0.2553 | dot Hack Roots  Samuel L Jackson | Black★Rock Shooter (TV)
+Average:						 | 0.4553 |
+Distance:						 | 0.4115 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4231 | dot Hack Roots  Star Ocean | Attack on Titan OVA
+normalized_damerau_levenshtein:  | 0.4231 | dot Hack Roots  Star Ocean | Attack on Titan OVA
+jaro:							 | 0.7110 | dot Hack Roots  Star Ocean | Wotakoi: Love is Hard for Otaku
+jaro_winkler:					 | 0.7110 | dot Hack Roots  Star Ocean | Wotakoi: Love is Hard for Otaku
+sorensen_dice:					 | 0.3125 | dot Hack Roots  Star Ocean | Pandora Hearts
+Average:						 | 0.5162 |
+Distance:						 | 0.3985 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3571 | dot Hack Roots  Rufus Shinra | Howl no Ugoku Shiro
+normalized_damerau_levenshtein:  | 0.3571 | dot Hack Roots  Rufus Shinra | Howl no Ugoku Shiro
+jaro:							 | 0.7228 | dot Hack Roots  Rufus Shinra | Toaru Hikuushi e no Koiuta
+jaro_winkler:					 | 0.7228 | dot Hack Roots  Rufus Shinra | Toaru Hikuushi e no Koiuta
+sorensen_dice:					 | 0.2727 | dot Hack Roots  Rufus Shinra | Black★Rock Shooter (TV)
+Average:						 | 0.4865 |
+Distance:						 | 0.4501 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | dot Hack Roots  Fujiwara Keiji | Attack on Titan OVA
+normalized_damerau_levenshtein:  | 0.3333 | dot Hack Roots  Fujiwara Keiji | Attack on Titan OVA
+jaro:							 | 0.6873 | dot Hack Roots  Fujiwara Keiji | Wotakoi: Love is Hard for Otaku
+jaro_winkler:					 | 0.6873 | dot Hack Roots  Fujiwara Keiji | Wotakoi: Love is Hard for Otaku
+sorensen_dice:					 | 0.2222 | dot Hack Roots  Fujiwara Keiji | Pandora Hearts
+Average:						 | 0.4527 |
+Distance:						 | 0.4651 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3784 | dot Hack Roots  Mountain Dew Code Red | Attack on Titan Season 2
+normalized_damerau_levenshtein:  | 0.3784 | dot Hack Roots  Mountain Dew Code Red | Attack on Titan Season 2
+jaro:							 | 0.6717 | dot Hack Roots  Mountain Dew Code Red | Log Horizon: Destruction of the Round Table
+jaro_winkler:					 | 0.6717 | dot Hack Roots  Mountain Dew Code Red | Log Horizon: Destruction of the Round Table
+sorensen_dice:					 | 0.2222 | dot Hack Roots  Mountain Dew Code Red | Code Geass: Hangyaku no Lelouch I - Koudou
+Average:						 | 0.4645 |
+Distance:						 | 0.4495 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3200 | dot Hack Roots  Boba Fett | Attack on Titan OVA
+normalized_damerau_levenshtein:  | 0.3200 | dot Hack Roots  Boba Fett | Attack on Titan OVA
+jaro:							 | 0.6644 | dot Hack Roots  Boba Fett | Wotakoi: Love is Hard for Otaku
+jaro_winkler:					 | 0.6644 | dot Hack Roots  Boba Fett | Wotakoi: Love is Hard for Otaku
+sorensen_dice:					 | 0.2500 | dot Hack Roots  Boba Fett | Robotics;Notes
+Average:						 | 0.4437 |
+Distance:						 | 0.4144 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3667 | dot Hack Roots  Chrono Trigger | Hai to Gensou no Grimgar
+normalized_damerau_levenshtein:  | 0.3667 | dot Hack Roots  Chrono Trigger | Hai to Gensou no Grimgar
+jaro:							 | 0.6767 | dot Hack Roots  Chrono Trigger | Hotarubi no Mori e
+jaro_winkler:					 | 0.6767 | dot Hack Roots  Chrono Trigger | Hotarubi no Mori e
+sorensen_dice:					 | 0.3243 | dot Hack Roots  Chrono Trigger | Tonari no Totoro
+Average:						 | 0.4822 |
+Distance:						 | 0.3524 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3256 | dot Hack Roots  Gendou | Code Geass: Hangyaku no Lelouch II - Handou
+normalized_damerau_levenshtein:  | 0.3256 | dot Hack Roots  Gendou | Code Geass: Hangyaku no Lelouch II - Handou
+jaro:							 | 0.6853 | dot Hack Roots  Gendou | Wotakoi: Love is Hard for Otaku
+jaro_winkler:					 | 0.6853 | dot Hack Roots  Gendou | Wotakoi: Love is Hard for Otaku
+sorensen_dice:					 | 0.2564 | dot Hack Roots  Gendou | Black★Rock Shooter (TV)
+Average:						 | 0.4556 |
+Distance:						 | 0.4289 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3750 | dot Hack Roots  Kids | By the Grace of the Gods
+normalized_damerau_levenshtein:  | 0.3750 | dot Hack Roots  Kids | By the Grace of the Gods
+jaro:							 | 0.6747 | dot Hack Roots  Kids | Toaru Hikuushi e no Koiuta
+jaro_winkler:					 | 0.6747 | dot Hack Roots  Kids | Toaru Hikuushi e no Koiuta
+sorensen_dice:					 | 0.2703 | dot Hack Roots  Kids | Black★Rock Shooter (TV)
+Average:						 | 0.4739 |
+Distance:						 | 0.4045 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3158 | dot Hack Roots  Sex | Attack on Titan
+normalized_damerau_levenshtein:  | 0.3158 | dot Hack Roots  Sex | Attack on Titan
+jaro:							 | 0.6727 | dot Hack Roots  Sex | Boku wa Tomodachi ga Sukunai Next
+jaro_winkler:					 | 0.6727 | dot Hack Roots  Sex | Boku wa Tomodachi ga Sukunai Next
+sorensen_dice:					 | 0.2778 | dot Hack Roots  Sex | Black★Rock Shooter (TV)
+Average:						 | 0.4510 |
+Distance:						 | 0.3950 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6364 | Hack Sign | .hack//Sign
+normalized_damerau_levenshtein:  | 0.6364 | Hack Sign | .hack//Sign
+jaro:							 | 0.8047 | Hack Sign | .hack//Sign
+jaro_winkler:					 | 0.8047 | Hack Sign | .hack//Sign
+sorensen_dice:					 | 0.5882 | Hack Sign | .hack//Sign
+Average:						 | 0.6941 |
+Distance:						 | 0.2165 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5455 | hack SIGN . | .hack//SIGN
+normalized_damerau_levenshtein:  | 0.5455 | hack SIGN . | .hack//SIGN
+jaro:							 | 0.8182 | hack SIGN . | .hack//SIGN
+jaro_winkler:					 | 0.8182 | hack SIGN . | .hack//SIGN
+sorensen_dice:					 | 0.6667 | hack SIGN . | .hack//SIGN
+Average:						 | 0.6788 |
+Distance:						 | 0.2727 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3333 | hack SIGN Evidence | .hack//SIGN
+normalized_damerau_levenshtein:  | 0.3333 | hack SIGN Evidence | .hack//SIGN
+jaro:							 | 0.7239 | hack SIGN Evidence | .hack//SIGN
+jaro_winkler:					 | 0.7239 | hack SIGN Evidence | .hack//SIGN
+sorensen_dice:					 | 0.4800 | hack SIGN Evidence | .hack//SIGN
+Average:						 | 0.5189 |
+Distance:						 | 0.3906 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3500 | hack SIGN Intermezzo | Patema Inverted
+normalized_damerau_levenshtein:  | 0.3500 | hack SIGN Intermezzo | Patema Inverted
+jaro:							 | 0.7091 | hack SIGN Intermezzo | .hack//SIGN
+jaro_winkler:					 | 0.7091 | hack SIGN Intermezzo | .hack//SIGN
+sorensen_dice:					 | 0.4444 | hack SIGN Intermezzo | .hack//SIGN
+Average:						 | 0.5125 |
+Distance:						 | 0.3591 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3750 | hack SIGN Unison | .hack//SIGN
+normalized_damerau_levenshtein:  | 0.3750 | hack SIGN Unison | .hack//SIGN
+jaro:							 | 0.7424 | hack SIGN Unison | .hack//SIGN
+jaro_winkler:					 | 0.7424 | hack SIGN Unison | .hack//SIGN
+sorensen_dice:					 | 0.5217 | hack SIGN Unison | .hack//SIGN
+Average:						 | 0.5513 |
+Distance:						 | 0.3674 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4286 | .hack⁄⁄Quantum | .hack//Sign
+normalized_damerau_levenshtein:  | 0.4286 | .hack⁄⁄Quantum | .hack//Sign
+jaro:							 | 0.6607 | .hack⁄⁄Quantum | Bakuman.
+jaro_winkler:					 | 0.8290 | .hack⁄⁄Quantum | .hack//Sign
+sorensen_dice:					 | 0.2963 | .hack⁄⁄Quantum | .hack//Sign
+Average:						 | 0.5286 |
+Distance:						 | 0.5327 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | .​hack⁄⁄Quantum | .hack//Sign
+normalized_damerau_levenshtein:  | 0.4000 | .​hack⁄⁄Quantum | .hack//Sign
+jaro:							 | 0.6528 | .​hack⁄⁄Quantum | Bakuman.
+jaro_winkler:					 | 0.6836 | .​hack⁄⁄Quantum | .hack//Sign
+sorensen_dice:					 | 0.2353 | .​hack⁄⁄Quantum | Darker than Black
+Average:						 | 0.4743 |
+Distance:						 | 0.4483 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3750 | .​​hack⁄⁄Quantum | .hack//Sign
+normalized_damerau_levenshtein:  | 0.3750 | .​​hack⁄⁄Quantum | .hack//Sign
+jaro:							 | 0.6528 | .​​hack⁄⁄Quantum | Bakuman.
+jaro_winkler:					 | 0.6761 | .​​hack⁄⁄Quantum | .hack//Sign
+sorensen_dice:					 | 0.2162 | .​​hack⁄⁄Quantum | Darker than Black
+Average:						 | 0.4590 |
+Distance:						 | 0.4599 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7391 | Nanatsu no Taizai - OAD | Nanatsu no Taizai
+normalized_damerau_levenshtein:  | 0.7391 | Nanatsu no Taizai - OAD | Nanatsu no Taizai
+jaro:							 | 0.9130 | Nanatsu no Taizai - OAD | Nanatsu no Taizai
+jaro_winkler:					 | 1.0000 | Nanatsu no Taizai - OAD | Nanatsu no Taizai
+sorensen_dice:					 | 0.8750 | Nanatsu no Taizai - OAD | Nanatsu no Taizai
+Average:						 | 0.8533 |
+Distance:						 | 0.2609 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5143 | Nurarihyon no Mago Sennen Makyou CM | Nurarihyon no Mago
+normalized_damerau_levenshtein:  | 0.5143 | Nurarihyon no Mago Sennen Makyou CM | Nurarihyon no Mago
+jaro:							 | 0.8381 | Nurarihyon no Mago Sennen Makyou CM | Nurarihyon no Mago
+jaro_winkler:					 | 1.0000 | Nurarihyon no Mago Sennen Makyou CM | Nurarihyon no Mago
+sorensen_dice:					 | 0.6818 | Nurarihyon no Mago Sennen Makyou CM | Nurarihyon no Mago
+Average:						 | 0.7097 |
+Distance:						 | 0.4857 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4186 | Nurarihyon no Mago Sennen Makyou Vol.  Menu | Nurarihyon no Mago
+normalized_damerau_levenshtein:  | 0.4186 | Nurarihyon no Mago Sennen Makyou Vol.  Menu | Nurarihyon no Mago
+jaro:							 | 0.8062 | Nurarihyon no Mago Sennen Makyou Vol.  Menu | Nurarihyon no Mago
+jaro_winkler:					 | 1.0000 | Nurarihyon no Mago Sennen Makyou Vol.  Menu | Nurarihyon no Mago
+sorensen_dice:					 | 0.6000 | Nurarihyon no Mago Sennen Makyou Vol.  Menu | Nurarihyon no Mago
+Average:						 | 0.6487 |
+Distance:						 | 0.5814 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5294 | Nurarihyon no Mago Sennen Makyou 5 | Nurarihyon no Mago
+normalized_damerau_levenshtein:  | 0.5294 | Nurarihyon no Mago Sennen Makyou 5 | Nurarihyon no Mago
+jaro:							 | 0.8431 | Nurarihyon no Mago Sennen Makyou 5 | Nurarihyon no Mago
+jaro_winkler:					 | 1.0000 | Nurarihyon no Mago Sennen Makyou 5 | Nurarihyon no Mago
+sorensen_dice:					 | 0.6977 | Nurarihyon no Mago Sennen Makyou 5 | Nurarihyon no Mago
+Average:						 | 0.7199 |
+Distance:						 | 0.4706 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Sora no Otoshimono | Sora no Otoshimono
+normalized_damerau_levenshtein:  | 1.0000 | Sora no Otoshimono | Sora no Otoshimono
+jaro:							 | 1.0000 | Sora no Otoshimono | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono | Sora no Otoshimono: Forte
+sorensen_dice:					 | 1.0000 | Sora no Otoshimono | Sora no Otoshimono
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6552 | Sora no Otoshimono Card Promo | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6897 | Sora no Otoshimono Card Promo | Sora no Otoshimono: Forte
+jaro:							 | 0.8736 | Sora no Otoshimono Card Promo | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Card Promo | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.7692 | Sora no Otoshimono Card Promo | Sora no Otoshimono
+Average:						 | 0.7975 |
+Distance:						 | 0.3448 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6552 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6552 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono: Forte
+jaro:							 | 0.8736 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.7895 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono
+Average:						 | 0.7947 |
+Distance:						 | 0.3448 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6129 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6129 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono: Forte
+jaro:							 | 0.8602 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.7692 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono
+Average:						 | 0.7711 |
+Distance:						 | 0.3871 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6129 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6129 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono: Forte
+jaro:							 | 0.8602 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.7692 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono
+Average:						 | 0.7711 |
+Distance:						 | 0.3871 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6552 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6552 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono: Forte
+jaro:							 | 0.8736 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.7895 | Sora no Otoshimono Disc  Menu | Sora no Otoshimono
+Average:						 | 0.7947 |
+Distance:						 | 0.3448 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6129 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6129 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono: Forte
+jaro:							 | 0.8602 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.7692 | Sora no Otoshimono Disc  Menu 1 | Sora no Otoshimono
+Average:						 | 0.7711 |
+Distance:						 | 0.3871 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6129 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6129 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono: Forte
+jaro:							 | 0.8602 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.7692 | Sora no Otoshimono Disc  Menu 2 | Sora no Otoshimono
+Average:						 | 0.7711 |
+Distance:						 | 0.3871 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7692 | Sora no Otoshimono  Promos | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.7692 | Sora no Otoshimono  Promos | Sora no Otoshimono: Forte
+jaro:							 | 0.8974 | Sora no Otoshimono  Promos | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono  Promos | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.8333 | Sora no Otoshimono  Promos | Sora no Otoshimono
+Average:						 | 0.8538 |
+Distance:						 | 0.2308 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6250 | Sora no Otoshimonoisode Previews | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6250 | Sora no Otoshimonoisode Previews | Sora no Otoshimono: Forte
+jaro:							 | 0.8542 | Sora no Otoshimonoisode Previews | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimonoisode Previews | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.6977 | Sora no Otoshimonoisode Previews | Sora no Otoshimono
+Average:						 | 0.7604 |
+Distance:						 | 0.3750 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.6667 | Sora no Otoshimono Fallen Down | Sora no Otoshimono: Forte
+normalized_damerau_levenshtein:  | 0.6667 | Sora no Otoshimono Fallen Down | Sora no Otoshimono: Forte
+jaro:							 | 0.8667 | Sora no Otoshimono Fallen Down | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Fallen Down | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.7500 | Sora no Otoshimono Fallen Down | Sora no Otoshimono
+Average:						 | 0.7900 |
+Distance:						 | 0.3333 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7600 | Sora no Otoshimono NG Cut | Sora no Otoshimono OVA
+normalized_damerau_levenshtein:  | 0.7600 | Sora no Otoshimono NG Cut | Sora no Otoshimono OVA
+jaro:							 | 0.9067 | Sora no Otoshimono NG Cut | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono NG Cut | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.8571 | Sora no Otoshimono NG Cut | Sora no Otoshimono
+Average:						 | 0.8568 |
+Distance:						 | 0.2400 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.7407 | Sora no Otoshimono TV Promo | Sora no Otoshimono OVA
+normalized_damerau_levenshtein:  | 0.7407 | Sora no Otoshimono TV Promo | Sora no Otoshimono: Forte
+jaro:							 | 0.8889 | Sora no Otoshimono TV Promo | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono TV Promo | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.8108 | Sora no Otoshimono TV Promo | Sora no Otoshimono
+Average:						 | 0.8362 |
+Distance:						 | 0.2593 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5660 | Sora no Otoshimono Final - Eternal My Master | Sora no Otoshimono Final: Eien no Watashi no Torikago
+normalized_damerau_levenshtein:  | 0.5660 | Sora no Otoshimono Final - Eternal My Master | Sora no Otoshimono Final: Eien no Watashi no Torikago
+jaro:							 | 0.8030 | Sora no Otoshimono Final - Eternal My Master | Sora no Otoshimono
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono Final - Eternal My Master | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.5882 | Sora no Otoshimono Final - Eternal My Master | Sora no Otoshimono
+Average:						 | 0.7047 |
+Distance:						 | 0.4340 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 1.0000 | Sora no Otoshimono OVA | Sora no Otoshimono OVA
+normalized_damerau_levenshtein:  | 1.0000 | Sora no Otoshimono OVA | Sora no Otoshimono OVA
+jaro:							 | 1.0000 | Sora no Otoshimono OVA | Sora no Otoshimono OVA
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono OVA | Sora no Otoshimono: Forte
+sorensen_dice:					 | 1.0000 | Sora no Otoshimono OVA | Sora no Otoshimono OVA
+Average:						 | 1.0000 |
+Distance:						 | 0.0000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.8039 | Sora no Otoshimono - Tokei Jikake no Angeloid Movie | Sora no Otoshimono: Tokeijikake no Angeloid
+normalized_damerau_levenshtein:  | 0.8039 | Sora no Otoshimono - Tokei Jikake no Angeloid Movie | Sora no Otoshimono: Tokeijikake no Angeloid
+jaro:							 | 0.9029 | Sora no Otoshimono - Tokei Jikake no Angeloid Movie | Sora no Otoshimono: Tokeijikake no Angeloid
+jaro_winkler:					 | 1.0000 | Sora no Otoshimono - Tokei Jikake no Angeloid Movie | Sora no Otoshimono: Forte
+sorensen_dice:					 | 0.8354 | Sora no Otoshimono - Tokei Jikake no Angeloid Movie | Sora no Otoshimono: Tokeijikake no Angeloid
+Average:						 | 0.8692 |
+Distance:						 | 0.1961 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3421 | Texhnolyze - Alternate Dialog Outtakes | Tantei Opera Milky Holmes
+normalized_damerau_levenshtein:  | 0.3421 | Texhnolyze - Alternate Dialog Outtakes | Tensei Shitara Slime Datta Ken
+jaro:							 | 0.7544 | Texhnolyze - Alternate Dialog Outtakes | Texhnolyze
+jaro_winkler:					 | 1.0000 | Texhnolyze - Alternate Dialog Outtakes | Texhnolyze
+sorensen_dice:					 | 0.4286 | Texhnolyze - Alternate Dialog Outtakes | Texhnolyze
+Average:						 | 0.5734 |
+Distance:						 | 0.6579 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.3158 | Texhnolyze - Interview with UEDA & ABe | Interviews with Monster Girls
+normalized_damerau_levenshtein:  | 0.3158 | Texhnolyze - Interview with UEDA & ABe | Interviews with Monster Girls
+jaro:							 | 0.7544 | Texhnolyze - Interview with UEDA & ABe | Texhnolyze
+jaro_winkler:					 | 1.0000 | Texhnolyze - Interview with UEDA & ABe | Texhnolyze
+sorensen_dice:					 | 0.4500 | Texhnolyze - Interview with UEDA & ABe | Texhnolyze
+Average:						 | 0.5672 |
+Distance:						 | 0.6842 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5000 | Texhnolyze - Trailer | Texhnolyze
+normalized_damerau_levenshtein:  | 0.5000 | Texhnolyze - Trailer | Texhnolyze
+jaro:							 | 0.8333 | Texhnolyze - Trailer | Texhnolyze
+jaro_winkler:					 | 1.0000 | Texhnolyze - Trailer | Texhnolyze
+sorensen_dice:					 | 0.6923 | Texhnolyze - Trailer | Texhnolyze
+Average:						 | 0.7051 |
+Distance:						 | 0.5000 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5641 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Garan no Dou
+normalized_damerau_levenshtein:  | 0.5641 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Garan no Dou
+jaro:							 | 0.7865 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Garan no Dou
+jaro_winkler:					 | 1.0000 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Fukan Fuukei
+sorensen_dice:					 | 0.5926 | Kara no Kyoukai - The Garden of Sinners | Kara no Kyoukai: Garan no Dou
+Average:						 | 0.7015 |
+Distance:						 | 0.4359 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | The Tatami Galaxy ED | The Future Diary
+normalized_damerau_levenshtein:  | 0.4000 | The Tatami Galaxy ED | The Future Diary
+jaro:							 | 0.6697 | The Tatami Galaxy ED | The Eccentric Family
+jaro_winkler:					 | 0.8018 | The Tatami Galaxy ED | The Eccentric Family
+sorensen_dice:					 | 0.3846 | The Tatami Galaxy ED | Galaxy Angel
+Average:						 | 0.5312 |
+Distance:						 | 0.4172 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.4000 | The Tatami Galaxy OP | The Future Diary
+normalized_damerau_levenshtein:  | 0.4000 | The Tatami Galaxy OP | The Future Diary
+jaro:							 | 0.6697 | The Tatami Galaxy OP | The Eccentric Family
+jaro_winkler:					 | 0.8018 | The Tatami Galaxy OP | The Eccentric Family
+sorensen_dice:					 | 0.3846 | The Tatami Galaxy OP | Galaxy Angel
+Average:						 | 0.5312 |
+Distance:						 | 0.4172 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5333 | Golden Kamuy S1 | Golden Time
+normalized_damerau_levenshtein:  | 0.5333 | Golden Kamuy S1 | Golden Time
+jaro:							 | 0.7535 | Golden Kamuy S1 | Golden Time
+jaro_winkler:					 | 0.9261 | Golden Kamuy S1 | Golden Time
+sorensen_dice:					 | 0.4762 | Golden Kamuy S1 | Golden Time
+Average:						 | 0.6445 |
+Distance:						 | 0.4499 |
+--------------------------------------------------------------------------------------------------------------------------------
+normalized_levenshtein:			 | 0.5333 | Golden Kamuy S2 | Golden Time
+normalized_damerau_levenshtein:  | 0.5333 | Golden Kamuy S2 | Golden Time
+jaro:							 | 0.7535 | Golden Kamuy S2 | Golden Time
+jaro_winkler:					 | 0.9261 | Golden Kamuy S2 | Golden Time
+sorensen_dice:					 | 0.4762 | Golden Kamuy S2 | Golden Time
+Average:						 | 0.6445 |
+Distance:						 | 0.4499 |
+--------------------------------------------------------------------------------------------------------------------------------
