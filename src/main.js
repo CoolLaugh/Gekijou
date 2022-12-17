@@ -6,7 +6,25 @@ window.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("information").style.display = "block";
   document.getElementById("underline_tab_0").style.visibility = "visible";
+  invoke("anime_update_delay_loop");
+  check_for_refresh_ui();
 });
+
+async function check_for_refresh_ui() {
+
+  while (true) {
+
+    var refresh = await invoke("get_refresh_ui");
+    if (refresh == true) {
+      show_anime_list(current_tab);
+    }
+    sleep(1000);
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 async function get_user_settings() {
   
@@ -124,14 +142,14 @@ const removeChilds = (parent) => {
 
 async function test() {
 
-  var bars = document.getElementsByClassName("episodes_exist");
-  for(var i = 0; i < bars.length; i++) {
-    var ctx = bars[i].getContext("2d");
-    ctx.fillStyle = "#808080";
-    ctx.fillRect(0, 0, 46, 5);
-    ctx.fillRect(77, 0, 46, 5);
-    ctx.fillRect(154, 0, 30, 5);
-  }
+  // var bars = document.getElementsByClassName("episodes_exist");
+  // for(var i = 0; i < bars.length; i++) {
+  //   var ctx = bars[i].getContext("2d");
+  //   ctx.fillStyle = "#808080";
+  //   ctx.fillRect(0, 0, 46, 5);
+  //   ctx.fillRect(77, 0, 46, 5);
+  //   ctx.fillRect(154, 0, 30, 5);
+  // }
 
   //console.log("test fn started");
   var response = await invoke("test");
@@ -156,16 +174,20 @@ async function add_anime(anime, user_data, cover_id) {
   } else if (watch_percent < 0) {
     watch_percent = 0;
   }
-  //console.log(user_data.progress + " " + anime.episodes + " " + watch_percent);
 
   document.getElementById("cover_panal_grid").insertAdjacentHTML("beforeend", 
-  "<div class=\"cover_container\" anime_id=" + anime.id + " title=\"" + title + "\" score=" + anime.average_score + " date=" + (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day) + " popularity=" + anime.popularity + ">" +
-    "<img class=\"image\" src=" + anime.cover_image.large + " id=\"" + cover_id + "\" alt=\"Cover Image\" width=\"200\" height=\"300\"/>" +
-    "<button class=\"cover_play_button\" type=\"button\" onclick=\"play_next_episode(" + anime.id + ")\">Play</button>" +
-    "<button class=\"cover_info_button\" type=\"button\" onclick=\"show_anime_info_window(" + anime.id + ")\">Info</button>" +
+  "<div anime_id=" + anime.id + " class=\"cover_container\" date=" + (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day) + " popularity=" + anime.popularity + " score=" + anime.average_score + " title=\"" + title + "\">" +
+    "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=" + anime.cover_image.large + " width=\"200\">" +
+    "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime.id + ")\" type=\"button\"><img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\"></button>" +
+    "<div class=\"cover_nav\">" +
+      "<a href=\"#\" onclick=\"show_anime_info_window(" + anime.id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px\">info</a>" +
+      "<a href=\"#\" onclick=\"decrease_episode(" + anime.id + ")\">-</a>" +
+      "<a href=\"#\" onclick=\"\">" + user_data.progress + "/" + anime.episodes + "</a>" +
+      "<a href=\"#\" onclick=\"increase_episode(" + anime.id + ")\" style=\"border-top-right-radius: 12px; border-bottom-right-radius:12px\">+</a>" +
+    "</div>" +
     "<div class=\"myProgress\">" +
-      "<div class=\"myBar\" id=\"Bar" + cover_id + "\"" + "style=\"width: " + watch_percent + "%;\"></div>" +
-      "<canvas class=\"episodes_exist\" id=\"progress_episodes" + cover_id + "\" width=\"200\" height=\"5\"></canvas>" +
+      "<div class=\"myBar\" id=\"Bar" + cover_id + "\" style=\"width: " + watch_percent + "%;\"></div>" +
+      "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes" + cover_id + "\" width=\"200\"></canvas>" +
     "</div>" +
     "<div class=\"cover_title\">" +
       "<p id=\"title" + anime.id + "\">" + title + "</p>" +
@@ -268,6 +290,14 @@ async function show_anime_info_window(anime_id) {
   openTab('information', 'underline_tab_0');
   document.getElementById("info_panal").style.display = "block";
   document.getElementById("cover_panal_grid").style.opacity = 0.3;
+}
+
+async function decrease_episode(anime_id) {
+
+}
+
+async function increase_episode(anime_id) {
+
 }
 
 async function update_user_entry(anime_id) {
@@ -431,6 +461,8 @@ async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
 }
 
+window.increase_episode = increase_episode;
+window.decrease_episode = decrease_episode;
 window.play_next_episode = play_next_episode;
 window.clearDate = clearDate;
 window.openTab = openTab;

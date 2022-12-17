@@ -14,9 +14,9 @@ pub mod file_name_recognition;
 extern crate lazy_static;
 
 use regex::Regex;
-use tauri::{async_runtime::Mutex};
+use tauri::{async_runtime::Mutex, Event};
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, time::Duration, thread};
 
 use api_calls::{TokenData, UserSettings};
 
@@ -29,6 +29,7 @@ lazy_static! {
     static ref GLOBAL_USER_ANIME_LISTS: Mutex<HashMap<String, Vec<i32>>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_SETTINGS: Mutex<UserSettings> = Mutex::new(UserSettings::new());
     static ref GLOBAL_ANIME_PATH: Mutex<HashMap<i32,HashMap<i32,AnimePath>>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_REFRESH_UI: Mutex<bool> = Mutex::new(false);
 }
 
 #[tauri::command]
@@ -44,7 +45,7 @@ async fn anilist_oauth_token(code: String) -> bool {
     }
 
     write_token_data().await;
-
+    
     true
 }
 
@@ -286,6 +287,12 @@ fn get_titles() -> Vec<String> {
 }
 
 #[tauri::command]
+async fn anime_update_delay_loop() {
+
+    loop { anime_update_delay().await; thread::sleep(Duration::from_secs(5)); }
+}
+
+#[tauri::command]
 async fn anime_update_delay() {
 
     //let mut filename: String = String::new();
@@ -321,10 +328,9 @@ async fn anime_update_delay() {
         }
     }
 
-    let token = GLOBAL_TOKEN.lock().await;
     for (media_id, tracking_info) in watching_data.iter_mut() {
         let seconds = tracking_info.timer.elapsed().as_secs();
-        if seconds >= 1 * 30 {
+        if seconds >= 1 * 60 {
             tracking_info.monitoring = false;
             // update anime
 
@@ -332,25 +338,33 @@ async fn anime_update_delay() {
                 ud.progress = tracking_info.episode;
             });
 
-            api_calls::update_user_entry(token.access_token.clone(), user_data.get(media_id).unwrap().clone()).await;
+            api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), user_data.get(media_id).unwrap().clone()).await;
+            *GLOBAL_REFRESH_UI.lock().await = true;
         }
-        println!("{} {}/30", anime_data.get(media_id).unwrap().title.romaji.clone().unwrap(), seconds);
+        println!("{} {}/60", anime_data.get(media_id).unwrap().title.romaji.clone().unwrap(), seconds);
     }
-
+    
     watching_data.retain(|_, v| v.monitoring == true);
 }
 
-
+#[tauri::command]
+async fn get_refresh_ui() -> bool {
+    let mut refresh = GLOBAL_REFRESH_UI.lock().await;
+    let refresh_clone = refresh.clone();
+    *refresh = false;
+    refresh_clone
+}
 
 #[tauri::command]
 async fn test() {
 
-    //loop { anime_update_delay().await; thread::sleep(Duration::from_secs(5)); }
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,play_next_episode,anime_update_delay])
+        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,
+            get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,
+            play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

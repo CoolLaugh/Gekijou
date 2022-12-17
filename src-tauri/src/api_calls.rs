@@ -65,7 +65,7 @@ pub struct  MediaRecommendation {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RecNode {
     pub rating: i32,
-    pub media_recommendation: MediaRecommendation,
+    pub media_recommendation: Option<MediaRecommendation>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -100,7 +100,7 @@ pub struct AnimeInfo {
     pub trailer: Option<TrailerData>,
     pub anime_type: String, // type is a rust keyword
     pub relations: Relations,
-    pub recommendations: Recommendations,
+    pub recommendations: Option<Recommendations>,
     pub tags: Vec<Tag>,
 }
 

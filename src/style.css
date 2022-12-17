@@ -24,6 +24,23 @@ body {
     overflow: hidden;
 }
 
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: var(--background-color2);
+  border-radius: 5px;
+}
+  
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: var(--highlight);
+  border-radius: 5px;
+}
+
 .header {
   position: fixed;
   width: 100%;
@@ -263,21 +280,33 @@ body {
 
 .cover_container button {
   position: absolute;
-  top: 78%;
   transform: translate(-50%,-50%);
   -ms-transform: translate(-50%,-50%);
   opacity: 0;
 }
 
+.play_image {
+  position: absolute;
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
 .cover_play_button {
   left: 68%;
+  top: 0;
 }
 
 .cover_info_button {
-  left: 32%;
+  left: 50%;
+  top: 78%;
+  display: none;
 }
 
 .cover_container:hover button {
+  opacity: 0.8;
+}
+
+.cover_container:hover .cover_nav {
   opacity: 1;
 }
 
@@ -287,6 +316,21 @@ body {
   visibility: visible;
 }
 
+.big_play_button {
+  border-radius: 60px;
+  top: 45%;
+  left: 50%;
+  padding: 20px;
+}
+
+.big_play_button:hover img {
+  filter: invert(100%);
+}
+
+.big_play_button:hover {
+  background: var(--text-color);
+}
+
 .CoverButton:hover {
   visibility: hidden;
 }
@@ -294,6 +338,34 @@ body {
 .cover_title {
   height: 44px;
   overflow: hidden;
+}
+
+.cover_nav {
+  position: absolute;
+  background-color: var(--background-color2);
+  overflow: hidden;
+  top: 70%;
+  left: 12.5%;
+  padding: 6px 6px;
+  border-radius: 16px;
+  opacity: 0;
+}
+
+/* Style the links inside the navigation bar */
+.cover_nav a {
+  float: left;
+  color: var(--text-color);
+  text-align: center;
+  padding: 4px;
+  text-decoration: none;
+  font-size: 16px;
+  min-width: 20px;
+}
+
+/* Change the color of links on hover */
+.cover_nav a:hover {
+  background-color: var(--text-color);
+  color: var(--background-color1);
 }
 
 .container_header {
