@@ -32,9 +32,9 @@ pub struct CoverImage {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AnilistDate {
-    pub year: i32,
-    pub month: i32,
-    pub day: i32
+    pub year: Option<i32>,
+    pub month: Option<i32>,
+    pub day: Option<i32>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -83,10 +83,10 @@ pub struct Tag {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AnimeInfo {
-    pub average_score: i32,
+    pub average_score: Option<i32>,
     pub cover_image: CoverImage,
-    pub description: String,
-    pub duration: i32,
+    pub description: Option<String>,
+    pub duration: Option<i32>,
     pub episodes: Option<i32>,
     pub format: String,
     pub genres: Vec<String>,
@@ -255,8 +255,6 @@ query ($username: String) {
     }
 }
 ";
-
-const LARGE_IMAGE_QUARY: &str = "query ($id: Int) { Media (id: $id, type: ANIME) { coverImage { large } } }";
 
 const ANIME_ALLINFO_QUERY: &str = "
 query ($id: Int) { # Define which variables will be used in the query (id)
@@ -430,29 +428,81 @@ query ($id: Int) { # Define which variables will be used in the query (id)
 }
 ";
 
-const ANIME_MULTI_INFO_QUERY: &str = "
-query ($id: Int, $id2: Int) {
-    A:Media (id: $id, type: ANIME) {
-        id
-        title {
-            english
+const ANIME_BROWSE: &str = "
+query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $seasonYear: Int $genres: [String]$tags: [String] $sort: [MediaSort] = [POPULARITY_DESC, SCORE_DESC]) {
+    Page(page: $page, perPage: 50) {
+        pageInfo {
+            total perPage currentPage lastPage hasNextPage
+        }
+        media(type: $type season: $season format_in: $format seasonYear: $seasonYear genre_in: $genres tag_in: $tags sort: $sort) {
+            id 
+            title {
+                userPreferred
+                romaji
+                english
+                native
+            }
+            coverImage {
+                large
+            }
+            season
+            seasonYear
+            type
+            format
+            episodes
+            duration
+            isAdult
+            genres
+            averageScore
+            popularity
+            description
+            status
+            trailer {
+                id
+                site
+            }
+            startDate {
+                year 
+                month 
+                day
+            }
+            relations {
+                edges {
+                    id
+                    relationType
+                    node {
+                        title {
+                            userPreferred
+                        }
+                        coverImage {
+                            large
+                        }
+                    }
+                }
+            }
+            recommendations {
+                nodes {
+                    rating
+                    mediaRecommendation {
+                        id
+                        title {
+                            userPreferred
+                        }
+                        coverImage {
+                            large
+                        }
+                    }
+                }
+            }
+            tags {
+                name
+                isGeneralSpoiler
+                isMediaSpoiler
+                description
+            }
         }
     }
-    B:Media (id: $id2, type: ANIME) {
-        id
-        title {
-            english
-        }
-    }
-}
-";
-
-const ANIME_UPDATE_PROGRESS_ENTRY: &str = "
-mutation ($id: Int, $progress: Int) {
-    SaveMediaListEntry (id: $id, progress: $progress) {
-    }
-}
-";
+}";
 
 const ANIME_UPDATE_ENTRY: &str = "
 mutation ($id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $syear: Int, $smonth: Int, $sday: Int, $eyear: Int, $emonth: Int, $eday: Int) { 
@@ -567,6 +617,43 @@ const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListS
       }
     }
   }";
+
+
+pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String) -> serde_json::Value {
+
+    let mut variables = json!({"page": page, "type": "ANIME"});
+    if year.is_empty() == false {
+        variables["seasonYear"] = Value::from(year);
+    }
+    if season.is_empty() == false {
+        variables["season"] = Value::from(season);
+    }
+    if genre.is_empty() == false {
+        variables["genres"] = Value::from(genre);
+    }
+    if format.is_empty() == false {
+        variables["format"] = Value::from(format);
+    }
+
+    let json = json!({"query": ANIME_BROWSE, "variables": variables});
+
+    let mut response = post(&json, None).await;
+    //println!("{}", response);
+
+    response = response.replace("averageScore", "average_score");
+    response = response.replace("coverImage", "cover_image");
+    response = response.replace("isAdult", "is_adult");
+    response = response.replace("seasonYear", "season_year");
+    response = response.replace("type", "anime_type");
+    response = response.replace("startDate", "start_date");
+    response = response.replace("userPreferred", "user_preferred");
+    response = response.replace("relationType", "relation_type");
+    response = response.replace("mediaRecommendation", "media_recommendation");
+    response = response.replace("isGeneralSpoiler", "is_general_spoiler");
+    response = response.replace("isMediaSpoiler", "is_media_spoiler");
+
+    serde_json::from_str(&response).unwrap()
+}
 
 
 // retrive information on anime using it's anilist id

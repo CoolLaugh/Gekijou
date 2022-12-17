@@ -13,52 +13,56 @@
       <a href="#Onhold" onclick="show_paused_anime()">On hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
       <a href="#Dropped" onclick="show_dropped_anime()">Dropped<div class="underline" id="underline3" style="visibility: hidden;"></div></a>
       <a href="#Plantowatch" onclick="show_planning_anime()">Plan to watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
-      <a href="#Browse" onclick="test()">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
+      <a href="#Browse" onclick="show_browse_anime()">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
     </div>
     <div id="cover_panal_id" class="container">
       <div class="subnav">
         <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" style="transform: rotate(180deg);">
         <a class="container_header" href="#sort_order" id="sort_order_text" onclick="change_sort_type()">Alphabetical</a>
-        <div class="filters">
-          <select id="genre" name="genre_select">
+        <div class="filters" id="browse_filters">
+          <select id="genre_select" name="genre_select">
+            <option value="">Any</option>
             <option value="Action">Action</option>
             <option value="Adventure">Adventure</option>
             <option value="Comedy">Comedy</option>
             <option value="Drama">Drama</option>
             <option value="Ecchi">Ecchi</option>
+            <option value="Fantasy">Fantasy</option>
+            <option value="Horror">Horror</option>
+            <option value="Mahou Shoujo">Mahou Shoujo</option>
+            <option value="Mecha">Mecha</option>
+            <option value="Music">Music</option>
+            <option value="Mystery">Mystery</option>
+            <option value="Psychological">Psychological</option>
+            <option value="Romance">Romance</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+            <option value="Slice of Life">Slice of Life</option>
+            <option value="Sports">Sports</option>
+            <option value="Supernatural">Supernatural</option>
+            <option value="Thriller">Thriller</option>
           </select>
-          <select id="year" name="year_select">
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
-            <option value="2020">2020</option>
-            <option value="2019">2019</option>
-            <option value="2018">2018</option>
-            <option value="2017">2017</option>
-            <option value="2016">2016</option>
-            <option value="2015">2015</option>
-            <option value="2014">2014</option>
-            <option value="2013">2013</option>
-            <option value="2012">2012</option>
-            <option value="2011">2011</option>
-            <option value="2010">2010</option>
+          <select id="year_select" name="year_select">
+            <option value="">Any</option>
           </select>
-          <select id="season" name="season_select">
-            <option value="Winter">Winter</option>
-            <option value="Spring">Spring</option>
-            <option value="Summer">Summer</option>
-            <option value="Fall">Fall</option>
+          <select id="season_select" name="season_select">
+            <option value="">Any</option>
+            <option value="WINTER">Winter</option>
+            <option value="SPRING">Spring</option>
+            <option value="SUMMER">Summer</option>
+            <option value="FALL">Fall</option>
           </select>
-          <select id="format" name="format_select">
+          <select id="format_select" name="format_select">
+            <option value="">Any</option>
             <option value="TV">TV</option>
-            <option value="Movie">Movie</option>
-            <option value="TV Short">TV Short</option>
-            <option value="Special">Special</option>
+            <option value="MOVIE">Movie</option>
+            <option value="TV_SHORT">TV Short</option>
+            <option value="SPECIAL">Special</option>
             <option value="OVA">OVA</option>
             <option value="ONA">ONA</option>
-            <option value="Music">Music</option>
+            <option value="MUSIC">Music</option>
           </select>
+          <button onclick="browse_update()">Search</button>
         </div>
       </div>
       <div class="cover_panal" id="cover_panal_grid" style="opacity: 1;"></div>

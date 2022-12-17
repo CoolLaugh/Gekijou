@@ -3,12 +3,22 @@ const { invoke } = window.__TAURI__.tauri;
 window.addEventListener("DOMContentLoaded", () => {
   invoke("on_startup");
   get_user_settings();
+  populate_year_dropdown();
 
   document.getElementById("information").style.display = "block";
   document.getElementById("underline_tab_0").style.visibility = "visible";
   invoke("anime_update_delay_loop");
   check_for_refresh_ui();
 });
+
+async function populate_year_dropdown() {
+
+  let year =  new Date().getFullYear();
+  year += 1;
+  for(var i = year; i >= 1940; i--) {
+    document.getElementById("year_select").insertAdjacentHTML("beforeend", "<option value=\"" + i + "\">" + i + "</option>");
+  }
+}
 
 async function check_for_refresh_ui() {
 
@@ -120,6 +130,13 @@ async function show_planning_anime() {
   exclusive_underline(4);
 }
 
+window.show_browse_anime = show_browse_anime;
+async function show_browse_anime() {
+  current_tab = "BROWSE";
+  exclusive_underline(5);
+  document.getElementById("browse_filters").style.display = "block";
+}
+
 function exclusive_underline(index) {
 
   for(var i = 0; i < 6; i++) {
@@ -130,6 +147,7 @@ function exclusive_underline(index) {
 
 async function show_anime_list(name) {
 
+  document.getElementById("browse_filters").style.display = "none";
   var watching = await invoke("get_list", { listName: name });
   console.log(watching);
   var user_data = await invoke("get_list_user_info", { listName: name });
@@ -146,6 +164,8 @@ async function show_anime_list(name) {
     }
     add_anime(watching[i], user_data[i], i);
   }
+
+  sort_anime();
 }
 
 const removeChilds = (parent) => {
@@ -172,37 +192,63 @@ async function test() {
 async function add_anime(anime, user_data, cover_id) {
 
   var title = "No Title";
-  if(anime.title.english != null){
-    title = anime.title.english;
-  } else if (anime.title.romaji != null) {
-    title = anime.title.romaji;
-  } else if (anime.title.native != null) {
-    title = anime.title.native;
+  if (anime.title != null) {
+    if(anime.title.english != null){
+      title = anime.title.english;
+    } else if (anime.title.romaji != null) {
+      title = anime.title.romaji;
+    } else if (anime.title.native != null) {
+      title = anime.title.native;
+    }
   }
 
   var watch_percent = 0;
   var episode_text = "";
+  // left side of episode text
+  if (user_data == null) {
+    episode_text = "0/";
+  } else {
+    episode_text = user_data.progress + "/";
+  }
+  // right side of episode text
   if (anime.episodes == null) {
-    if (user_data.progress == 0) {
-      watch_percent = 0;
-    } else {
+    episode_text += "??";
+  } else {
+    episode_text += anime.episodes;
+  }
+  // progress bar length
+  if (user_data != null) {
+    if (anime.episodes != null) {
+      watch_percent = (user_data.progress / anime.episodes);
+    } else if (user_data.progress > 0) {
       watch_percent = 0.1;
     }
-    episode_text = user_data.progress + "/??";
-  } else {
-    watch_percent = (user_data.progress / anime.episodes);
-    if (watch_percent > 1.0) {
-      watch_percent = 1.0;
-    } else if (watch_percent < 0.0) {
-      watch_percent = 0.0;
-    }
-    episode_text = user_data.progress + "/" + anime.episodes;
+  }
+  // protection for bad data
+  if (watch_percent > 1.0) {
+    watch_percent = 1.0;
+  } else if (watch_percent < 0.0) {
+    watch_percent = 0.0;
   }
 
+  var start_date = 0;
+  if (anime.start_date != null) {
+    start_date = (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day);
+  }
+
+  var cover_image = "./assets/no_cover_image.png";
+  if (anime.cover_image != null) {
+    cover_image = anime.cover_image.large;
+  }
+
+  var average_score = 0;
+  if (anime.average_score != null) {
+    average_score = anime.average_score;
+  }
 
   document.getElementById("cover_panal_grid").insertAdjacentHTML("beforeend", 
-  "<div anime_id=" + anime.id + " class=\"cover_container\" date=" + (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day) + " popularity=" + anime.popularity + " score=" + anime.average_score + " title=\"" + title + "\">" +
-    "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=" + anime.cover_image.large + " width=\"200\">" +
+  "<div anime_id=" + anime.id + " class=\"cover_container\" date=" + start_date + " popularity=" + anime.popularity + " score=" + average_score + " title=\"" + title + "\">" +
+    "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=" + cover_image + " width=\"200\">" +
     "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime.id + ")\" type=\"button\"><img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\"></button>" +
     "<div class=\"cover_nav\">" +
       "<a href=\"#\" onclick=\"show_anime_info_window(" + anime.id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px\">info</a>" +
@@ -258,7 +304,26 @@ async function add_anime(anime, user_data, cover_id) {
 
   ctx.fillStyle = highlight;
   ctx.fillRect(0, 0, watch_percent * 200, 5);
+}
 
+window.browse_update = browse_update;
+async function browse_update() {
+
+  var year = document.getElementById("year_select").value;
+  var season = document.getElementById("season_select").value;
+  var format = document.getElementById("format_select").value;
+  var genre = document.getElementById("genre_select").value;
+
+  var list = await invoke("browse", {year: year, season: season, genre: genre, format: format});
+
+  var user_settings = await invoke("get_user_settings");
+  removeChilds(document.getElementById("cover_panal_grid"));
+  for(var i = 0; i < list.length; i++) {
+    if(user_settings.show_adult == false && list[i].is_adult == true) {
+      continue;
+    }
+    add_anime(list[i], null, i);
+  }
   sort_anime();
 }
 
@@ -495,8 +560,6 @@ async function sort_anime() {
       
     if (elements[i].nodeType == 1) {
 
-      var id = parseInt(elements[i].getAttribute("anime_id"), 10);
-
       switch(sort_categorie_index) {
         case 0:
           sortMe.push([ elements[i].getAttribute("title").toLowerCase() , elements[i] ]);
@@ -514,7 +577,19 @@ async function sort_anime() {
     }
   }
 
-  sortMe.sort();
+  switch(sort_categorie_index) {
+    case 0:
+      sortMe.sort();
+      break;
+    case 1: // intentional fall through
+    case 2: // intentional fall through
+    case 3: // intentional fall through
+      sortMe.sort(function(a,b) {
+        return a[0]-b[0];
+      });
+      break;
+  }
+
   if (sort_ascending == false) {
     sortMe.reverse();
   }

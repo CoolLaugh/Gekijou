@@ -439,6 +439,39 @@ async fn episodes_exist() -> HashMap<i32, Vec<i32>> {
 
 
 #[tauri::command]
+async fn browse(year: String, season: String, genre: String, format: String) -> Vec<AnimeInfo> {
+
+    let mut list: Vec<AnimeInfo> = Vec::new();
+
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+    let mut has_next_page = true;
+
+    let mut page = 0;
+    while has_next_page {
+        
+        page += 1;
+        let response = api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone()).await;
+
+        for anime in response["data"]["Page"]["media"].as_array().unwrap() {
+
+            let id = anime["id"].as_i64().unwrap() as i32;
+
+            let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
+            list.push(anime_entry.clone());
+            anime_data.insert(id, anime_entry);
+        }
+        
+        if page >= 2 {
+            break;
+        }
+        has_next_page = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
+    }
+    
+    list
+}
+
+
+#[tauri::command]
 async fn test() {
 
 }
@@ -447,7 +480,7 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,
             get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,
-            play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist])
+            play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
