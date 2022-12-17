@@ -41,7 +41,7 @@
 
         <div class="anime_info_panal" id="info_panal" style="border: 2px solid blue">
           <div class="anime_info_title_row">
-            <p id="info_title">title title title title</p>
+            <p id="info_title" maxlength="50">title title title title</p>
             <img src="/assets/close.png" onclick="hide_anime_info_window()" class="anime_info_close" style="float: right;" width="30" height="30">
           </div>
           <div class="anime_info_lower">
@@ -83,6 +83,28 @@
             </div>
           </div>
         </div>
+
+        <div class="anilist_login_panal" id="login_panal" style="border: 2px solid blue">
+          <table>
+            <tr>
+              <th>
+                Get Autherization code:
+              </th>
+              <th>
+                <button class="cover_info_button" type="button" onclick="open_oauth_window()">get code</button>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <input type="text" id="oauth_code">
+              </th>
+              <th>
+                <button class="cover_info_button" type="button" onclick="get_oauth_token()">Autherize</button>
+              </th>
+            </tr>
+          </table>
+        </div>
+
       </div>
 
     </div>
