@@ -34,6 +34,14 @@ async function get_user_settings() {
   document.getElementById("title_language").value = user_settings.title_language;
   document.getElementById("show_spoiler_tags").checked = user_settings.show_spoilers;
   document.getElementById("show_adult").checked = user_settings.show_adult;
+  var folder_textarea = document.getElementById("folders");
+  folder_textarea.value = "";
+  for(var i = 0; i < user_settings.folders.length; i++){
+    folder_textarea.value += user_settings.folders[i];
+    if(i + 1 != user_settings.folders.length) {
+      folder_textarea.value += "\n";
+    }
+  }
 }
 
 // add anime for testing
@@ -69,10 +77,11 @@ async function hide_setting_window() {
 
   var username = document.getElementById("user_name").value;
   var language = document.getElementById("title_language").value;
-  var show_spoiler = document.getElementById("show_spoiler_tags").checked
-  var show_adult = document.getElementById("show_adult").checked
+  var show_spoiler = document.getElementById("show_spoiler_tags").checked;
+  var show_adult = document.getElementById("show_adult").checked;
+  var folders = document.getElementById("folders").value.split('\n');
 
-  invoke("set_user_settings", { username: username, titleLanguage: language, showSpoilers: show_spoiler, showAdult: show_adult});
+  invoke("set_user_settings", { username: username, titleLanguage: language, showSpoilers: show_spoiler, showAdult: show_adult, folders: folders});
 }
 
 async function show_setting_window() {
@@ -126,10 +135,15 @@ async function show_anime_list(name) {
   var user_data = await invoke("get_list_user_info", { listName: name });
   // get userdata on anime
   console.log(user_data);
+  var user_settings = await invoke("get_user_settings");
+
   // add anime to UI
   removeChilds(document.getElementById("cover_panal_grid"));
 
   for(var i = 0; i < watching.length; i++) {
+    if(user_settings.show_adult == false && watching[i].is_adult == true) {
+      continue;
+    }
     add_anime(watching[i], user_data[i], i);
   }
 }
@@ -140,16 +154,14 @@ const removeChilds = (parent) => {
   }
 };
 
-async function test() {
+function getfolder(e) {
 
-  // var bars = document.getElementsByClassName("episodes_exist");
-  // for(var i = 0; i < bars.length; i++) {
-  //   var ctx = bars[i].getContext("2d");
-  //   ctx.fillStyle = "#808080";
-  //   ctx.fillRect(0, 0, 46, 5);
-  //   ctx.fillRect(77, 0, 46, 5);
-  //   ctx.fillRect(154, 0, 30, 5);
-  // }
+  var path = files[0].webkitRelativePath;
+  var Folder = path.split("/");
+  alert(Folder[0]);
+}
+
+async function test() {
 
   //console.log("test fn started");
   var response = await invoke("test");
@@ -168,12 +180,25 @@ async function add_anime(anime, user_data, cover_id) {
     title = anime.title.native;
   }
 
-  var watch_percent = (user_data.progress / anime.episodes) * 100;
-  if (watch_percent > 100) {
-    watch_percent = 100;
-  } else if (watch_percent < 0) {
-    watch_percent = 0;
+  var watch_percent = 0;
+  var episode_text = "";
+  if (anime.episodes == null) {
+    if (user_data.progress == 0) {
+      watch_percent = 0;
+    } else {
+      watch_percent = 0.1;
+    }
+    episode_text = user_data.progress + "/??";
+  } else {
+    watch_percent = (user_data.progress / anime.episodes);
+    if (watch_percent > 1.0) {
+      watch_percent = 1.0;
+    } else if (watch_percent < 0.0) {
+      watch_percent = 0.0;
+    }
+    episode_text = user_data.progress + "/" + anime.episodes;
   }
+
 
   document.getElementById("cover_panal_grid").insertAdjacentHTML("beforeend", 
   "<div anime_id=" + anime.id + " class=\"cover_container\" date=" + (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day) + " popularity=" + anime.popularity + " score=" + anime.average_score + " title=\"" + title + "\">" +
@@ -182,17 +207,57 @@ async function add_anime(anime, user_data, cover_id) {
     "<div class=\"cover_nav\">" +
       "<a href=\"#\" onclick=\"show_anime_info_window(" + anime.id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px\">info</a>" +
       "<a href=\"#\" onclick=\"decrease_episode(" + anime.id + ")\">-</a>" +
-      "<a href=\"#\" onclick=\"\">" + user_data.progress + "/" + anime.episodes + "</a>" +
+      "<a href=\"#\" onclick=\"show_anime_info_window_edit(" + anime.id + ")\">" + episode_text + "</a>" +
       "<a href=\"#\" onclick=\"increase_episode(" + anime.id + ")\" style=\"border-top-right-radius: 12px; border-bottom-right-radius:12px\">+</a>" +
     "</div>" +
-    "<div class=\"myProgress\">" +
-      "<div class=\"myBar\" id=\"Bar" + cover_id + "\" style=\"width: " + watch_percent + "%;\"></div>" +
-      "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes" + cover_id + "\" width=\"200\"></canvas>" +
-    "</div>" +
+    "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes" + cover_id + "\" width=\"200\"></canvas>" +
     "<div class=\"cover_title\">" +
       "<p id=\"title" + anime.id + "\">" + title + "</p>" +
     "</div>" +
   "</div>");
+
+  
+  var bar = document.getElementById("progress_episodes" + cover_id);
+  var ctx = bar.getContext("2d");
+
+  var highlight = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
+  var invert = getComputedStyle(document.documentElement).getPropertyValue('--highlight-secondary');
+  var width = 200 / anime.episodes;
+
+  ctx.fillStyle = invert;
+  var episodes_exist = await invoke("episodes_exist");
+
+  if((anime.id in episodes_exist) && episodes_exist[anime.id].length > 0){
+
+    var start = 1;
+    var length = 0;
+    var last_episode = 0;
+    episodes_exist[anime.id].sort(function(a,b) {
+      return a-b;
+    });
+    for(var i = 0; i < episodes_exist[anime.id].length; i++) {
+  
+      var episode = episodes_exist[anime.id][i];
+      if (episode == last_episode + 1) {
+  
+        last_episode = episode;
+        length++;
+      } else {
+        ctx.fillRect((start - 1) * width, 0, width * length, 5);
+  
+        last_episode = episode;
+        start = episode;
+        length = 1;
+      }
+      if (i == episodes_exist[anime.id].length - 1) {
+        
+        ctx.fillRect((start - 1) * width, 0, width * length, 5);
+      }
+    }
+  }
+
+  ctx.fillStyle = highlight;
+  ctx.fillRect(0, 0, watch_percent * 200, 5);
 
   sort_anime();
 }
@@ -292,12 +357,22 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("cover_panal_grid").style.opacity = 0.3;
 }
 
-async function decrease_episode(anime_id) {
+window.show_anime_info_window_edit = show_anime_info_window_edit;
+async function show_anime_info_window_edit(anime_id) {
+  await show_anime_info_window(anime_id);
+  openTab('user_entry', 'underline_tab_1');
+}
 
+async function decrease_episode(anime_id) {
+  
+  await invoke("increment_decrement_episode", {animeId: anime_id, change: -1});
+  show_anime_list(current_tab);
 }
 
 async function increase_episode(anime_id) {
 
+  await invoke("increment_decrement_episode", {animeId: anime_id, change: 1});
+  show_anime_list(current_tab);
 }
 
 async function update_user_entry(anime_id) {
@@ -461,6 +536,7 @@ async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
 }
 
+window.getfolder = getfolder;
 window.increase_episode = increase_episode;
 window.decrease_episode = decrease_episode;
 window.play_next_episode = play_next_episode;

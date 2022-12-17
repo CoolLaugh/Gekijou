@@ -4,6 +4,7 @@
   --background-color2: #27292a;
   --text-color: #f6f6f6;
   --highlight: #60b6ec;
+  --highlight-secondary: #707679;
 
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -31,7 +32,7 @@ body {
 
 /* Track */
 ::-webkit-scrollbar-track {
-  background: var(--background-color2);
+  background: var(--highlight-secondary);
   border-radius: 5px;
 }
   
@@ -164,6 +165,17 @@ body {
   background-color: var(--background-color1);
 }
 
+.anime_info_panal input {
+  background-color: var(--background-color2);
+  width: 140px;
+  margin-right: 6px;
+}
+
+.anime_info_panal select {
+  background-color: var(--background-color2);
+  width: 161.2px;
+}
+
 .anime_info_panal_title {
   border-top: 0px;
   border-bottom: 0px;
@@ -202,12 +214,18 @@ body {
   left: 50%;
   transform: translate(-50%,-50%);
   background-color: var(--background-color1);
-  width: 400px;
+  width: 600px;
   display: grid;
   border-radius: 10px;
   padding: 10px;
   gap: 10px;
   visibility: hidden;
+}
+
+.anilist_login_panal textarea {
+  width: 250px;
+  height: 50px;
+  resize: none;
 }
 
 .anilist_login_panal button {
@@ -249,11 +267,7 @@ body {
   z-index: 3;
 }
 
-.episodes_exist {
-  transform: translateX(-100px);
-  position: absolute;
-  z-index: 2;
-}
+.episodes_exist {transform: translate(-200px, 300px);position: absolute;background: var(--background-color1);}
 
 .cover_panal {
   display: grid;

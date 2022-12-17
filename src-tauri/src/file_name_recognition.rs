@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
+use std::time::Instant;
 use regex::Regex;
 
 
@@ -30,7 +31,7 @@ pub struct AnimePath {
     pub similarity_score: f64,
 }
 
-pub async fn parse_file_names(folders: Vec<String>) {
+pub async fn parse_file_names(folders: &Vec<String>) {
 
     for folder in folders {
 
@@ -71,7 +72,12 @@ pub async fn parse_file_names(folders: Vec<String>) {
 
         irrelevant_information_removal_paths(&mut file_names);
 
+        let timer = Instant::now();
+
         string_similarity(&mut file_names).await;
+
+        let millis = timer.elapsed().as_millis();
+        println!("Time: {}s {}ms", millis / 1000, millis % 1000);
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
 
@@ -91,7 +97,7 @@ pub async fn parse_file_names(folders: Vec<String>) {
                     media.insert(file.episode, AnimePath { path: file.path, similarity_score: file.similarity_score });
                 }
             }
-            println!("{} {} {} {}", file.filename, file.media_id, file.episode, file.similarity_score);
+            //println!("{} {} {} {}", file.filename, file.media_id, file.episode, file.similarity_score);
         }
     }
 }
@@ -135,14 +141,14 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>) {
 
     //let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut previous_file_name = String::new();
-    let mut counter = 0;
-    let total = paths.len();
+    //let mut counter = 0;
+    //let total = paths.len();
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
 
     paths.iter_mut().for_each(|path| {
         // skip files that have the same title
-        counter += 1;
-        println!("{}/{}", counter, total);
+        //counter += 1;
+        //println!("{}/{}", counter, total);
         if path.filename == previous_file_name {
             return;
         }
@@ -184,6 +190,7 @@ pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>)
 
         for title in titles {
 
+            if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue }
             let normalized_levenshtein_score = strsim::normalized_levenshtein(&filename, &title);
             if normalized_levenshtein_score > score { media_id = data.1.id; score = normalized_levenshtein_score; }
         }
