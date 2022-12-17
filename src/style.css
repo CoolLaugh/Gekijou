@@ -48,11 +48,12 @@
   left: 50%;
   transform: translate(-50%,-50%);
   background-color: #333;
-  width: 600px;
+  width: 700px;
   display: grid;
   border-radius: 10px;
   padding: 10px;
   gap: 10px;
+  visibility: hidden;
 }
 
 .anime_info_close:hover {
@@ -80,29 +81,36 @@
   float: left;
 }
 
-
 .anime_info_title_row {
-  scroll-snap-align: center;
-  align-content: baseline;
-  scroll-snap-align: center;
-  font-size: 24px;
-  vertical-align: bottom;
-  max-height: 24px;
+    
+  scroll-snap-align: center;
+    
+  align-content: baseline;
+    
+  scroll-snap-align: center;
+    
+  font-size: 24px;
+    
+  vertical-align: bottom;
+    
+  max-height: 24px;
 }
 
 .anime_info_lower {
-  
-display: flex;
-  
-gap: 10px;
+    
+  display: flex;
+    
+  gap: 10px;
 }
 
 .anime_info_cover {
   
-max-width: 200px;
+  max-width: 200px;
 }
 
 .anime_info_text {
+  max-height: 300px; 
+  Overflow-y: scroll;
 }
 
 .myProgress {
@@ -140,11 +148,11 @@ max-width: 200px;
 }
 
 .cover_play_button {
-  left: 32%;
+  left: 68%;
 }
 
 .cover_info_button {
-  left: 68%;
+  left: 32%;
 }
 
 .cover_container:hover button {
