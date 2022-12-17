@@ -58,34 +58,58 @@ async function show_setting_window() {
 }
 
 async function show_watching_anime() {
-
-  var watching = await invoke("get_watching_list", { listName: "Watching" });
-  console.log(watching);
-  // get userdata on anime
-
-  // add anime to UI
-  var cover_id = 0;
-  watching.forEach(function(anime) {
-    console.log(anime);
-    add_anime(anime, cover_id);
-    cover_id += 1;
-  });
+  show_anime_list("Watching");
+  exclusive_underline(0);
 }
 
 async function show_completed_anime() {
-
-  var watching = await invoke("get_watching_list", { listName: "Completed" });
-  console.log(watching);
-  // get userdata on anime
-
-  // add anime to UI
-  var cover_id = 0;
-  watching.forEach(function(anime) {
-    console.log(anime);
-    add_anime(anime, cover_id);
-    cover_id += 1;
-  });
+  show_anime_list("Completed");
+  exclusive_underline(1);
 }
+
+async function show_paused_anime() {
+  show_anime_list("Paused");
+  exclusive_underline(2);
+}
+
+async function show_dropped_anime() {
+  show_anime_list("Dropped");
+  exclusive_underline(3);
+}
+
+async function show_planning_anime() {
+  show_anime_list("Planning");
+  exclusive_underline(4);
+}
+
+function exclusive_underline(index) {
+
+  for(var i = 0; i < 6; i++) {
+    document.getElementById("underline" + i).style.visibility = "hidden";
+  }
+  document.getElementById("underline" + index).style.visibility = "visible";
+}
+
+async function show_anime_list(name) {
+
+  var watching = await invoke("get_watching_list", { listName: name });
+  //console.log(watching);
+  var user_data = await invoke("get_list_user_info", { listName: name });
+  // get userdata on anime
+  //console.log(user_data);
+  // add anime to UI
+  removeChilds(document.getElementById("cover_panal_grid"));
+
+  for(var i = 0; i < watching.length; i++) {
+    add_anime(watching[i], user_data[i], i);
+  }
+}
+
+const removeChilds = (parent) => {
+  while (parent.lastChild) {
+      parent.removeChild(parent.lastChild);
+  }
+};
 
 async function test() {
 
@@ -95,7 +119,7 @@ async function test() {
 }
 
 // add an anime to the ui
-async function add_anime(anime, cover_id) {
+async function add_anime(anime, user_data, cover_id) {
 
   var title = "No Title";
   if(anime.title.english != null){
@@ -106,13 +130,21 @@ async function add_anime(anime, cover_id) {
     title = anime.title.native;
   }
 
+  var watch_percent = (user_data.progress / anime.episodes) * 100;
+  if (watch_percent > 100) {
+    watch_percent = 100;
+  } else if (watch_percent < 0) {
+    watch_percent = 0;
+  }
+  //console.log(user_data.progress + " " + anime.episodes + " " + watch_percent);
+
   document.getElementById("cover_panal_grid").insertAdjacentHTML("beforeend", 
   "<div class=\"cover_container\" anime_id=" + anime.id + " title=\"" + title + "\" score=" + anime.average_score + " date=" + (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day) + " popularity=" + anime.popularity + ">" +
     "<img class=\"image\" src=" + anime.cover_image.large + " id=\"" + cover_id + "\" alt=\"Cover Image\" width=\"200\" height=\"300\"/>" +
     "<button class=\"cover_play_button\" type=\"button\" onclick=\"getanime(" + anime.id + ", " + cover_id + ")\">Play</button>" +
     "<button class=\"cover_info_button\" type=\"button\" onclick=\"show_anime_info_window(" + anime.id + ")\">Info</button>" +
     "<div class=\"myProgress\">" +
-      "<div class=\"myBar\" id=\"Bar" + cover_id + "\"></div>" +
+      "<div class=\"myBar\" id=\"Bar" + cover_id + "\"" + "style=\"width: " + watch_percent + "%;\"></div>" +
     "</div>" +
     "<div class=\"cover_title\">" +
       "<p id=\"title" + anime.id + "\">" + title + "</p>" +
@@ -130,14 +162,23 @@ async function hide_anime_info_window() {
 
 // show information window populated with the shows info
 async function show_anime_info_window(anime_id) {
-  var info = anime_info.get(anime_id);
+  
+  var info = await invoke("get_anime_info", {id: anime_id});
+  var title = "";
+  if(info.title.english != null) {
+    title = info.title.english;
+  } else if(info.title.romaji != null) {
+    title = info.title.romaji;
+  } else {
+    title = info.title.native;
+  }
 
   document.getElementById("info_cover").src = info.cover_image.large;
-  document.getElementById("info_description").insertAdjacentHTML("afterbegin", info.description)
-  if(info.title.english.length > 55) {
-    document.getElementById("info_title").textContent = info.title.english.substring(0, 55) + "...";
+  document.getElementById("info_description").innerHTML = info.description;
+  if(title.length > 55) {
+    document.getElementById("info_title").textContent = title.substring(0, 55) + "...";
   } else {
-    document.getElementById("info_title").textContent = info.title.english;
+    document.getElementById("info_title").textContent = title;
   }
   if (info.format != "TV") {
     document.getElementById("info_format").textContent = info.format.charAt(0) + info.format.toLowerCase().slice(1);
@@ -147,15 +188,23 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("info_rating").textContent = info.average_score + "%";
   if (info.episodes == 1) {
     document.getElementById("info_duration").textContent = info.duration + " Minutes";
+  } else if (info.episodes == null) {
+    document.getElementById("info_duration").textContent = "?? x " + info.duration + " Minutes";
   } else {
     document.getElementById("info_duration").textContent = info.episodes + " x " + info.duration + " Minutes";
   }
   document.getElementById("info_season_year").textContent = info.season.charAt(0) + info.season.toLowerCase().slice(1) + " " + info.season_year;
 
+  if(info.trailer != null && info.trailer.site == "youtube") {
+    document.getElementById("Trailer_link").href = "https://www.youtube.com/watch?v=" + info.trailer.id;
+    document.getElementById("Trailer_link").innerHTML = "Watch Trailer";
+  } else {
+    document.getElementById("Trailer_link").href = "";
+    document.getElementById("Trailer_link").innerHTML = "No Trailer";
+  }
 
   document.getElementById("info_panal").style.visibility = "visible";
   document.getElementById("cover_panal_grid").style.opacity = 0.3;
-  console.log(anime_info.get(anime_id));
 }
 
 // list of categories that can be searched by
@@ -249,8 +298,12 @@ async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
 }
 
-window.show_completed_anime = show_completed_anime;
+window.show_anime_list = show_anime_list;
 window.show_watching_anime = show_watching_anime;
+window.show_completed_anime = show_completed_anime;
+window.show_paused_anime = show_paused_anime;
+window.show_dropped_anime = show_dropped_anime;
+window.show_planning_anime = show_planning_anime;
 window.get_user_settings = get_user_settings;
 window.hide_setting_window = hide_setting_window;
 window.show_setting_window = show_setting_window;

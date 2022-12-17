@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use reqwest::Client;
-use serde::{Serialize, Deserialize, Deserializer};
+use serde::{Serialize, Deserialize};
 use serde_json::{json};
 
 use crate::{secrets, GLOBAL_ANIME_DATA};
@@ -118,7 +118,7 @@ impl UserSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserAnimeInfo {
     pub id: i32,
     pub media_id: i32,
@@ -128,7 +128,7 @@ pub struct UserAnimeInfo {
     pub completed_at: Option<FuzzyDate>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FuzzyDate {
     pub year: Option<i32>,
     pub month: Option<i32>,

@@ -13,7 +13,7 @@ pub mod file_operations;
 extern crate lazy_static;
 
 use tauri::async_runtime::Mutex;
-use std::{collections::HashMap, ptr::null};
+use std::{collections::HashMap};
 
 use api_calls::{TokenData, UserSettings};
 
@@ -134,6 +134,31 @@ async fn get_watching_list(list_name: String) -> Vec<AnimeInfo> {
 }
 
 #[tauri::command]
+async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
+
+    if GLOBAL_USER_ANIME_DATA.lock().await.is_empty() {
+        get_user_data().await;
+    }
+
+    let list_name_formatted = format!("\"{}\"", list_name);
+    let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+    let list = user_data.entry(String::from(list_name_formatted.clone())).or_insert(Vec::new());
+
+    list.to_vec()
+}
+
+#[tauri::command]
+async fn get_anime_info(id: i32) -> AnimeInfo {
+
+    if GLOBAL_ANIME_DATA.lock().await.is_empty() {
+        file_operations::read_file_anime_info_cache().await;
+    }
+
+    let anime_data = GLOBAL_ANIME_DATA.lock().await.get(&id).unwrap().clone();
+    anime_data
+}
+
+#[tauri::command]
 async fn test() -> String {
 
     let anime: Vec<i32> = [5114,9253,21202,17074,2904].to_vec();
@@ -143,7 +168,7 @@ async fn test() -> String {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list])
+        .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,get_user_settings,get_watching_list,get_list_user_info,get_anime_info])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
     

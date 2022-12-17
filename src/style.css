@@ -38,8 +38,15 @@
 /* Create a right-aligned (split) link inside the navigation bar */
 .topnav a.split {
   float: right;
-  background-color: #04AA6D;
+  background-color: #16c0a4;
   color: white;
+}
+
+.underline {
+  transform: translateY(14px);
+  height: 5px;
+  background-color: #14c7a6;
+  visibility: hidden;
 }
 
 .anime_info_panal {
@@ -48,7 +55,7 @@
   left: 50%;
   transform: translate(-50%,-50%);
   background-color: #333;
-  width: 700px;
+  width: 732px;
   display: grid;
   border-radius: 10px;
   padding: 10px;
@@ -99,6 +106,7 @@
 }
 
 .anime_info_text {
+  min-height: 150px;
   max-height: 300px; 
   Overflow-y: scroll;
 }
@@ -159,6 +167,8 @@
   transition: .5s ease;
   font-size: 14px;
   text-align: center;
+  max-height: 86vh;
+  overflow: auto;
 }
 
 .cover_panal p {
