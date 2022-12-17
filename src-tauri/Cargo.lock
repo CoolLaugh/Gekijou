@@ -807,6 +807,7 @@ dependencies = [
 name = "gekijou"
 version = "0.0.0"
 dependencies = [
+ "lazy_static",
  "reqwest",
  "serde",
  "serde_json",

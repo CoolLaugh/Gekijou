@@ -82,35 +82,56 @@
 }
 
 .anime_info_title_row {
-    
   scroll-snap-align: center;
-    
   align-content: baseline;
-    
-  scroll-snap-align: center;
-    
   font-size: 24px;
-    
   vertical-align: bottom;
-    
   max-height: 24px;
 }
 
 .anime_info_lower {
-    
   display: flex;
-    
   gap: 10px;
 }
 
 .anime_info_cover {
-  
   max-width: 200px;
 }
 
 .anime_info_text {
   max-height: 300px; 
   Overflow-y: scroll;
+}
+
+.anilist_login_panal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background-color: #333;
+  width: 400px;
+  display: grid;
+  border-radius: 10px;
+  padding: 10px;
+  gap: 10px;
+  visibility: visible;
+}
+
+.anilist_login_panal button {
+  width: 110px;
+}
+
+.anilist_auth_panal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background-color: #333;
+  width: 700px;
+  display: grid;
+  border-radius: 10px;
+  padding: 10px;
+  gap: 10px;
 }
 
 .myProgress {
@@ -131,6 +152,13 @@
   grid-gap: 20px 30px;
   grid-template-columns: repeat(auto-fill, 200px);
   transition: .5s ease;
+  font-size: 14px;
+  text-align: center;
+}
+
+.cover_panal p {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .cover_container {
@@ -141,7 +169,7 @@
 
 .cover_container button {
   position: absolute;
-  top: 90%;
+  top: 78%;
   transform: translate(-50%,-50%);
   -ms-transform: translate(-50%,-50%);
   opacity: 0;
@@ -167,6 +195,11 @@
 
 .CoverButton:hover {
   visibility: hidden;
+}
+
+.cover_title {
+  height: 44px;
+  overflow: hidden;
 }
 
 .container_header {

@@ -3,20 +3,32 @@ var anime_info = new Map();
 
 window.addEventListener("DOMContentLoaded", () => {
   test_add_anime();
+  invoke("read_token_data");
 });
 
 // add anime for testing
-async function test_add_anime(){
-  add_anime(5114, 1);
-  add_anime(9253, 2);
-  add_anime(21202, 3);
-  add_anime(17074, 4);
-  add_anime(2904, 5);
-  add_anime(114745, 6);
-  add_anime(7311, 7);
-  add_anime(437, 8);
-  add_anime(109190, 9);
-  add_anime(21366, 10);
+async function test_add_anime() {
+  
+  //var anime_ids = [5114,9253,21202,17074,2904,114745,7311,437,109190,21366,21860,21,17871,19221];
+
+  //for (let i = 0; i < anime_ids.length; i++) {
+  //  add_anime(anime_ids[i], i);
+  //}
+}
+
+async function open_oauth_window() {
+  window.open("https://anilist.co/api/v2/oauth/authorize?client_id=9965&redirect_uri=https://anilist.co/api/v2/oauth/pin&response_type=code");
+}
+
+async function get_oauth_token() {
+  invoke("anilist_oauth_token", { code: document.getElementById("oauth_code").value});
+}
+
+async function test() {
+
+  console.log("test fn started");
+  var response = await invoke("test");
+  console.log(response);
 }
 
 // add an anime to the ui
@@ -33,6 +45,9 @@ async function add_anime(anime_id, cover_id) {
     "<button class=\"cover_info_button\" type=\"button\" onclick=\"show_anime_info_window(" + anime_id + ")\">Info</button>" +
     "<div class=\"myProgress\">" +
       "<div class=\"myBar\" id=\"Bar" + cover_id + "\"></div>" +
+    "</div>" +
+    "<div class=\"cover_title\">" +
+      "<p id=\"title" + anime_id + "\">" + anime_info.get(anime_id).title.english + "</p>" +
     "</div>" +
   "</div>");
 
@@ -51,7 +66,11 @@ async function show_anime_info_window(anime_id) {
 
   document.getElementById("info_cover").src = info.cover_image.large;
   document.getElementById("info_description").insertAdjacentHTML("afterbegin", info.description)
-  document.getElementById("info_title").textContent = info.title.english;
+  if(info.title.english.length > 55) {
+    document.getElementById("info_title").textContent = info.title.english.substring(0, 55) + "...";
+  } else {
+    document.getElementById("info_title").textContent = info.title.english;
+  }
   if (info.format != "TV") {
     document.getElementById("info_format").textContent = info.format.charAt(0) + info.format.toLowerCase().slice(1);
   } else {
@@ -162,6 +181,11 @@ async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
 }
 
+
+
+window.get_oauth_token = get_oauth_token;
+window.open_oauth_window = open_oauth_window;
+window.test = test;
 window.change_sort_ascending = change_sort_ascending;
 window.change_sort_type = change_sort_type;
 window.sort_anime = sort_anime;
