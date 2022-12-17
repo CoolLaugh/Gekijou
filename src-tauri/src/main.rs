@@ -14,7 +14,7 @@ pub mod file_name_recognition;
 extern crate lazy_static;
 
 use regex::Regex;
-use tauri::{async_runtime::Mutex, Event};
+use tauri::{async_runtime::Mutex, Event, Manager};
 use window_titles::{Connection, ConnectionTrait};
 use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread, task::Poll};
 
@@ -34,12 +34,12 @@ lazy_static! {
 }
 
 #[tauri::command]
-async fn anilist_oauth_token(code: String) -> bool {
+async fn anilist_oauth_token(code: String) -> (bool, String) {
     
     let token = api_calls::anilist_get_access_token(code).await;
 
     if token.access_token.len() == 0 {
-        return false;
+        return (false, token.token_type);
     }
     else {
         *GLOBAL_TOKEN.lock().await = token;
@@ -47,7 +47,7 @@ async fn anilist_oauth_token(code: String) -> bool {
 
     write_token_data().await;
     
-    true
+    (true, String::new())
 }
 
 #[tauri::command]
@@ -106,8 +106,9 @@ async fn get_list(list_name: String) -> Vec<AnimeInfo> {
         api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
         file_operations::write_file_anime_info_cache().await;
     }
-    let lists = GLOBAL_USER_ANIME_LISTS.lock().await;
-    let list = lists.get(&list_name).unwrap();
+    
+    let anime_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+    let list = anime_lists.get(&list_name).unwrap();
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
 
@@ -218,11 +219,22 @@ async fn update_user_entry(anime: UserAnimeInfo) {
 
     if old_status != new_status {
         
-        GLOBAL_USER_ANIME_LISTS.lock().await.entry(old_status.clone()).and_modify(|data|{ 
-            data.remove(data.iter().position(|&v| v == anime.media_id).unwrap());
-        });
+        if old_status.is_empty() == false {
+
+            GLOBAL_USER_ANIME_LISTS.lock().await.entry(old_status.clone()).and_modify(|data|{ 
+                data.remove(data.iter().position(|&v| v == anime.media_id).unwrap());
+            });
+        }
         
-        GLOBAL_USER_ANIME_LISTS.lock().await.entry(new_status).or_default().push(anime.media_id);
+        let mut lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+        if lists.contains_key(&new_status) {
+            
+            let list = lists.entry(new_status).or_default();
+            if list.len() > 0 {
+
+                list.push(anime.media_id);
+            }
+        }
     }
 
     let response = api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime).await;
@@ -230,9 +242,16 @@ async fn update_user_entry(anime: UserAnimeInfo) {
     let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
     let media_id = new_info.media_id.clone();
 
-    GLOBAL_USER_ANIME_DATA.lock().await.entry(media_id).and_modify(|entry| {
-        *entry = new_info;
-    });
+    let mut anime_data = GLOBAL_USER_ANIME_DATA.lock().await;
+    if anime_data.contains_key(&media_id) {
+
+        anime_data.entry(media_id).and_modify(|entry| {
+            *entry = new_info;
+        });
+    } else {
+        anime_data.insert(media_id, new_info);
+    }
+
 
 }
 
@@ -413,6 +432,7 @@ async fn anime_update_delay() {
 
 #[tauri::command]
 async fn get_refresh_ui() -> bool {
+    thread::sleep(Duration::from_millis(1000));
     let mut refresh = GLOBAL_REFRESH_UI.lock().await;
     let refresh_clone = refresh.clone();
     *refresh = false;
@@ -439,7 +459,7 @@ async fn episodes_exist() -> HashMap<i32, Vec<i32>> {
 
 
 #[tauri::command]
-async fn browse(year: String, season: String, genre: String, format: String) -> Vec<AnimeInfo> {
+async fn browse(year: String, season: String, genre: String, format: String, order: String) -> Vec<AnimeInfo> {
 
     let mut list: Vec<AnimeInfo> = Vec::new();
 
@@ -450,7 +470,7 @@ async fn browse(year: String, season: String, genre: String, format: String) -> 
     while has_next_page {
         
         page += 1;
-        let response = api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone()).await;
+        let response = api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone(), order.clone()).await;
 
         for anime in response["data"]["Page"]["media"].as_array().unwrap() {
 
@@ -470,6 +490,35 @@ async fn browse(year: String, season: String, genre: String, format: String) -> 
     list
 }
 
+#[tauri::command]
+async fn add_to_list(id: i32, list: String) {
+
+    let mut user_anime = UserAnimeInfo::default();
+    user_anime.media_id = id;
+    user_anime.status = list;
+
+    update_user_entry(user_anime).await;
+}
+
+
+#[tauri::command]
+async fn remove_anime(id: i32, media_id: i32) -> bool {
+
+    let removed = api_calls::anilist_remove_entry(id, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+    if removed == true {
+
+        let status = GLOBAL_USER_ANIME_DATA.lock().await.get(&media_id).unwrap().status.clone();
+
+        GLOBAL_USER_ANIME_LISTS.lock().await.entry(status).and_modify(|list| {
+
+            let position = list.iter().position(|v| *v == media_id).unwrap();
+            list.remove(position);
+        });
+
+        GLOBAL_USER_ANIME_DATA.lock().await.remove(&media_id);
+    }
+    removed
+}
 
 #[tauri::command]
 async fn test() {
@@ -480,7 +529,7 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,
             get_user_settings,get_watching_list,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,
-            play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse])
+            play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,add_to_list,remove_anime])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

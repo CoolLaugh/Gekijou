@@ -28,12 +28,26 @@ async function check_for_refresh_ui() {
     if (refresh == true) {
       show_anime_list(current_tab);
     }
-    sleep(1000);
   }
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+window.confirm_delete_entry = confirm_delete_entry;
+async function confirm_delete_entry(id, media_id) {
+
+  // await warning is a lie, don't remove await
+  if (await confirm('This will remove all data about this anime from your list. Are you sure?') == true) {
+    
+    var removed = await invoke("remove_anime", { id: id, mediaId: media_id});
+    if (removed == true) {
+
+      show_anime_list(current_tab);
+      document.getElementById("status_select").value = "";
+      document.getElementById("episode_number").value = 0;
+      document.getElementById("score_0to5").value = "0";
+      document.getElementById("started_date").value = "";
+      document.getElementById("finished_date").value = "";
+    }
+  }
 }
 
 async function get_user_settings() {
@@ -74,10 +88,11 @@ async function get_oauth_token() {
   var success = await invoke("anilist_oauth_token", { code: document.getElementById("oauth_code").value});
 
   input.value = "";
-  if(success == true) {
+  if(success[0] == true) {
     input.setAttribute("placeholder", "Success");
   } else {
     input.setAttribute("placeholder", "Failed");
+    alert(success[1]);
   }
 }
 
@@ -135,6 +150,7 @@ async function show_browse_anime() {
   current_tab = "BROWSE";
   exclusive_underline(5);
   document.getElementById("browse_filters").style.display = "block";
+  removeChilds(document.getElementById("cover_panal_grid"));
 }
 
 function exclusive_underline(index) {
@@ -246,21 +262,28 @@ async function add_anime(anime, user_data, cover_id) {
     average_score = anime.average_score;
   }
 
-  document.getElementById("cover_panal_grid").insertAdjacentHTML("beforeend", 
-  "<div anime_id=" + anime.id + " class=\"cover_container\" date=" + start_date + " popularity=" + anime.popularity + " score=" + average_score + " title=\"" + title + "\">" +
-    "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=" + cover_image + " width=\"200\">" +
-    "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime.id + ")\" type=\"button\"><img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\"></button>" +
-    "<div class=\"cover_nav\">" +
-      "<a href=\"#\" onclick=\"show_anime_info_window(" + anime.id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px\">info</a>" +
-      "<a href=\"#\" onclick=\"decrease_episode(" + anime.id + ")\">-</a>" +
-      "<a href=\"#\" onclick=\"show_anime_info_window_edit(" + anime.id + ")\">" + episode_text + "</a>" +
-      "<a href=\"#\" onclick=\"increase_episode(" + anime.id + ")\" style=\"border-top-right-radius: 12px; border-bottom-right-radius:12px\">+</a>" +
-    "</div>" +
-    "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes" + cover_id + "\" width=\"200\"></canvas>" +
-    "<div class=\"cover_title\">" +
-      "<p id=\"title" + anime.id + "\">" + title + "</p>" +
-    "</div>" +
-  "</div>");
+  var html = "";
+  html += "<div anime_id=" + anime.id + " class=\"cover_container\" date=" + start_date + " popularity=" + anime.popularity + " score=" + average_score + " title=\"" + title + "\">";
+  html += "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=" + cover_image + " width=\"200\">";
+  if (current_tab == "BROWSE") {
+    html += "<button class=\"add_planning_button\" onclick=\"add_to_list(" + anime.id + ", 'PLANNING')\" type=\"button\">Add to Planning</button>";
+    html += "<button class=\"add_watching_button\" onclick=\"add_to_list(" + anime.id + ", 'CURRENT')\" type=\"button\">Add to Watching</button>";
+  } else {
+    html += "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime.id + ")\" type=\"button\"><img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\"></button>";
+  }
+  html += "<div class=\"cover_nav\">";
+  html +=   "<a href=\"#\" onclick=\"show_anime_info_window(" + anime.id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px\">info</a>";
+  html +=   "<a href=\"#\" onclick=\"decrease_episode(" + anime.id + ")\">-</a>";
+  html +=   "<a href=\"#\" onclick=\"show_anime_info_window_edit(" + anime.id + ")\">" + episode_text + "</a>";
+  html +=   "<a href=\"#\" onclick=\"increase_episode(" + anime.id + ")\" style=\"border-top-right-radius: 12px; border-bottom-right-radius:12px\">+</a>";
+  html += "</div>";
+  html += "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes" + cover_id + "\" width=\"200\"></canvas>";
+  html += "<div class=\"cover_title\">";
+  html +=   "<p id=\"title" + anime.id + "\">" + title + "</p>";
+  html += "</div>";
+  html += "</div>";
+
+  document.getElementById("cover_panal_grid").insertAdjacentHTML("beforeend", html);
 
   
   var bar = document.getElementById("progress_episodes" + cover_id);
@@ -314,7 +337,26 @@ async function browse_update() {
   var format = document.getElementById("format_select").value;
   var genre = document.getElementById("genre_select").value;
 
-  var list = await invoke("browse", {year: year, season: season, genre: genre, format: format});
+  var sort_value = "";
+  switch(document.getElementById("sort_order_text").textContent) {
+    case "Alphabetical":
+      sort_value = "TITLE_ROMAJI";
+      break;
+    case "Score":
+      sort_value = "SCORE";
+      break;
+    case "Date":
+      sort_value = "START_DATE";
+      break;
+    case "Populariry":
+      sort_value = "POPULARITY";
+      break;
+  }
+  if (document.getElementById("sort_order_ascending").order == "DESC") {
+    sort_value += "_DESC";
+  }
+
+  var list = await invoke("browse", {year: year, season: season, genre: genre, format: format, order: sort_value});
 
   var user_settings = await invoke("get_user_settings");
   removeChilds(document.getElementById("cover_panal_grid"));
@@ -327,8 +369,14 @@ async function browse_update() {
   sort_anime();
 }
 
+window.play_next_episode = play_next_episode;
 async function play_next_episode(id) {
   await invoke("play_next_episode", { id: id });
+}
+
+window.add_to_list = add_to_list;
+async function add_to_list(id, list) {
+  await invoke("add_to_list", { id: id, list: list});
 }
 
 // hide information window and return to cover grid
@@ -336,9 +384,11 @@ async function hide_anime_info_window(anime_id) {
   document.getElementById("youtube_embed").src = "";
   document.getElementById("info_panal").style.display = "none";
   document.getElementById("cover_panal_grid").style.opacity = 1;
-  var refresh = await update_user_entry(anime_id);
-  if (refresh == true) {
-    show_anime_list(current_tab);
+  if (anime_id != null) {
+    var refresh = await update_user_entry(anime_id);
+    if (refresh == true) {
+      show_anime_list(current_tab);
+    }
   }
 }
 
@@ -405,7 +455,8 @@ async function show_anime_info_window(anime_id) {
   }
 
   var user_data = await invoke("get_user_info", {id: anime_id});
-  console.log(user_data);
+
+  document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
   document.getElementById("status_select").value = user_data.status;
   document.getElementById("episode_number").value = user_data.progress;
   document.getElementById("score_0to5").value = user_data.score;
@@ -529,23 +580,33 @@ async function change_sort_type() {
   console.log(sort_categorie_index);
   console.log(sort_categories[sort_categorie_index]);
 
-  sort_anime();
+  if (current_tab == "BROWSE") {
+    browse_update();
+  } else {
+    sort_anime();
+  }
 }
 
 // change between sorting ascending and decending
 async function change_sort_ascending() {
   sort_ascending = !sort_ascending;
   change_ascending_indicator()
-  sort_anime();
+  if (current_tab == "BROWSE") {
+    browse_update();
+  } else {
+    sort_anime();
+  }
 }
 
 // change the image to show if the list is being sorted ascending or decending
 function change_ascending_indicator() {
   if(sort_ascending == true) {
     document.getElementById("sort_order_ascending").style.transform = 'rotate(180deg)';
+    document.getElementById("sort_order_ascending").order = "AESC";
   }
   else {
     document.getElementById("sort_order_ascending").style.transform = 'rotate(0deg)';
+    document.getElementById("sort_order_ascending").order = "DESC";
   }
 }
 
@@ -614,7 +675,6 @@ async function toggleMaximizeWindow() {
 window.getfolder = getfolder;
 window.increase_episode = increase_episode;
 window.decrease_episode = decrease_episode;
-window.play_next_episode = play_next_episode;
 window.clearDate = clearDate;
 window.openTab = openTab;
 window.show_anime_list = show_anime_list;

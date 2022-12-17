@@ -505,8 +505,8 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
 }";
 
 const ANIME_UPDATE_ENTRY: &str = "
-mutation ($id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $syear: Int, $smonth: Int, $sday: Int, $eyear: Int, $emonth: Int, $eday: Int) { 
-    SaveMediaListEntry (id: $id, status: $status, score: $score, progress: $progress, startedAt: {year: $syear, month: $smonth, day: $sday}, completedAt: {year: $eyear, month: $emonth, day: $eday}) {
+mutation ($id: Int, $media_id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $syear: Int, $smonth: Int, $sday: Int, $eyear: Int, $emonth: Int, $eday: Int) { 
+    SaveMediaListEntry (id: $id, mediaId: $media_id, status: $status, score: $score, progress: $progress, startedAt: {year: $syear, month: $smonth, day: $sday}, completedAt: {year: $eyear, month: $emonth, day: $eday}) {
         id
         mediaId
         status
@@ -619,7 +619,7 @@ const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListS
   }";
 
 
-pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String) -> serde_json::Value {
+pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String, order: String) -> serde_json::Value {
 
     let mut variables = json!({"page": page, "type": "ANIME"});
     if year.is_empty() == false {
@@ -633,6 +633,9 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
     }
     if format.is_empty() == false {
         variables["format"] = Value::from(format);
+    }
+    if order.is_empty() == false {
+        variables["sort"] = Value::from(order);
     }
 
     let json = json!({"query": ANIME_BROWSE, "variables": variables});
@@ -655,6 +658,23 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
     serde_json::from_str(&response).unwrap()
 }
 
+
+const ANIME_DELETE_ENTRY: &str = "
+mutation ($id: Int) { 
+    DeleteMediaListEntry (id: $id) {
+        deleted
+    }
+}";
+pub async fn anilist_remove_entry(id: i32, access_token: String) -> bool {
+
+    let json = json!({"query": ANIME_DELETE_ENTRY, "variables": {"id": id}});
+
+    let response = post(&json, Some(&access_token)).await;
+
+    let deleted = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["DeleteMediaListEntry"]["deleted"].as_bool().unwrap();
+    
+    deleted
+}
 
 // retrive information on anime using it's anilist id
 pub async fn anilist_api_call(id: i32) -> AnimeInfo {
@@ -689,17 +709,17 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
 
     let mut response = post(&json, Some(&access_token)).await;
 
-    response = response.replace("averageScore", "average_score");
-    response = response.replace("coverImage", "cover_image");
-    response = response.replace("isAdult", "is_adult");
-    response = response.replace("seasonYear", "season_year");
-    response = response.replace("type", "anime_type");
-    response = response.replace("startDate", "start_date");
-    response = response.replace("userPreferred", "user_preferred");
-    response = response.replace("relationType", "relation_type");
-    response = response.replace("mediaRecommendation", "media_recommendation");
-    response = response.replace("isGeneralSpoiler", "is_general_spoiler");
-    response = response.replace("isMediaSpoiler", "is_media_spoiler");
+    response = response.replace("averageScore", "average_score")
+        .replace("coverImage", "cover_image")
+        .replace("isAdult", "is_adult")
+        .replace("seasonYear", "season_year")
+        .replace("type", "anime_type")
+        .replace("startDate", "start_date")
+        .replace("userPreferred", "user_preferred")
+        .replace("relationType", "relation_type")
+        .replace("mediaRecommendation", "media_recommendation")
+        .replace("isGeneralSpoiler", "is_general_spoiler")
+        .replace("isMediaSpoiler", "is_media_spoiler");
 
     let list: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["MediaListCollection"]["lists"][0]["entries"].take();
 
@@ -873,7 +893,7 @@ pub async fn anilist_get_access_token(code: String) -> TokenData {
     print!("{}\n\n", response_string);
 
     if response_string.contains("\"error\"") {
-        return TokenData { token_type: String::from("error"), expires_in: 0, access_token: String::new(), refresh_token: String::new() };
+        return TokenData { token_type: response_string, expires_in: 0, access_token: String::new(), refresh_token: String::new() };
     }
     
     return serde_json::from_str(&response_string).unwrap();
@@ -897,7 +917,11 @@ pub async fn anilist_oauth_call() -> String {
 pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> String {
 
     let mut mutation: String = ANIME_UPDATE_ENTRY.to_string();
-    let mut variables = json!({"id": anime.id, "status": anime.status, "score": anime.score, "progress": anime.progress});
+    let mut variables = json!({"media_id": anime.media_id, "status": anime.status, "score": anime.score, "progress": anime.progress});
+
+    if anime.id != 0 {
+        variables["id"] = json!(anime.id);
+    }
 
     if anime.started_at.is_none() {
         mutation = mutation.replace(", $syear: Int, $smonth: Int, $sday: Int", "");

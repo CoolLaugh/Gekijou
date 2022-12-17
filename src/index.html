@@ -8,21 +8,21 @@
 </head>
   <body>
     <div class="topnav">
-      <a href="#Watching" onclick="show_watching_anime()">Watching<div class="underline" id="underline0" style="visibility: visible;"></div></a>
+      <a href="#Watching" onclick="show_watching_anime()">Watching<div class="underline" id="underline0" style="visibility: hidden;"></div></a>
       <a href="#Completed" onclick="show_completed_anime()">Completed<div class="underline" id="underline1" style="visibility: hidden;"></div></a>
-      <a href="#Onhold" onclick="show_paused_anime()">On hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
+      <a href="#Onhold" onclick="show_paused_anime()">On Hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
       <a href="#Dropped" onclick="show_dropped_anime()">Dropped<div class="underline" id="underline3" style="visibility: hidden;"></div></a>
-      <a href="#Plantowatch" onclick="show_planning_anime()">Plan to watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
+      <a href="#Plantowatch" onclick="show_planning_anime()">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
       <a href="#Browse" onclick="show_browse_anime()">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
     </div>
     <div id="cover_panal_id" class="container">
       <div class="subnav">
-        <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" style="transform: rotate(180deg);">
+        <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="AESC" style="transform: rotate(180deg);">
         <a class="container_header" href="#sort_order" id="sort_order_text" onclick="change_sort_type()">Alphabetical</a>
         <div class="filters" id="browse_filters">
           <select id="genre_select" name="genre_select">
-            <option value="">Any</option>
+            <option value="">Genre</option>
             <option value="Action">Action</option>
             <option value="Adventure">Adventure</option>
             <option value="Comedy">Comedy</option>
@@ -43,17 +43,17 @@
             <option value="Thriller">Thriller</option>
           </select>
           <select id="year_select" name="year_select">
-            <option value="">Any</option>
+            <option value="">Year</option>
           </select>
           <select id="season_select" name="season_select">
-            <option value="">Any</option>
+            <option value="">Season</option>
             <option value="WINTER">Winter</option>
             <option value="SPRING">Spring</option>
             <option value="SUMMER">Summer</option>
             <option value="FALL">Fall</option>
           </select>
           <select id="format_select" name="format_select">
-            <option value="">Any</option>
+            <option value="">Format</option>
             <option value="TV">TV</option>
             <option value="MOVIE">Movie</option>
             <option value="TV_SHORT">TV Short</option>
@@ -65,10 +65,12 @@
           <button onclick="browse_update()">Search</button>
         </div>
       </div>
-      <div class="cover_panal" id="cover_panal_grid" style="opacity: 1;"></div>
+      <div class="cover_panal" id="cover_panal_grid" style="opacity: 1;">
+        
+      </div>
       <div class="anime_info_panal" id="info_panal">
         <div class="anime_info_title_row">
-          <p id="info_title" maxlength="50">title title title title</p>
+          <p id="info_title" maxlength="50">title</p>
           <img class="anime_info_close" height="30" id="info_close_button" onclick="hide_anime_info_window()" src="/assets/close.png" style="float: right;" width="30">
         </div>
         <div class="anime_info_lower">
@@ -101,28 +103,28 @@
               <div><p>Tags: </p><p id="info_tags"></p></div>
             </div>
             <div class="tabcontent" id="user_entry">
-              <table>
+              <table style="text-align: left;">
                 <tbody>
                   <tr>
-                    <th><p>Status:</p></th>
+                    <th style="text-align: right; padding-right: 10px;"><p>Status:</p></th>
                     <th>
                       <select id="status_select" name="status select">
-                        <option value="">Not in list</option>
                         <option value="CURRENT">Watching</option>
                         <option value="COMPLETED">Completed</option>
-                        <option value="PAUSED">On hold</option>
+                        <option value="PAUSED">On Hold</option>
                         <option value="DROPPED">Dropped</option>
-                        <option value="PLANNING">Plan to watch</option>
+                        <option value="PLANNING">Plan to Watch</option>
                         <option value="REPEATING">Rewatching</option>
                       </select>
+                      <button id="delete_anime" onclick="" type="button">Delete</button>
                     </th>
                   </tr>
                   <tr>
-                    <th><p>Episode: </p></th>
+                    <th style="text-align: right; padding-right: 10px;"><p>Episode: </p></th>
                     <th><input id="episode_number" max="26" min="0" name="quantity" type="number"></th>
                   </tr>
                   <tr>
-                    <th><p>Score: </p></th>
+                    <th style="text-align: right; padding-right: 10px;"><p>Score: </p></th>
                     <th>
                       <select id="score_0to5" name="score_select">
                         <option value="0">0</option>
@@ -135,11 +137,11 @@
                     </th>
                   </tr>
                   <tr>
-                    <th><p>Started: </p></th>
+                    <th style="text-align: right; padding-right: 10px;"><p>Started: </p></th>
                     <th><input id="started_date" max="2100-12-31" min="1970-01-01" name="started date" type="date" value=""><img class="anime_info_close" height="30" onclick="clearDate('started_date')" src="/assets/close.png" style="vertical-align: middle;" width="30"></th>
                   </tr>
                   <tr>
-                    <th><p>Finished: </p></th>
+                    <th style="text-align: right; padding-right: 10px;"><p>Finished: </p></th>
                     <th><input id="finished_date" max="2100-12-31" min="1970-01-01" name="finished date" type="date" value=""><img class="anime_info_close" height="30" onclick="clearDate('finished_date')" src="/assets/close.png" style="vertical-align: middle;" width="30"></th>
                   </tr>
                 </tbody>
@@ -167,7 +169,7 @@
                 <button onclick="open_oauth_window()" type="button">Get Autherization code</button>
               </th>
               <th>
-                <input id="oauth_code" onpaste="var e=this; setTimeout(function(){get_oauth_token();}, 4);" placeholder="paste code here" type="text">
+                <input id="oauth_code" onpaste="var e=this; setTimeout(function(){get_oauth_token();}, 4);" onchange="var e=this; setTimeout(function(){get_oauth_token();}, 4);" placeholder="paste code here" type="text">
               </th>
             </tr>
             <tr>
