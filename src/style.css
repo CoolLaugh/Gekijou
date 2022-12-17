@@ -80,6 +80,11 @@ body {
   color: white;
 }
 
+.recognition_delay {
+  float: right;
+  margin-right: 5px;
+}
+
 .sub_navigation {
   overflow: hidden;
   min-width: 722px;

@@ -12,7 +12,7 @@ use crate::api_calls::UserSettings;
 pub fn write_file_token_data(token_data: &TokenData) {
 
     let path = Path::new("data/token.txt");
-    let path_backup = Path::new("token_backup.txt");
+    let path_backup = Path::new("data/token_backup.txt");
     let mut file: File;
 
     // backup file before replacing it

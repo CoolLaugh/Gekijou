@@ -20,6 +20,7 @@ async function get_user_settings() {
   document.getElementById("title_language").value = user_settings.title_language;
   document.getElementById("show_spoiler_tags").checked = user_settings.show_spoilers;
   document.getElementById("show_adult").checked = user_settings.show_adult;
+  document.getElementById("update_delay").value = user_settings.update_delay;
   var folder_textarea = document.getElementById("folders");
   folder_textarea.value = "";
   for(var i = 0; i < user_settings.folders.length; i++){
@@ -46,9 +47,11 @@ async function check_for_refresh_ui() {
   while (true) {
 
     var refresh = await invoke("get_refresh_ui");
-    if (refresh == true) {
+    if (refresh.anime_list == true) {
       show_anime_list(current_tab);
     }
+    
+    draw_delay_progress();
   }
 }
 
@@ -180,7 +183,7 @@ async function show_anime_list(name) {
     if(user_settings.show_adult == false && watching[i].is_adult == true) {
       continue;
     }
-    add_anime(watching[i], user_data[i], i);
+    add_anime(watching[i], user_data[i], i, user_settings.title_language);
   }
 
   sort_anime();
@@ -297,18 +300,31 @@ async function sort_anime() {
 
 // add an anime to the ui
 window.add_anime = add_anime;
-async function add_anime(anime, user_data, cover_id) {
+async function add_anime(anime, user_data, cover_id, language) {
 
-  var title = "No Title";
-  if (anime.title != null) {
-    if(anime.title.english != null){
+  var title = null;
+  if (language == "romaji" && anime.title.romaji != null) {
+    title = anime.title.romaji;
+  } else if (language == "english" && anime.title.english != null) {
+    title = anime.title.english;
+  }  else if (language == "native" && anime.title.native != null) {
+    title = anime.title.native;
+  } 
+
+  if (title == null) {
+    if(anime.title.user_preferred != null){
+      title = anime.title.user_preferred;
+    } else if(anime.title.english != null){
       title = anime.title.english;
     } else if (anime.title.romaji != null) {
       title = anime.title.romaji;
     } else if (anime.title.native != null) {
       title = anime.title.native;
+    } else {
+      title = "ID: " + anime.id;
     }
   }
+
 
   var watch_percent = 0;
   var episode_text = "";
@@ -475,7 +491,7 @@ async function browse_update() {
     if(user_settings.show_adult == false && list[i].is_adult == true) {
       continue;
     }
-    add_anime(list[i], null, i);
+    add_anime(list[i], null, i, user_settings.title_language);
   }
   sort_anime();
 }
@@ -520,6 +536,18 @@ async function show_anime_info_window(anime_id) {
     title = info.title.native;
   }
 
+  var episode_text = "";
+  if (info.episodes == null) {
+    episode_text = "?? x "
+  } else if (info.episodes > 1) {
+    episode_text = info.episodes + " x "
+  }
+  if (info.duration == null) {
+    episode_text += "?? Minutes"
+  } else {
+    episode_text += info.duration + " Minutes"
+  }
+
   document.getElementById("info_cover").src = info.cover_image.large;
   document.getElementById("info_description").innerHTML = info.description;
   if(title.length > 55) {
@@ -532,14 +560,12 @@ async function show_anime_info_window(anime_id) {
   } else {
     document.getElementById("info_format").textContent = info.format;
   }
-  document.getElementById("info_rating").textContent = info.average_score + "%";
-  if (info.episodes == 1) {
-    document.getElementById("info_duration").textContent = info.duration + " Minutes";
-  } else if (info.episodes == null) {
-    document.getElementById("info_duration").textContent = "?? x " + info.duration + " Minutes";
+  if (info.average_score == null) {
+    document.getElementById("info_rating").textContent = "No Score";
   } else {
-    document.getElementById("info_duration").textContent = info.episodes + " x " + info.duration + " Minutes";
+    document.getElementById("info_rating").textContent = info.average_score + "%";
   }
+  document.getElementById("info_duration").textContent = episode_text;
   document.getElementById("info_season_year").textContent = info.season.charAt(0) + info.season.toLowerCase().slice(1) + " " + info.season_year;
 
   var genres_text = "";
@@ -577,9 +603,13 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("score_0to5").value = user_data.score;
   if (user_data.started_at != null) {
     document.getElementById("started_date").value = user_data.started_at.year + "-" + String(user_data.started_at.month).padStart(2,'0') + "-" + String(user_data.started_at.day).padStart(2,'0');
+  } else {
+    document.getElementById("started_date").value = "";
   }
   if (user_data.completed_at != null) {
     document.getElementById("finished_date").value = user_data.completed_at.year + "-" + String(user_data.completed_at.month).padStart(2,'0') + "-" + String(user_data.completed_at.day).padStart(2,'0');
+  } else {
+    document.getElementById("finished_date").value = "";
   }
   document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(user_data.media_id)};
 
@@ -690,13 +720,16 @@ async function hide_setting_window() {
   document.getElementById("login_panel").style.visibility = "hidden";
   document.getElementById("cover_panel_grid").style.opacity = 1;
 
-  var username = document.getElementById("user_name").value;
-  var language = document.getElementById("title_language").value;
-  var show_spoiler = document.getElementById("show_spoiler_tags").checked;
-  var show_adult = document.getElementById("show_adult").checked;
-  var folders = document.getElementById("folders").value.split('\n');
+  var settings = {
+    username: document.getElementById("user_name").value,
+    title_language: document.getElementById("title_language").value,
+    show_spoilers: document.getElementById("show_spoiler_tags").checked,
+    show_adult: document.getElementById("show_adult").checked,
+    folders: document.getElementById("folders").value.split('\n'),
+    update_delay: parseInt(document.getElementById("update_delay").value),
+  }
 
-  invoke("set_user_settings", { username: username, titleLanguage: language, showSpoilers: show_spoiler, showAdult: show_adult, folders: folders});
+  invoke("set_user_settings", { settings: settings});
 }
 
 // close the window
@@ -715,4 +748,65 @@ async function minimizeWindow() {
 window.toggleMaximizeWindow = toggleMaximizeWindow;
 async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
+}
+
+window.draw_delay_progress = draw_delay_progress;
+async function draw_delay_progress() {
+
+  var percent = await invoke("get_delay_info");
+  var ctx = document.getElementById("recognition_delay").getContext("2d");
+
+  if (percent[0] == 0.0 || percent[0] >= 0.995) {
+
+    ctx.clearRect(0,0,52,52);
+    document.getElementById("recognition_delay").title = "";
+  } else {
+    var title = "";
+    if (percent[2].romaji != null) {
+      title = percent[2].romaji;
+    } else if (percent[2].english != null) {
+      title = percent[2].english;
+    } else if (percent[2].native != null) {
+      title = percent[2].native;
+    }
+    var time_remaining = "";
+    if (percent[3] >= 60) {
+      time_remaining = Math.floor(percent[3] / 60) + "m " + (percent[3] % 60) + "s";
+    } else {
+      time_remaining = percent[3] + "s";
+    }
+    document.getElementById("recognition_delay").title = "Updating " + title + " to episode " + percent[1] + " in " + time_remaining;
+
+    ctx.clearRect(0,0,52,52);
+    
+    ctx.beginPath();
+    ctx.arc(26,26,25,0, 2 * Math.PI, false);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight-secondary');
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(26,26,25, 1.5 * Math.PI, (1.5 + (2 * percent[0])) * Math.PI, false);
+    ctx.lineTo(26, 26);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(26,26,21,0, 2 * Math.PI, false);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--background-color2');
+    ctx.fill();
+  
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
+    ctx.font = "12px Arial";
+  
+    var left = 14;
+    if (percent[1] >= 10) {
+      left -= 3;
+    }
+    ctx.fillText("ep " + percent[1], left, 25);
+    var left2 = 19;
+    if (percent[0] > 0.095) {
+      left2 -= 4;
+    }
+    ctx.fillText(Math.round(percent[0] * 100) + "%", left2, 37);
+  }
 }

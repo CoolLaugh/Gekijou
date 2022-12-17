@@ -135,11 +135,12 @@ pub struct UserSettings {
     pub show_spoilers: bool,
     pub show_adult: bool,
     pub folders: Vec<String>,
+    pub update_delay: i32,
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new() }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0 }
     }
 }
 

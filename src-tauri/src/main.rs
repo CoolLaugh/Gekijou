@@ -14,11 +14,12 @@ pub mod file_name_recognition;
 extern crate lazy_static;
 
 use regex::Regex;
+use serde::{Serialize, Deserialize};
 use tauri::{async_runtime::Mutex};
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread, fmt::format};
+use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread, fmt::format, cell::Ref};
 
-use api_calls::{TokenData, UserSettings};
+use api_calls::{TokenData, UserSettings, Title};
 
 use crate::{api_calls::{AnimeInfo, UserAnimeInfo}, file_name_recognition::AnimePath};
 
@@ -79,17 +80,33 @@ async fn get_anime_info_query(id: i32) -> api_calls::AnimeInfo {
 
 // sets the user's settings taken from the settings ui
 #[tauri::command]
-async fn set_user_settings(username: String, title_language: String, show_spoilers: bool, show_adult: bool, folders: Vec<String>) {
+async fn set_user_settings(settings: UserSettings) {
 
     let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
 
-    user_settings.username = username;
-    user_settings.title_language = title_language;
-    user_settings.show_spoilers = show_spoilers;
-    user_settings.show_adult = show_adult;
-    user_settings.folders = folders;
+    // check if the folders have changed
+    let mut scan = false;
+    if user_settings.folders.len() != settings.folders.len() {
+        scan = true;
+    } else {
+        for i in 0..settings.folders.len() {
+            if user_settings.folders[i] != settings.folders[i] {
+                scan = true;
+            }
+        }
+    }
+
+    if user_settings.username != settings.username {
+        GLOBAL_USER_ANIME_LISTS.lock().await.clear();
+    }
+
+    *user_settings = settings;
 
     file_operations::write_file_user_settings(&*user_settings);
+
+    if scan {
+        file_name_recognition::parse_file_names(&user_settings.folders, None).await;
+    }
 }
 
 // retrieves user's settings from a file
@@ -154,6 +171,23 @@ async fn get_user_info(id: i32) -> UserAnimeInfo {
     }
 
     GLOBAL_USER_ANIME_DATA.lock().await.entry(id).or_insert(UserAnimeInfo::new()).clone()
+}
+
+#[tauri::command]
+async fn get_delay_info() -> (f64, i32, Title, i64) {
+
+    let found_anime = WATCHING_TRACKING.lock().await.clone();
+    
+    if found_anime.len() > 0 {
+
+        let delay = (GLOBAL_USER_SETTINGS.lock().await.update_delay * 60) as f64;
+        
+        let anime = found_anime.iter().next().unwrap();
+        
+        return (anime.1.timer.elapsed().as_secs_f64() / delay, anime.1.episode, anime.1.title.clone(), (delay as i64) - (anime.1.timer.elapsed().as_secs() as i64));
+    }
+
+    return (0.0, 0, Title::default(), 0)
 }
 
 // get data for a specific anime
@@ -245,7 +279,7 @@ async fn check_delayed_updates(wait: bool) {
     
     let delay = 15;
     for entry in GLOBAL_UPDATE_ANIME_DELAYED.lock().await.iter() {
-            
+        
         if entry.1.elapsed() >= Duration::from_secs(delay) || wait == false {
 
             api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), GLOBAL_USER_ANIME_DATA.lock().await.get(&entry.0).unwrap().clone()).await;
@@ -317,7 +351,7 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
 // scan folders for episodes of anime
 #[tauri::command]
 async fn scan_anime_folder() {
-    file_name_recognition::parse_file_names(&GLOBAL_USER_SETTINGS.lock().await.folders).await;
+    file_name_recognition::parse_file_names(&GLOBAL_USER_SETTINGS.lock().await.folders, None).await;
 }
 
 #[derive(Debug, Clone)]
@@ -325,6 +359,7 @@ struct WatchingTracking {
     timer: std::time::Instant,
     monitoring: bool,
     episode: i32,
+    title: Title,
 }
 lazy_static! {
     static ref WATCHING_TRACKING: Mutex<HashMap<i32, WatchingTracking>> = Mutex::new(HashMap::new());
@@ -341,11 +376,19 @@ fn get_titles() -> Vec<String> {
 #[tauri::command]
 async fn anime_update_delay_loop() {
 
+    let mut hour_timer = Instant::now();
+    let one_hour = Duration::from_secs(60 * 60);
+
     loop { 
 
         anime_update_delay().await;
 
         check_delayed_updates(true).await;
+
+        if hour_timer.elapsed() > one_hour {
+            file_name_recognition::parse_file_names(&GLOBAL_USER_SETTINGS.lock().await.folders, None).await;
+            hour_timer = Instant::now();
+        }
 
         thread::sleep(Duration::from_secs(5)); 
     }
@@ -358,6 +401,7 @@ async fn anime_update_delay() {
     //let mut filename: String = String::new();
     //let mut ignore_filenames: Vec<String> = Vec::new();
     let regex = Regex::new(r"\.mkv|\.avi|\.mp4").unwrap();
+    let delay = (GLOBAL_USER_SETTINGS.lock().await.update_delay * 60)  as u64;
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut watching_data = WATCHING_TRACKING.lock().await;
     let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
@@ -376,7 +420,7 @@ async fn anime_update_delay() {
         title_edit = title_edit.replace(episode_str.as_str(), "");
         title_edit = file_name_recognition::irrelevant_information_removal(title_edit);
 
-        let (media_id, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data);
+        let (media_id, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data, None);
         if media_score < 0.8 { continue; }
         //println!("{} {} {} {:.4}", title_edit, episode.1, media_id, media_score);
         if watching_data.contains_key(&media_id) {
@@ -384,13 +428,13 @@ async fn anime_update_delay() {
                 entry.monitoring = true;
             });
         } else if user_data.contains_key(&media_id) && user_data.get(&media_id).unwrap().progress + 1 == episode { // only add if it is in the users list and it is the next episode
-            watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode});
+            watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.clone()});
         }
     }
 
     for (media_id, tracking_info) in watching_data.iter_mut() {
         let seconds = tracking_info.timer.elapsed().as_secs();
-        if seconds >= 1 * 60 {
+        if seconds >= delay {
             tracking_info.monitoring = false;
             // update anime
 
@@ -401,20 +445,34 @@ async fn anime_update_delay() {
             api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), user_data.get(media_id).unwrap().clone()).await;
             *GLOBAL_REFRESH_UI.lock().await = true;
         }
-        println!("{} {}/60", anime_data.get(media_id).unwrap().title.romaji.clone().unwrap(), seconds);
+        println!("{} {}/{}", anime_data.get(media_id).unwrap().title.romaji.clone().unwrap(), seconds, delay);
     }
     
     watching_data.retain(|_, v| v.monitoring == true);
 }
 
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct RefreshUI {
+    pub anime_list: bool,
+    pub tracking_progress: bool,
+}
+
 // allows the ui to check if a anime has been updated to determine if the ui will be refreshed
 #[tauri::command]
-async fn get_refresh_ui() -> bool {
+async fn get_refresh_ui() -> RefreshUI {
+
     thread::sleep(Duration::from_millis(1000));
+
+    let mut refresh_ui = RefreshUI::default();
+
     let mut refresh = GLOBAL_REFRESH_UI.lock().await;
-    let refresh_clone = refresh.clone();
+    refresh_ui.anime_list = refresh.clone();
     *refresh = false;
-    refresh_clone
+
+    refresh_ui.tracking_progress = WATCHING_TRACKING.lock().await.len() > 0;
+
+    refresh_ui
 }
 
 // returns a list of what episodes of what anime exist on disk
@@ -481,6 +539,10 @@ async fn browse(year: String, season: String, genre: String, format: String, ord
         }
         has_next_page = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
     }
+
+
+    drop(anime_data); // anime data is used by write function
+    file_operations::write_file_anime_info_cache().await;
     
     list
 }
@@ -493,6 +555,7 @@ async fn add_to_list(id: i32, list: String) {
     user_anime.status = list;
 
     update_user_entry(user_anime).await;
+    file_name_recognition::parse_file_names(&GLOBAL_USER_SETTINGS.lock().await.folders, Some(id)).await;
 }
 
 
@@ -525,7 +588,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![get_anime_info_query,test,anilist_oauth_token,read_token_data,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
-            add_to_list,remove_anime,episodes_exist_single])
+            add_to_list,remove_anime,episodes_exist_single,get_delay_info])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

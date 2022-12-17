@@ -15,6 +15,7 @@
       <a href="#Plantowatch" onclick="show_planning_anime()">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
       <a href="#Browse" onclick="show_browse_anime()">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
+      <canvas class="recognition_delay" id="recognition_delay" height="52" width="52" title="" onclick="draw_delay_progress()"></canvas>
     </div>
     <div id="cover_panel_id" class="container">
       <div class="sub_navigation">
@@ -202,10 +203,25 @@
             </tr>
             <tr>
               <th>
-                folders:
+                Folders:
               </th>
               <th>
                 <textarea wrap="hard" id="folders"></textarea>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                Episode Update Delay:
+              </th>
+              <th>
+                <select id="update_delay">
+                  <option value=0>Instant</option>
+                  <option value=1>1 Minute</option>
+                  <option value=2>2 Minutes</option>
+                  <option value=3>3 Minutes</option>
+                  <option value=4>4 Minutes</option>
+                  <option value=5>5 Minutes</option>
+                </select>
               </th>
             </tr>
           </tbody>

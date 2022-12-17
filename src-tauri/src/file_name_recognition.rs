@@ -33,7 +33,8 @@ pub struct AnimePath {
 
 // scans these folders and subfolders looking for files that match titles in the users anime list
 // found files are then stored in a global list for each anime and episode
-pub async fn parse_file_names(folders: &Vec<String>) {
+// media_id is for finding files for a specific anime instead of any anime known
+pub async fn parse_file_names(folders: &Vec<String>, media_id: Option<i32>) {
     
     for folder in folders {
 
@@ -76,7 +77,7 @@ pub async fn parse_file_names(folders: &Vec<String>) {
         
         let timer = Instant::now();
 
-        string_similarity(&mut file_names).await;
+        string_similarity(&mut file_names, media_id).await;
         
         let millis = timer.elapsed().as_millis();
         println!("Time: {}s {}ms", millis / 1000, millis % 1000);
@@ -141,7 +142,7 @@ fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
 
 
 // compares filename to anime titles using multiple string matching algorithms and remembers the most similar title
-async fn string_similarity(paths: &mut Vec<AnimePathWorking>) {
+async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>) {
 
     //let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut previous_file_name = String::new();
@@ -160,7 +161,7 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>) {
             previous_file_name = path.filename.clone();
         }
 
-        let similarity_score = identify_media_id(&path.filename, &anime_data);
+        let similarity_score = identify_media_id(&path.filename, &anime_data, media_id);
         
         if similarity_score.1 > 0.8 {
             path.media_id = similarity_score.0;
@@ -181,27 +182,39 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>) {
 }
 
 // returns the media id and similarity score based on the title
-pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>) -> (i32, f64) {
+pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>, only_compare: Option<i32>) -> (i32, f64) {
 
     let mut score = 0.0;
     let mut media_id = 0;
-    anime_data.iter().for_each(|data| {
+    if only_compare.is_none() {
+
+        anime_data.iter().for_each(|data| {
             
-        let mut titles: Vec<String> = Vec::new();
-        if data.1.title.english.is_some() { titles.push(data.1.title.english.clone().unwrap().to_ascii_lowercase()) }
-        if data.1.title.romaji.is_some() { titles.push(data.1.title.romaji.clone().unwrap().to_ascii_lowercase()) }
-        if data.1.title.native.is_some() { titles.push(data.1.title.native.clone().unwrap().to_ascii_lowercase()) }
-
-        for title in titles {
-
-            if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue }
-            let normalized_levenshtein_score = strsim::normalized_levenshtein(&filename, &title);
-            if normalized_levenshtein_score > score { media_id = data.1.id; score = normalized_levenshtein_score; }
-        }
-    });
+            title_compare(data.1, filename, &mut score, &mut media_id);
+        });
+    } else if anime_data.contains_key(&only_compare.unwrap()) {
+        
+        let anime = anime_data.get(&only_compare.unwrap()).unwrap();
+        title_compare(anime, filename, &mut score, &mut media_id);
+    }
     (media_id, score)
 }
 
+
+fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id: &mut i32) {
+    
+    let mut titles: Vec<String> = Vec::new();
+    if anime.title.english.is_some() { titles.push(anime.title.english.clone().unwrap().to_ascii_lowercase()) }
+    if anime.title.romaji.is_some() { titles.push(anime.title.romaji.clone().unwrap().to_ascii_lowercase()) }
+    if anime.title.native.is_some() { titles.push(anime.title.native.clone().unwrap().to_ascii_lowercase()) }
+
+    for title in titles {
+
+        if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue }
+        let normalized_levenshtein_score = strsim::normalized_levenshtein(&filename, &title);
+        if normalized_levenshtein_score > *score { *media_id = anime.id; *score = normalized_levenshtein_score; }
+    }
+}
 
 // find the episode number in the filename and store it
 fn identify_episode_number(paths: &mut Vec<AnimePathWorking>) {
