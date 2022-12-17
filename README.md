@@ -1,7 +1,9 @@
-# Tauri + Vanilla
+# Gekijou
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Javascript.
+Gekijou is a multiplatform user interface for browsing and watching anime on your computer. Gekijou will automatically find episodes on your computer and update your progress as you watch them. Works with AniList for user data and media data. 
 
-## Recommended IDE Setup
+Gekijou is built in Tauri, primarily using Rust for functionality and HMTL/CSS/JavaScript for the interface. 
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## Screenshots
+![Gekijou](https://raw.githubusercontent.com/rC5HUaxv9j/Gekijou/master/Gekijou.png)
+![Gekijou](https://raw.githubusercontent.com/rC5HUaxv9j/Gekijou/master/Gekijou2.png)
