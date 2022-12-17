@@ -675,7 +675,7 @@ function determine_sort_value(anime, user_data) {
       break;
     case "Completed":
       if (user_data.completed_at != null) {
-        if (user_data.started_at.year == null && user_data.started_at.month == null && user_data.started_at.day == null){
+        if (user_data.completed_at.year == null && user_data.completed_at.month == null && user_data.completed_at.day == null){
           return "No Date";
         }
         return user_data.completed_at.year + "-" + user_data.completed_at.month + "-" + user_data.completed_at.day;

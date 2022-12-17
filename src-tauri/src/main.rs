@@ -1,8 +1,8 @@
-/*#![cfg_attr(
+#![cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
 )]
-*/
+
 
 
 pub mod secrets;
@@ -82,6 +82,9 @@ async fn set_user_settings(settings: UserSettings) {
         scan = true;
     } else {
         for i in 0..settings.folders.len() {
+            if settings.folders[i] == "" {
+                continue;
+            }
             if user_settings.folders[i] != settings.folders[i] {
                 scan = true;
             }
@@ -100,11 +103,11 @@ async fn set_user_settings(settings: UserSettings) {
         user_settings.score_format = api_calls::get_user_score_format(user_settings.username.clone()).await;
     }
 
+    drop(user_settings);
     if scan {
         file_name_recognition::parse_file_names(None).await;
     }
 
-    drop(user_settings);
     file_operations::write_file_user_settings().await;
 }
 
@@ -146,7 +149,6 @@ async fn get_list(list_name: String) -> (Vec<AnimeInfo>, Option<String>) {
 async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: usize) -> Vec<(AnimeInfo, UserAnimeInfo)> {
 
     let anime_per_page: usize = 50;
-
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
         if error_message.is_some() {
@@ -158,7 +160,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
     }
 
     let mut anime_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
-    let mut list = anime_lists.get_mut(&list_name).unwrap().clone();
+    let list = anime_lists.get_mut(&list_name).unwrap();
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let user_data = GLOBAL_USER_ANIME_DATA.lock().await;
 
@@ -206,7 +208,8 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
 
     let mut list_info: Vec<(AnimeInfo, UserAnimeInfo)> = Vec::new();
     for i in start..finish {
-        list_info.push((anime_data.get(list.get(i).unwrap()).unwrap().clone(), user_data.get(list.get(i).unwrap()).unwrap().clone()));
+        let id = list.get(i).unwrap();
+        list_info.push((anime_data.get(id).unwrap().clone(), user_data.get(id).unwrap().clone()));
     }
 
     list_info
@@ -310,6 +313,7 @@ async fn update_user_entry(anime: UserAnimeInfo) {
     }
 
     let response = api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime).await;
+    println!("{}", response);
     let json: serde_json::Value = serde_json::from_str(&response).unwrap();
     let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
     let media_id = new_info.media_id.clone();
@@ -347,6 +351,10 @@ async fn on_startup() {
 async fn load_user_settings() {
 
     file_operations::read_file_user_settings().await;
+    let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
+    if user_settings.highlight_color.is_empty() {
+        user_settings.highlight_color = String::from("rgb(96, 217, 236)");
+    }
 }
 
 // go ahead with any updates that haven't been completed yet before closing
@@ -504,9 +512,9 @@ async fn anime_update_delay() {
         title_edit = title_edit.replace(episode_str.as_str(), "");
         title_edit = file_name_recognition::irrelevant_information_removal(title_edit);
 
-        let (media_id, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data, None);
+        let (media_id, _, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data, None);
         if media_score < 0.8 { continue; }
-        //println!("{} {} {} {:.4}", title_edit, episode.1, media_id, media_score);
+
         if watching_data.contains_key(&media_id) {
             watching_data.entry(media_id).and_modify(|entry| {
                 entry.monitoring = true;
@@ -774,7 +782,7 @@ async fn get_user_data() {
             for item2 in item["entries"].as_array().unwrap() {
 
                 let entry: UserAnimeInfo = serde_json::from_value(item2.clone()).unwrap();
-                //println!("{} {}", entry.id, entry.progress);
+
                 list.push(entry.media_id.clone());
                 user_data.insert(entry.media_id, entry);
             }

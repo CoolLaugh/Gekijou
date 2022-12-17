@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use std::fs;
+use std::fs::{self, File};
+use std::io::Write;
 use std::path::Path;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
@@ -142,16 +143,29 @@ fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
 // compares filename to anime titles using multiple string matching algorithms and remembers the most similar title
 async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>) {
 
-    //let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut previous_file_name = String::new();
-    //let mut counter = 0;
-    //let total = paths.len();
     let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
+
+    // let mut folders = paths.first().unwrap().path.split("\\");
+    // let index = folders.clone().count();
+    // let folder = format!("data/{}_string_similarity.txt",folders.nth(index-2).unwrap());
+    // let path = Path::new(folder.as_str());
+
+    // if path.exists() {
+    //     match fs::remove_file(path) {
+    //         Err(why) => panic!("unable to remove, {}", why),
+    //         Ok(file) => file,
+    //     };
+    // }
+
+    // // create the file
+    // let mut file = match File::create(path) {
+    //     Err(why) => panic!("unable to open, {}", why),
+    //     Ok(file) => file,
+    // };
 
     paths.iter_mut().for_each(|path| {
         // skip files that have the same title
-        //counter += 1;
-        //println!("{}/{}", counter, total);
         if path.filename == previous_file_name {
             return;
         }
@@ -159,18 +173,21 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i
             previous_file_name = path.filename.clone();
         }
 
-        let similarity_score = identify_media_id(&path.filename, &anime_data, media_id);
+        let (id, _title, similarity_score) = identify_media_id(&path.filename, &anime_data, media_id);
+        // match file.write_all(format!("{} | {} | {}\n", similarity_score, path.filename, title).as_bytes()) {
+        //     Err(why) => panic!("ERROR: {}", why),
+        //     Ok(file) => file,
+        // };
         
-        if similarity_score.1 > 0.8 {
-            path.media_id = similarity_score.0;
-            path.similarity_score = similarity_score.1;
+        if similarity_score > 0.8 && similarity_score > path.similarity_score {
+            path.media_id = id;
+            path.similarity_score = similarity_score;
         }
     });
 
     // fill in data for files that were skipped
-    for i in 0..paths.len() {
-        if i == 0 { continue; }
-        if paths[i].media_id == 0 {
+    for i in 1..paths.len() {
+        if paths[i].filename == paths[i - 1].filename {
             paths[i].similarity_score = paths[i - 1].similarity_score;
             paths[i].media_id = paths[i - 1].media_id;
         }
@@ -179,26 +196,28 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i
 }
 
 // returns the media id and similarity score based on the title
-pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>, only_compare: Option<i32>) -> (i32, f64) {
+pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>, only_compare: Option<i32>) -> (i32, String, f64) {
 
     let mut score = 0.0;
     let mut media_id = 0;
+    let mut title = String::new();
+    
     if only_compare.is_none() {
 
         anime_data.iter().for_each(|data| {
             
-            title_compare(data.1, filename, &mut score, &mut media_id);
+            title_compare(data.1, filename, &mut score, &mut media_id, &mut title);
         });
     } else if anime_data.contains_key(&only_compare.unwrap()) {
         
         let anime = anime_data.get(&only_compare.unwrap()).unwrap();
-        title_compare(anime, filename, &mut score, &mut media_id);
+        title_compare(anime, filename, &mut score, &mut media_id, &mut title);
     }
-    (media_id, score)
+    (media_id, title, score)
 }
 
 
-fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id: &mut i32) {
+fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id: &mut i32, return_title: &mut String) {
     
     let mut titles: Vec<String> = Vec::new();
     if anime.title.english.is_some() { titles.push(anime.title.english.clone().unwrap().to_ascii_lowercase()) }
@@ -207,9 +226,13 @@ fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id
 
     for title in titles {
 
-        if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue }
+        if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue } // skip comparison if first character does not match
         let normalized_levenshtein_score = strsim::normalized_levenshtein(&filename, &title);
-        if normalized_levenshtein_score > *score { *media_id = anime.id; *score = normalized_levenshtein_score; }
+        if normalized_levenshtein_score > *score { 
+            *media_id = anime.id; 
+            *score = normalized_levenshtein_score;
+            *return_title = title;
+        }
     }
 }
 
