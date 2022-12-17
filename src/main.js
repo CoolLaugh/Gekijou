@@ -1,10 +1,17 @@
 const { invoke } = window.__TAURI__.tauri;
-var anime_info = new Map();
 
 window.addEventListener("DOMContentLoaded", () => {
-  test_add_anime();
   invoke("read_token_data");
+  get_user_settings();
 });
+
+async function get_user_settings() {
+  
+  var user_settings = await invoke("get_user_settings");
+  
+  document.getElementById("user_name").value = user_settings.username;
+  document.getElementById("title_language").value = user_settings.title_language;
+}
 
 // add anime for testing
 async function test_add_anime() {
@@ -21,7 +28,63 @@ async function open_oauth_window() {
 }
 
 async function get_oauth_token() {
-  invoke("anilist_oauth_token", { code: document.getElementById("oauth_code").value});
+  var input = document.getElementById("oauth_code")
+  console.log(input.value);
+  var success = await invoke("anilist_oauth_token", { code: document.getElementById("oauth_code").value});
+
+  input.value = "";
+  if(success == true) {
+    input.setAttribute("placeholder", "Success");
+  } else {
+    input.setAttribute("placeholder", "Failed");
+  }
+}
+
+async function hide_setting_window() {
+  document.getElementById("login_panal").style.visibility = "hidden";
+  document.getElementById("cover_panal_grid").style.opacity = 1;
+
+  var un = document.getElementById("user_name").value;
+  var lang = document.getElementById("title_language").value;
+
+  console.log(un + " " + lang + "\n");
+
+  invoke("set_user_settings", { username: un, titleLanguage: lang});
+}
+
+async function show_setting_window() {
+  document.getElementById("login_panal").style.visibility = "visible";
+  document.getElementById("cover_panal_grid").style.opacity = 0.3;
+}
+
+async function show_watching_anime() {
+
+  var watching = await invoke("get_watching_list", { listName: "Watching" });
+  console.log(watching);
+  // get userdata on anime
+
+  // add anime to UI
+  var cover_id = 0;
+  watching.forEach(function(anime) {
+    console.log(anime);
+    add_anime(anime, cover_id);
+    cover_id += 1;
+  });
+}
+
+async function show_completed_anime() {
+
+  var watching = await invoke("get_watching_list", { listName: "Completed" });
+  console.log(watching);
+  // get userdata on anime
+
+  // add anime to UI
+  var cover_id = 0;
+  watching.forEach(function(anime) {
+    console.log(anime);
+    add_anime(anime, cover_id);
+    cover_id += 1;
+  });
 }
 
 async function test() {
@@ -32,22 +95,27 @@ async function test() {
 }
 
 // add an anime to the ui
-async function add_anime(anime_id, cover_id) {
+async function add_anime(anime, cover_id) {
 
-  if(anime_info.has(anime_id) == false) {
-    anime_info.set(anime_id, await invoke("get_anime_info_query", { id: anime_id }));
+  var title = "No Title";
+  if(anime.title.english != null){
+    title = anime.title.english;
+  } else if (anime.title.romaji != null) {
+    title = anime.title.romaji;
+  } else if (anime.title.native != null) {
+    title = anime.title.native;
   }
-  console.log(typeof anime_id);
+
   document.getElementById("cover_panal_grid").insertAdjacentHTML("beforeend", 
-  "<div class=\"cover_container\" anime_id=" + anime_id + ">" +
-    "<img class=\"image\" src=" + anime_info.get(anime_id).cover_image.large + " id=\"" + cover_id + "\" alt=\"Cover Image\" width=\"200\" height=\"300\"/>" +
-    "<button class=\"cover_play_button\" type=\"button\" onclick=\"getanime(" + anime_id + ", " + cover_id + ")\">Play</button>" +
-    "<button class=\"cover_info_button\" type=\"button\" onclick=\"show_anime_info_window(" + anime_id + ")\">Info</button>" +
+  "<div class=\"cover_container\" anime_id=" + anime.id + " title=\"" + title + "\" score=" + anime.average_score + " date=" + (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day) + " popularity=" + anime.popularity + ">" +
+    "<img class=\"image\" src=" + anime.cover_image.large + " id=\"" + cover_id + "\" alt=\"Cover Image\" width=\"200\" height=\"300\"/>" +
+    "<button class=\"cover_play_button\" type=\"button\" onclick=\"getanime(" + anime.id + ", " + cover_id + ")\">Play</button>" +
+    "<button class=\"cover_info_button\" type=\"button\" onclick=\"show_anime_info_window(" + anime.id + ")\">Info</button>" +
     "<div class=\"myProgress\">" +
       "<div class=\"myBar\" id=\"Bar" + cover_id + "\"></div>" +
     "</div>" +
     "<div class=\"cover_title\">" +
-      "<p id=\"title" + anime_id + "\">" + anime_info.get(anime_id).title.english + "</p>" +
+      "<p id=\"title" + anime.id + "\">" + title + "</p>" +
     "</div>" +
   "</div>");
 
@@ -144,16 +212,16 @@ async function sort_anime() {
 
       switch(sort_categorie_index) {
         case 0:
-          sortMe.push([ anime_info.get(id).title.english , elements[i] ]);
+          sortMe.push([ elements[i].getAttribute("title") , elements[i] ]);
           break;
         case 1:
-          sortMe.push([ anime_info.get(id).average_score , elements[i] ]);
+          sortMe.push([ parseInt(elements[i].getAttribute("score"), 10) , elements[i] ]);
           break;
         case 2:
-          sortMe.push([ anime_info.get(id).start_date.year * 10000 + anime_info.get(id).start_date.month * 100 + anime_info.get(id).start_date.day , elements[i] ]);
+          sortMe.push([ parseInt(elements[i].getAttribute("date"), 10) , elements[i] ]);
           break;
         case 3:
-          sortMe.push([ anime_info.get(id).popularity , elements[i] ]);
+          sortMe.push([ parseInt(elements[i].getAttribute("popularity"), 10) , elements[i] ]);
           break;
       }
     }
@@ -181,8 +249,11 @@ async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
 }
 
-
-
+window.show_completed_anime = show_completed_anime;
+window.show_watching_anime = show_watching_anime;
+window.get_user_settings = get_user_settings;
+window.hide_setting_window = hide_setting_window;
+window.show_setting_window = show_setting_window;
 window.get_oauth_token = get_oauth_token;
 window.open_oauth_window = open_oauth_window;
 window.test = test;

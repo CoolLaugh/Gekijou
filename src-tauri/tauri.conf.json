@@ -56,7 +56,7 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 800,
+        "height": 825,
         "resizable": true,
         "title": "Gekijou",
         "width": 1160,

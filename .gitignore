@@ -22,5 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# persistant storage
 token.txt
+token_backup.txt
+user_settings.txt
+user_settings_backup.txt
+anime_cache.txt
+anime_cache_backup.txt
+
+
+# client secret
 secrets.rs

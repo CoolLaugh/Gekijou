@@ -114,11 +114,16 @@
   border-radius: 10px;
   padding: 10px;
   gap: 10px;
-  visibility: visible;
+  visibility: hidden;
 }
 
 .anilist_login_panal button {
-  width: 110px;
+  height: 39.6px;
+  width: 210px;
+}
+
+.anilist_login_panal input {
+  width: 160px;
 }
 
 .anilist_auth_panal {
@@ -250,7 +255,7 @@ input,
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  padding: 0.6em 0.6em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;

@@ -18,13 +18,13 @@
   <body>
 
     <div class="topnav">
-      <a href="#Watching">Watching</a>
-      <a href="#Completed" onclick="add_anime(142838, 4)">Completed</a>
+      <a href="#Watching" onclick="show_watching_anime()">Watching</a>
+      <a href="#Completed" onclick="show_completed_anime()">Completed</a>
       <a href="#Onhold">On hold</a>
       <a href="#Dropped">Dropped</a>
       <a href="#Plantowatch">Plan to watch</a>
       <a href="#Browse">Browse</a>
-      <a href="#Settings" class="split">Settings</a>
+      <a href="#Settings" class="split" onclick="show_setting_window()">Settings</a>
     </div> 
 
     <div class="container">
@@ -88,21 +88,34 @@
           <table>
             <tr>
               <th>
-                Get Autherization code:
+                Username:
               </th>
               <th>
-                <button class="cover_info_button" type="button" onclick="open_oauth_window()">get code</button>
+                <input type="text" id="user_name" placeholder="required">
               </th>
             </tr>
             <tr>
               <th>
-                <input type="text" id="oauth_code">
+                <button type="button" onclick="open_oauth_window()">Get Autherization code</button>
               </th>
               <th>
-                <button class="cover_info_button" type="button" onclick="get_oauth_token()">Autherize</button>
+                <input type="text" id="oauth_code" placeholder="paste code here" onPaste="var e=this; setTimeout(function(){get_oauth_token();}, 4);">
+              </th>
+            </tr>
+            <tr>
+              <th>
+                Title language prefrence: 
+              </th>
+              <th>
+                <select name="title_language" id="title_language">
+                  <option value="romaji">Romaji</option>
+                  <option value="english">English</option>
+                  <option value="native">Native</option>
+                </select>
               </th>
             </tr>
           </table>
+          <button type="button" style="transform: translateX(50%);" onclick="hide_setting_window()">OK</button>
         </div>
 
       </div>
