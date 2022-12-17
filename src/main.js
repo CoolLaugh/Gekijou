@@ -1,15 +1,42 @@
 const { invoke } = window.__TAURI__.tauri;
 
-window.addEventListener("DOMContentLoaded", () => {
-  invoke("on_startup");
-  get_user_settings();
+window.addEventListener("DOMContentLoaded", async () => {
+
+  await invoke("load_user_settings");
+
+  var user_settings = await invoke("get_user_settings");
+  document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
+
+  await invoke("on_startup");
+
   populate_year_dropdown();
 
   document.getElementById("information").style.display = "block";
   document.getElementById("underline_tab_0").style.visibility = "visible";
+
   invoke("anime_update_delay_loop");
+
   check_for_refresh_ui();
 });
+
+window.set_color = set_color;
+async function set_color(element) {
+
+  var parent = document.getElementById("color_boxes");
+  var elements = parent.childNodes;
+
+  for (var i=0; i<elements.length; i++) {
+
+    if(elements[i].nodeType == 1) {
+      elements[i].style.setProperty("border-style", "hidden");
+      elements[i].style.setProperty("margin", "2.5px");
+    }
+  }
+  element.style.setProperty("border-style", "solid");
+  element.style.setProperty("margin", "0px");
+
+  document.styleSheets[0].cssRules[0].style.setProperty("--highlight", element.style.getPropertyValue("background"));
+}
 
 window.get_user_settings = get_user_settings;
 async function get_user_settings() {
@@ -27,6 +54,23 @@ async function get_user_settings() {
     folder_textarea.value += user_settings.folders[i];
     if(i + 1 != user_settings.folders.length) {
       folder_textarea.value += "\n";
+    }
+  }
+  
+  document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
+  var elements = document.getElementById("color_boxes").childNodes;
+  for (var i=0; i<elements.length; i++) {
+
+    if(elements[i].nodeType != 1) { 
+      continue;
+    }
+
+    if (elements[i].style.getPropertyValue("background") == user_settings.highlight_color) {
+      elements[i].style.setProperty("border-style", "solid");
+      elements[i].style.setProperty("margin", "0px");
+    } else {
+      elements[i].style.setProperty("border-style", "hidden");
+      elements[i].style.setProperty("margin", "2.5px");
     }
   }
 }
@@ -68,7 +112,7 @@ async function confirm_delete_entry(id, media_id) {
       show_anime_list(current_tab);
       document.getElementById("status_select").value = "";
       document.getElementById("episode_number").value = 0;
-      document.getElementById("score_0to5").value = "0";
+      document.getElementById("score_dropdown").value = "0";
       document.getElementById("started_date").value = "";
       document.getElementById("finished_date").value = "";
     }
@@ -108,6 +152,7 @@ async function show_watching_anime() {
   has_next_page = true;
   show_anime_list_paged(current_page);
   exclusive_underline(0);
+  populate_sort_dropdown(false);
   var grid = document.getElementById("cover_panel_id");
   grid.onscroll = function(ev) {
     if (ev.target.offsetHeight + ev.target.scrollTop >= (ev.target.scrollHeight - 500)) {
@@ -125,6 +170,7 @@ async function show_completed_anime() {
   has_next_page = true;
   show_anime_list_paged(current_page);
   exclusive_underline(1);
+  populate_sort_dropdown(false);
   var grid = document.getElementById("cover_panel_id");
   grid.onscroll = function(ev) {
     if (ev.target.offsetHeight + ev.target.scrollTop >= (ev.target.scrollHeight - 500)) {
@@ -142,6 +188,7 @@ async function show_paused_anime() {
   has_next_page = true;
   show_anime_list_paged(current_page);
   exclusive_underline(2);
+  populate_sort_dropdown(false);
   var grid = document.getElementById("cover_panel_id");
   grid.onscroll = function(ev) {
     if (ev.target.offsetHeight + ev.target.scrollTop >= (ev.target.scrollHeight - 500)) {
@@ -159,6 +206,7 @@ async function show_dropped_anime() {
   has_next_page = true;
   show_anime_list_paged(current_page);
   exclusive_underline(3);
+  populate_sort_dropdown(false);
   var grid = document.getElementById("cover_panel_id");
   grid.onscroll = function(ev) {
     if (ev.target.offsetHeight + ev.target.scrollTop >= (ev.target.scrollHeight - 500)) {
@@ -176,6 +224,7 @@ async function show_planning_anime() {
   has_next_page = true;
   show_anime_list_paged(current_page);
   exclusive_underline(4);
+  populate_sort_dropdown(false);
   var grid = document.getElementById("cover_panel_id");
   grid.onscroll = function(ev) {
     if (ev.target.offsetHeight + ev.target.scrollTop >= (ev.target.scrollHeight - 500)) {
@@ -189,9 +238,30 @@ window.show_browse_anime = show_browse_anime;
 async function show_browse_anime() {
   current_tab = "BROWSE";
   exclusive_underline(5);
+  populate_sort_dropdown(true);
   document.getElementById("browse_filters").style.display = "block";
   removeChildren(document.getElementById("cover_panel_grid"));
-  grid.onscroll = null;
+  document.getElementById("cover_panel_id").onscroll = null;
+}
+
+function populate_sort_dropdown(browse) {
+
+  var index = document.getElementById("sort_order").selectedIndex;
+
+  removeChildren(document.getElementById("sort_order"));
+  document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Alphabetical\">Alphabetical</option>");
+  document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Score\">Score</option>");
+  document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Date\">Date</option>");
+  document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Popularity\">Popularity</option>");
+  document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Trending\">Trending</option>");
+  if (browse == false) {
+    document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Started\">Started</option>");
+    document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Completed\">Completed</option>");
+  } else if (index >= 5) {
+      index = 0;
+  }
+
+  document.getElementById("sort_order").selectedIndex = index;
 }
 
 // draw progress bar for recognizing anime being played by media players
@@ -257,6 +327,7 @@ async function draw_delay_progress() {
 // shows the settings window
 window.show_setting_window = show_setting_window;
 async function show_setting_window() {
+  get_user_settings();
   document.getElementById("login_panel").style.visibility = "visible";
   document.getElementById("cover_panel_grid").style.opacity = 0.3;
 }
@@ -321,7 +392,7 @@ async function show_anime_list_paged(page) {
   
   document.getElementById("browse_filters").style.display = "none";
 
-  var watching = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order_text").textContent, page: page});
+  var watching = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order").value, ascending: sort_ascending, page: page});
   var user_settings = await invoke("get_user_settings");
 
   // user didn't change the tab while getting the list from anilist
@@ -354,23 +425,14 @@ const removeChildren = (parent) => {
 
 // list of categories that can be searched by
 // variables are field name, display name, and default sorting order
-const sort_categories = [["name", "Alphabetical", true], ["score","Score", false], ["date","Date", true], ["popularity","Popularity", false]];
-var sort_category_index = 0;
 var sort_ascending = true;
-
+const default_order = {"Alphabetical": true, "Score": false, "Date": true, "Popularity": false, "Trending": false, "Started": false, "Completed": false}
 // cycle through different ways of sorting shows
 window.change_sort_type = change_sort_type;
 async function change_sort_type() {
 
-  sort_category_index = (sort_category_index + 1) % sort_categories.length;
-  sort_ascending = sort_categories[sort_category_index][2];
-
-  document.getElementById("sort_order_text").textContent = sort_categories[sort_category_index][1];
-
-  change_ascending_indicator()
-
-  console.log(sort_category_index);
-  console.log(sort_categories[sort_category_index]);
+  sort_ascending = default_order[document.getElementById("sort_order").value];
+  change_ascending_indicator(sort_ascending);
 
   if (current_tab == "BROWSE") {
     browse_update();
@@ -383,7 +445,7 @@ async function change_sort_type() {
 window.change_sort_ascending = change_sort_ascending;
 async function change_sort_ascending() {
   sort_ascending = !sort_ascending;
-  change_ascending_indicator()
+  change_ascending_indicator(sort_ascending)
   if (current_tab == "BROWSE") {
     browse_update();
   } else {
@@ -392,8 +454,8 @@ async function change_sort_ascending() {
 }
 
 // change the image to show if the list is being sorted ascending or descending
-function change_ascending_indicator() {
-  if(sort_ascending == true) {
+function change_ascending_indicator(ascending) {
+  if(ascending == true) {
     document.getElementById("sort_order_ascending").style.transform = 'rotate(180deg)';
     document.getElementById("sort_order_ascending").order = "AES";
   }
@@ -410,35 +472,47 @@ async function sort_anime() {
   var container = document.getElementById("cover_panel_grid");
   var elements = container.childNodes;
   var sort_me = [];
-
+  
   for (var i=0; i<elements.length; i++) {
       
     if (elements[i].nodeType == 1) {
 
-      switch(sort_category_index) {
-        case 0:
+      switch(document.getElementById("sort_order").value) {
+        case "Alphabetical":
           sort_me.push([ elements[i].getAttribute("title").toLowerCase() , elements[i] ]);
           break;
-        case 1:
+        case "Score":
           sort_me.push([ parseInt(elements[i].getAttribute("score"), 10) , elements[i] ]);
           break;
-        case 2:
+        case "Date":
           sort_me.push([ parseInt(elements[i].getAttribute("date"), 10) , elements[i] ]);
           break;
-        case 3:
+        case "Popularity":
           sort_me.push([ parseInt(elements[i].getAttribute("popularity"), 10) , elements[i] ]);
+          break;
+        case "Trending":
+          sort_me.push([ parseInt(elements[i].getAttribute("trending"), 10) , elements[i] ]);
+          break;
+        case "Started":
+          sort_me.push([ parseInt(elements[i].getAttribute("started"), 10) , elements[i] ]);
+          break;
+        case "Completed":
+          sort_me.push([ parseInt(elements[i].getAttribute("completed"), 10) , elements[i] ]);
           break;
       }
     }
   }
 
-  switch(sort_category_index) {
-    case 0:
+  switch(document.getElementById("sort_order").value) {
+    case "Alphabetical":
       sort_me.sort();
       break;
-    case 1: // intentional fall through
-    case 2: // intentional fall through
-    case 3: 
+    case "Score": // intentional fall through
+    case "Date": // intentional fall through
+    case "Popularity":
+    case "Trending":
+    case "Started":
+    case "Completed":
       sort_me.sort(function(a,b) {
         return a[0]-b[0];
       });
@@ -494,6 +568,16 @@ async function add_anime(anime, user_data, cover_id, language) {
     start_date = (anime.start_date.year * 10000 + anime.start_date.month * 100 + anime.start_date.day);
   }
 
+  var started_date = 0;
+  if (anime.started_at != null) {
+    started_date = (user_data.started_at.year * 10000 + user_data.started_at.month * 100 + user_data.started_at.day);
+  }
+
+  var completed_date = 0;
+  if (anime.completed_at != null) {
+    completed_date = (user_data.completed_at.year * 10000 + user_data.completed_at.month * 100 + user_data.completed_at.day);
+  }
+
   var cover_image = "./assets/no_cover_image.png";
   if (anime.cover_image != null) {
     cover_image = anime.cover_image.large;
@@ -504,7 +588,7 @@ async function add_anime(anime, user_data, cover_id, language) {
     average_score = anime.average_score;
   }
 
-  add_cover_card(anime.id, cover_id, cover_image, start_date, anime.popularity, average_score, title, episode_text, anime.trailer);
+  add_cover_card(anime.id, cover_id, cover_image, start_date, anime.popularity, average_score, title, episode_text, anime.trailer, anime.trending, started_date, completed_date);
 
   if (user_data != null) {
     draw_episode_canvas(user_data.progress, anime.episodes, anime.id);
@@ -513,7 +597,7 @@ async function add_anime(anime, user_data, cover_id, language) {
 
 // insert a card into the ui
 window.add_cover_card = add_cover_card;
-async function add_cover_card(anime_id, cover_id, cover_image, start_date, popularity, score, title, episode_text, trailer) {
+async function add_cover_card(anime_id, cover_id, cover_image, start_date, popularity, score, title, episode_text, trailer, trending, started, completed) {
 
   var display_browse = "none";
   var display_not_browse = "none";
@@ -531,7 +615,7 @@ async function add_cover_card(anime_id, cover_id, cover_image, start_date, popul
 
   var html = "";
 
-  html += "<div id=\"" + anime_id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + popularity + "\" score=\"" + score + "\" title=\"" + title + "\">"
+  html += "<div id=\"" + anime_id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + popularity + "\" score=\"" + score + "\" title=\"" + title + "\" trending=\"" + trending + "\" started=\"" + started + "\" completed=\"" + completed + "\">"
   html +=   "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=\"" + cover_image + "\" width=\"200\">"
   html +=   "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes_" + anime_id + "\" width=\"200\"></canvas>"
   html +=   "<div class=\"cover_title\"><p id=\"title" + anime_id + "\">" + title + "</p></div>"
@@ -637,11 +721,22 @@ async function browse_update() {
   var season = document.getElementById("season_select").value;
   var format = document.getElementById("format_select").value;
   var genre = document.getElementById("genre_select").value;
+  var user_settings = await invoke("get_user_settings");
 
   var sort_value = "";
-  switch(document.getElementById("sort_order_text").textContent) {
+  switch(document.getElementById("sort_order").value) {
     case "Alphabetical":
-      sort_value = "TITLE_ROMAJI";
+      switch(user_settings.title_language) {
+        case "romaji":
+          sort_value = "TITLE_ROMAJI";
+          break;
+        case "english":
+          sort_value = "TITLE_ENGLISH";
+          break;
+        case "native":
+          sort_value = "TITLE_NATIVE";
+          break;
+      }
       break;
     case "Score":
       sort_value = "SCORE";
@@ -652,6 +747,9 @@ async function browse_update() {
     case "Popularity":
       sort_value = "POPULARITY";
       break;
+    case "Trending":
+      sort_value = "TRENDING";
+      break;
   }
   if (document.getElementById("sort_order_ascending").order == "DESC") {
     sort_value += "_DESC";
@@ -659,7 +757,6 @@ async function browse_update() {
 
   var list = await invoke("browse", {year: year, season: season, genre: genre, format: format, order: sort_value});
 
-  var user_settings = await invoke("get_user_settings");
   removeChildren(document.getElementById("cover_panel_grid"));
   for(var i = 0; i < list.length; i++) {
     if(user_settings.show_adult == false && list[i].is_adult == true) {
@@ -746,6 +843,7 @@ async function show_anime_info_window(anime_id) {
   }
 
   document.getElementById("info_cover").src = info.cover_image.large;
+  document.getElementById("studio").innerHTML = info.studios.nodes[0].name;
   document.getElementById("info_description").innerHTML = info.description;
   if(title.length > 55) {
     document.getElementById("info_title").textContent = title.substring(0, 55) + "...";
@@ -796,7 +894,8 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
   document.getElementById("status_select").value = user_data.status;
   document.getElementById("episode_number").value = user_data.progress;
-  document.getElementById("score_0to5").value = user_data.score;
+  setup_score_dropdown(user_settings.score_format);
+  document.getElementById("score_dropdown").value = user_data.score;
   if (user_data.started_at != null) {
     document.getElementById("started_date").value = user_data.started_at.year + "-" + String(user_data.started_at.month).padStart(2,'0') + "-" + String(user_data.started_at.day).padStart(2,'0');
   } else {
@@ -812,6 +911,26 @@ async function show_anime_info_window(anime_id) {
   openTab('information', 'underline_tab_0');
   document.getElementById("info_panel").style.display = "block";
   document.getElementById("cover_panel_grid").style.opacity = 0.3;
+}
+
+function setup_score_dropdown(format) {
+  switch(format) {
+    case "POINT_100":
+      document.getElementById("score_cell").innerHTML = "<input id=\"score_dropdown\" format=\"" + format + "\" min=\"0\" max=\"100\" step=1 type=\"number\">";
+      break;
+    case "POINT_10_DECIMAL":
+      document.getElementById("score_cell").innerHTML = "<input id=\"score_dropdown\" format=\"" + format + "\" min=\"0.0\" max=\"10.0\" step=0.1 type=\"number\">";
+      break;
+    case "POINT_10":
+      document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">1</option><option value=\"2\">2</option><option value=\"3\">3</option><option value=\"4\">4</option><option value=\"5\">5</option><option value=\"6\">6</option><option value=\"7\">7</option><option value=\"8\">8</option><option value=\"9\">9</option><option value=\"10\">10</option></select>";
+      break;
+    case "POINT_5":
+      document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">★☆☆☆☆</option><option value=\"2\">★★☆☆☆</option><option value=\"3\">★★★☆☆</option><option value=\"4\">★★★★☆</option><option value=\"5\">★★★★★</option></select>";
+      break;
+    case "POINT_3":
+      document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">🙁</option><option value=\"2\">😐</option><option value=\"3\">🙂</option></select>";
+      break;
+  }
 }
 
 // decrease the users progress by 1
@@ -899,9 +1018,24 @@ async function update_user_entry(anime_id) {
     'id': user_data.id,
     'media_id': anime_id,
     'status': document.getElementById("status_select").value,
-    'score': parseInt(document.getElementById("score_0to5").value),
+    'score': parseFloat(document.getElementById("score_dropdown").value),
     'progress': parseInt(document.getElementById("episode_number").value)
   };
+
+  switch(document.getElementById("score_dropdown").getAttribute("format")) {
+    case "POINT_100":
+      if (user_entry.score < 0) { user_entry.score = user_entry.score * -1 }
+      if (user_entry.score > 100) { user_entry.score = 100 }
+      break;
+    case "POINT_10_DECIMAL":
+      if (user_entry.score < 0) { user_entry.score = user_entry.score * -1 }
+      if (user_entry.score > 10) { user_entry.score = 10 }
+      break;
+    case "POINT_10":
+    case "POINT_5":
+    case "POINT_3":
+      break;
+  }
 
   // fill in start date
   var started = document.getElementById("started_date").value.split("-");
@@ -959,6 +1093,20 @@ async function hide_setting_window() {
   document.getElementById("login_panel").style.visibility = "hidden";
   document.getElementById("cover_panel_grid").style.opacity = 1;
 
+  var elements = document.getElementById("color_boxes").childNodes;
+  var highlight_color = "";
+  for (var i=0; i<elements.length; i++) {
+    
+    if(elements[i].nodeType != 1) { 
+      continue;
+    }
+
+    if (elements[i].style.getPropertyValue("border-style") == "solid") {
+      highlight_color = elements[i].style.getPropertyValue("background");
+      break;
+    } 
+  }
+
   var settings = {
     username: document.getElementById("user_name").value,
     title_language: document.getElementById("title_language").value,
@@ -966,6 +1114,8 @@ async function hide_setting_window() {
     show_adult: document.getElementById("show_adult").checked,
     folders: document.getElementById("folders").value.split('\n'),
     update_delay: parseInt(document.getElementById("update_delay").value),
+    score_format: "",
+    highlight_color: highlight_color,
   }
 
   invoke("set_user_settings", { settings: settings});

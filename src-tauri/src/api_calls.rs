@@ -1,7 +1,7 @@
 
 
 
-use std::{collections::HashMap, time::Instant, cmp::Ordering};
+use std::{collections::HashMap, cmp::Ordering};
 
 use reqwest::Client;
 use serde::{Serialize, Deserialize};
@@ -73,6 +73,12 @@ impl PartialEq for AnilistDate {
 
 impl Eq for AnilistDate { }
 
+impl AnilistDate {
+    pub const fn new() -> AnilistDate {
+        AnilistDate { year: None, month: None, day: None }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Node {
     pub title: Title,
@@ -138,6 +144,18 @@ pub struct AnimeInfo {
     pub relations: Relations,
     pub recommendations: Option<Recommendations>,
     pub tags: Vec<Tag>,
+    pub trending: i32,
+    pub studios: Studio,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Studio {
+    pub nodes: Vec<NodeName>
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct NodeName {
+    pub name: String
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -172,11 +190,13 @@ pub struct UserSettings {
     pub show_adult: bool,
     pub folders: Vec<String>,
     pub update_delay: i32,
+    pub score_format: String,
+    pub highlight_color: String,
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0 }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new() }
     }
 }
 
@@ -185,28 +205,15 @@ pub struct UserAnimeInfo {
     pub id: i32,
     pub media_id: i32,
     pub status: String,
-    pub score: i32,
+    pub score: f32,
     pub progress: i32,
-    pub started_at: Option<FuzzyDate>,
-    pub completed_at: Option<FuzzyDate>,
+    pub started_at: Option<AnilistDate>,
+    pub completed_at: Option<AnilistDate>,
 }
 
 impl UserAnimeInfo {
     pub const fn new() -> UserAnimeInfo {
-        UserAnimeInfo { id: 0, media_id: 0, status: String::new(), score: 0, progress: 0, started_at: None, completed_at: None }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FuzzyDate {
-    pub year: Option<i32>,
-    pub month: Option<i32>,
-    pub day: Option<i32>,
-}
-
-impl FuzzyDate {
-    pub const fn new() -> FuzzyDate {
-        FuzzyDate { year: None, month: None, day: None }
+        UserAnimeInfo { id: 0, media_id: 0, status: String::new(), score: 0.0, progress: 0, started_at: None, completed_at: None }
     }
 }
 
@@ -214,7 +221,7 @@ impl FuzzyDate {
 const ANIME_INFO_QUERY: &str = "
 query ($id: Int) { # Define which variables will be used in the query (id)
     Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
-        id title { english } coverImage { large } season seasonYear type format episodes duration isAdult genres averageScore popularity description trailer { id site } startDate { year month day }
+        id title { english } coverImage { large } season seasonYear type format episodes duration isAdult genres averageScore popularity description trailer { id site } startDate { year month day } trending
     }
 }";
 
@@ -255,11 +262,12 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
     Page(page: $page, perPage: 50) {
         pageInfo { total perPage currentPage lastPage hasNextPage }
         media(type: $type season: $season format_in: $format seasonYear: $seasonYear genre_in: $genres tag_in: $tags sort: $sort) {
-            id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes 
+            id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
             duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
             relations { edges { id relationType node { title { userPreferred } coverImage { large } } } }
             recommendations { nodes { rating mediaRecommendation { id title { userPreferred } coverImage { large } } } }
             tags { name isGeneralSpoiler isMediaSpoiler description }
+            studios(isMain: true) { nodes { name } }
         }
     }
 }";
@@ -280,11 +288,12 @@ const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListS
         entries {
           id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day }
           media {
-            id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes 
+            id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
             duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
             relations { edges { id relationType node { title { userPreferred } coverImage { large } } } }
             recommendations { nodes { rating mediaRecommendation { id title { userPreferred } coverImage { large } } } }
             tags { name isGeneralSpoiler isMediaSpoiler description }
+            studios(isMain: true) { nodes { name } }
           }
         }
       }
@@ -414,7 +423,7 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
         let user_info: UserAnimeInfo = UserAnimeInfo { id: entry["id"].as_i64().unwrap() as i32, 
                                                         media_id: entry["mediaId"].as_i64().unwrap() as i32, 
                                                         status: entry["status"].as_str().unwrap().to_string(), 
-                                                        score: entry["score"].as_i64().unwrap() as i32, 
+                                                        score: entry["score"].as_f64().unwrap() as f32, 
                                                         progress: entry["progress"].as_i64().unwrap() as i32, 
                                                         started_at: serde_json::from_value(entry["startedAt"].clone()).unwrap(), 
                                                         completed_at: serde_json::from_value(entry["completedAt"].clone()).unwrap() };
@@ -616,8 +625,28 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
     response = response.replace("mediaId", "media_id")
         .replace("startedAt", "started_at")
         .replace("completedAt", "completed_at");
-
+    
     response
+}
+
+
+const USER_SCORE_FORMAT: &str = "
+query($username: String) {
+    User(name: $username) {
+        mediaListOptions {
+            scoreFormat
+        }
+    }
+}";
+pub async fn get_user_score_format(username: String) -> String {
+
+    let json = json!({"query": USER_SCORE_FORMAT, "variables": {"username": username}});
+
+    let response = post(&json, None).await;
+
+    let format = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["User"]["mediaListOptions"]["scoreFormat"].to_string().replace("\"", "");
+    
+    format
 }
 
 // send post json to https://graphql.anilist.co/ and return its response as a string

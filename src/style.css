@@ -228,6 +228,39 @@ body {
   padding: 10px;
   gap: 10px;
   visibility: hidden;
+  border: 2px solid var(--highlight);
+}
+
+.color_box {
+  width: 20px;
+  height: 20px;
+  border-width: 0px;
+  border: #f6f6f6;
+  border-style: hidden;
+  margin: 2.5px;
+}
+
+#option-blue {
+  color: #1d7dd4;
+}
+#option-green {
+  color: #1db853;
+}
+
+#option-orange {
+  color: #ff9626;
+}
+
+#option-purple {
+  color: #7a4aba;
+}
+
+#option-5 {
+  color: #ee205e;
+}
+
+#option-red {
+  color: #e53935;
 }
 
 .anilist_login_panel textarea {

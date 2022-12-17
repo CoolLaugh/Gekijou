@@ -13,6 +13,7 @@
       <a href="#Onhold" onclick="show_paused_anime()" title="See your on hold list">On Hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
       <a href="#Dropped" onclick="show_dropped_anime()" title="See your dropped list">Dropped<div class="underline" id="underline3" style="visibility: hidden;"></div></a>
       <a href="#Plantowatch" onclick="show_planning_anime()" title="See your plan to watch list">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="set_color()" title="Test">Test</a>
       <a href="#Browse" onclick="show_browse_anime()" title="Browse anilist for anime">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
       <canvas class="recognition_delay" id="recognition_delay" height="52" width="52" title="" onclick="draw_delay_progress()"></canvas>
@@ -20,7 +21,16 @@
     <div id="cover_panel_id" class="container">
       <div class="sub_navigation">
         <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="ASC" style="transform: rotate(180deg);"  title="Sort by ascending or descending">
-        <a class="container_header" href="#sort_order" id="sort_order_text" onclick="change_sort_type()" title="Sorting category">Alphabetical</a>
+        <!--<a class="container_header" href="#sort_order" id="sort_order_text" onclick="change_sort_type()" title="Sorting category">Alphabetical</a>-->
+        <select class="container_header" id="sort_order" title="Sorting category" onchange="change_sort_type()">
+          <option value="Alphabetical">Alphabetical</option>
+          <option value="Score">Score</option>
+          <option value="Date">Date</option>
+          <option value="Popularity">Popularity</option>
+          <option value="Trending">Trending</option>
+          <option value="Started">Started</option>
+          <option value="Completed">Completed</option>
+        </select>
         <div class="filters" id="browse_filters">
           <select id="genre_select" name="genre_select">
             <option value="">Genre</option>
@@ -77,6 +87,7 @@
         <div class="anime_info_lower">
           <div class="anime_info_cover">
             <img alt="Cover Image" height="300" id="info_cover" src="/assets/CoverImageTest.png" width="200">
+            <table><tbody><tr><th><p id="studio">Studio</p></th></tr></tbody></table>
           </div>
           <div>
             <div class="tab_navigation">
@@ -126,15 +137,8 @@
                   </tr>
                   <tr>
                     <th style="text-align: right; padding-right: 10px;"><p>Score: </p></th>
-                    <th>
-                      <select id="score_0to5" name="score_select">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                      </select>
+                    <th id="score_cell">
+                      <input id="score_dropdown" min="0.0" max="10.0" step=0.1 type="number">
                     </th>
                   </tr>
                   <tr>
@@ -154,7 +158,7 @@
           </div>
         </div>
       </div>
-      <div class="anilist_login_panel" id="login_panel" style="border: 2px solid blue; visibility: hidden;">
+      <div class="anilist_login_panel" id="login_panel">
         <table>
           <tbody>
             <tr>
@@ -222,6 +226,23 @@
                   <option value=4>4 Minutes</option>
                   <option value=5>5 Minutes</option>
                 </select>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                Highlight Color:
+              </th>
+              <th style="text-align: -webkit-center;">
+                <div style="display: flex; width: fit-content;" id="color_boxes">
+                  <div class="color_box" style="background: #60d9ec;" onclick="set_color(this)"></div>
+                  <div class="color_box" style="background: #1d7dd4;" onclick="set_color(this)"></div>
+                  <div class="color_box" style="background: #23cd9a;" onclick="set_color(this)"></div>
+                  <div class="color_box" style="background: #1db853;" onclick="set_color(this)"></div>
+                  <div class="color_box" style="background: #ff9626;" onclick="set_color(this)"></div>
+                  <div class="color_box" style="background: #7a4aba;" onclick="set_color(this)"></div>
+                  <div class="color_box" style="background: #d123ce;" onclick="set_color(this)"></div>
+                  <div class="color_box" style="background: #e53935;" onclick="set_color(this)"></div>
+                </div>
               </th>
             </tr>
           </tbody>
