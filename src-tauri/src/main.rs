@@ -158,7 +158,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
     }
 
     let mut anime_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
-    let list = anime_lists.get_mut(&list_name).unwrap();
+    let mut list = anime_lists.get_mut(&list_name).unwrap().clone();
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let user_data = GLOBAL_USER_ANIME_DATA.lock().await;
 
@@ -263,6 +263,10 @@ async fn get_anime_info(id: i32) -> AnimeInfo {
 
     if GLOBAL_ANIME_DATA.lock().await.is_empty() {
         file_operations::read_file_anime_info_cache().await;
+    }
+
+    if GLOBAL_ANIME_DATA.lock().await.contains_key(&id) == false {
+        api_calls::anilist_get_anime_info_single(id).await;
     }
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await.get(&id).unwrap().clone();

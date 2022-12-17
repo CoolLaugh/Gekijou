@@ -188,6 +188,12 @@ body {
   float: left;
 }
 
+.related_title {
+  font-size: 24px;
+  margin-top: 10px;
+  margin-bottom: 3px;
+}
+
 .anime_info_title_row {
   /* scroll-snap-align: center; */
   /* align-content: baseline; */
@@ -348,6 +354,13 @@ body {
 
 .cover_container:hover .add_buttons {
   opacity: 1;
+}
+
+.sort_value_display {
+  width: 100%;
+  position: absolute;
+  top: 276px;
+  background: rgba(0,0,0,0.5);
 }
 
 .CoverButton {

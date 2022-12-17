@@ -89,11 +89,12 @@
             <img alt="Cover Image" height="300" id="info_cover" src="/assets/CoverImageTest.png" width="200">
             <table><tbody><tr><th><p id="studio">Studio</p></th></tr></tbody></table>
           </div>
-          <div>
+          <div style="width: 527px;">
             <div class="tab_navigation">
               <a href="#information" onclick="openTab('information', 'underline_tab_0')">Information<div class="tab_underline" id="underline_tab_0" style="visibility: visible;"></div></a>
               <a href="#user_entry" onclick="openTab('user_entry', 'underline_tab_1')">User Entry<div class="tab_underline" id="underline_tab_1"></div></a>
               <a href="#trailer" onclick="openTab('trailer', 'underline_tab_2')" id="trailer_button">Trailer<div class="tab_underline" id="underline_tab_2"></div></a>
+              <a href="#related" onclick="openTab('related', 'underline_tab_3')" id="trailer_button">Related<div class="tab_underline" id="underline_tab_3"></div></a>
             </div>
             <div class="tab_content" id="information" style="display: block;">
               <div class="anime_info_text">
@@ -154,6 +155,16 @@
             </div>
             <div class="tab_content" id="trailer">
               <iframe allow="autoplay; picture-in-picture" allowfullscreen="" frameborder="0" height="293" id="youtube_embed" src="" title="YouTube video player" width="522" allowfullscreen></iframe>
+            </div>
+            <div class="tab_content" id="related" style="padding-left: 5px; max-height: 500px; overflow: auto;">
+              <div class="related_title"><p>Related</p></div>
+              <div id="related_grid" style="display: grid; grid-gap: 10px 10px; grid-template-columns: repeat(auto-fill, 116px)">
+                
+              </div>
+              <div class="related_title"><p>Recommended</p></div>
+              <div id="recommended_grid" style="display: grid; grid-gap: 10px 10px; grid-template-columns: repeat(auto-fill, 116px)">
+                
+              </div>
             </div>
           </div>
         </div>

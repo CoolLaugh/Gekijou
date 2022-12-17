@@ -41,19 +41,25 @@ impl Ord for AnilistDate {
     fn cmp(&self, other: &Self) -> Ordering {
 
         if self.year.is_none() && other.year.is_some() {  return Ordering::Less }
-        if other.year.is_none() && self.year.is_some() { return Ordering::Greater }
-        if self.year.unwrap() < other.year.unwrap() { return Ordering::Less }
-        if self.year.unwrap() > other.year.unwrap()  { return Ordering::Greater }
+        if self.year.is_some() && other.year.is_none() { return Ordering::Greater }
+        if self.year.is_some() && other.year.is_some() {
+            if self.year.unwrap() < other.year.unwrap() { return Ordering::Less }
+            if self.year.unwrap() > other.year.unwrap()  { return Ordering::Greater }
+        }
 
         if self.month.is_none() && other.month.is_some() { return Ordering::Less }
-        if other.month.is_none() && self.month.is_some() { return Ordering::Greater } 
-        if self.month.unwrap() < other.month.unwrap() { return Ordering::Less } 
-        if self.month.unwrap() > other.month.unwrap()  { return Ordering::Greater }
+        if self.month.is_some() && self.month.is_none() { return Ordering::Greater } 
+        if self.month.is_some() && other.month.is_some() {
+            if self.month.unwrap() < other.month.unwrap() { return Ordering::Less } 
+            if self.month.unwrap() > other.month.unwrap()  { return Ordering::Greater }
+        }
 
         if self.day.is_none() && other.day.is_some() { return Ordering::Less } 
-        if other.day.is_none() && self.day.is_some() { return Ordering::Greater } 
-        if self.day.unwrap() < other.day.unwrap() { return Ordering::Less } 
-        if self.day.unwrap() > other.day.unwrap()  { return Ordering::Greater }
+        if self.day.is_some() && self.day.is_none() { return Ordering::Greater } 
+        if self.day.is_some() && other.day.is_some() {
+            if self.day.unwrap() < other.day.unwrap() { return Ordering::Less } 
+            if self.day.unwrap() > other.day.unwrap()  { return Ordering::Greater }
+        }
 
         Ordering::Equal
     }
@@ -81,13 +87,14 @@ impl AnilistDate {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Node {
+    pub id: i32,
     pub title: Title,
-    pub cover_image: CoverImage
+    pub cover_image: CoverImage,
+    pub media_type: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Edge {
-    pub id: i32,
     pub relation_type: String,
     pub node: Node,
 }
@@ -140,7 +147,7 @@ pub struct AnimeInfo {
     pub start_date: AnilistDate,
     pub title: Title,
     pub trailer: Option<TrailerData>,
-    pub anime_type: String, // type is a rust keyword
+    pub media_type: String, // type is a rust keyword
     pub relations: Relations,
     pub recommendations: Option<Recommendations>,
     pub tags: Vec<Tag>,
@@ -244,7 +251,7 @@ query ($id: Int) { # Define which variables will be used in the query (id)
         season seasonYear seasonInt episodes duration chapters volumes countryOfOrigin isLicensed source hashtag trailer { id site } updatedAt coverImage { large } bannerImage
 		genres synonyms averageScore meanScore popularity isLocked trending favourites isFavourite isFavouriteBlocked isAdult
 		tags { id name description category rank isGeneralSpoiler isMediaSpoiler isAdult userId }
-        relations { edges { id relationType node { title { userPreferred } coverImage { large } } } nodes { id title { english romaji } } }
+        relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } nodes { id title { english romaji } } }
 		nextAiringEpisode { id airingAt timeUntilAiring episode mediaId media { id } }
 		externalLinks { id url site siteId type language color icon notes isDisabled }
 		streamingEpisodes { title thumbnail url site }
@@ -264,8 +271,8 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
         media(type: $type season: $season format_in: $format seasonYear: $seasonYear genre_in: $genres tag_in: $tags sort: $sort) {
             id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
             duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
-            relations { edges { id relationType node { title { userPreferred } coverImage { large } } } }
-            recommendations { nodes { rating mediaRecommendation { id title { userPreferred } coverImage { large } } } }
+            relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+            recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
             tags { name isGeneralSpoiler isMediaSpoiler description }
             studios(isMain: true) { nodes { name } }
         }
@@ -290,8 +297,8 @@ const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListS
           media {
             id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
             duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
-            relations { edges { id relationType node { title { userPreferred } coverImage { large } } } }
-            recommendations { nodes { rating mediaRecommendation { id title { userPreferred } coverImage { large } } } }
+            relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+            recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
             tags { name isGeneralSpoiler isMediaSpoiler description }
             studios(isMain: true) { nodes { name } }
           }
@@ -328,7 +335,7 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
     response = response.replace("coverImage", "cover_image");
     response = response.replace("isAdult", "is_adult");
     response = response.replace("seasonYear", "season_year");
-    response = response.replace("type", "anime_type");
+    response = response.replace("type", "media_type");
     response = response.replace("startDate", "start_date");
     response = response.replace("userPreferred", "user_preferred");
     response = response.replace("relationType", "relation_type");
@@ -373,7 +380,7 @@ pub async fn anilist_api_call(id: i32) -> AnimeInfo {
         .replace("coverImage", "cover_image")
         .replace("isAdult", "is_adult")
         .replace("seasonYear", "season_year")
-        .replace("type", "anime_type") // type is already snake case but it is a rust keyword
+        .replace("type", "media_type") // type is already snake case but it is a rust keyword
         .replace("startDate", "start_date");
 
     // return struct with media information
@@ -396,7 +403,7 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
         .replace("coverImage", "cover_image")
         .replace("isAdult", "is_adult")
         .replace("seasonYear", "season_year")
-        .replace("type", "anime_type")
+        .replace("type", "media_type")
         .replace("startDate", "start_date")
         .replace("userPreferred", "user_preferred")
         .replace("relationType", "relation_type")
@@ -510,7 +517,7 @@ pub async fn anilist_get_anime_info(anime: Vec<i32>) -> bool {
         .replace("coverImage", "cover_image")
         .replace("isAdult", "is_adult")
         .replace("seasonYear", "season_year")
-        .replace("type", "anime_type") // type is already snake case but it is a rust keyword
+        .replace("type", "media_type") // type is already snake case but it is a rust keyword
         .replace("startDate", "start_date");
 
 
@@ -535,6 +542,44 @@ pub async fn anilist_get_anime_info(anime: Vec<i32>) -> bool {
     true
 }
 
+// query for a specific list along with all user data and media data for the anime on that list
+const MEDIA_INFO: &str = "query ($id: Int) {
+    Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
+        id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+        duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
+        relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+        recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+        tags { name isGeneralSpoiler isMediaSpoiler description }
+        studios(isMain: true) { nodes { name } }
+    }
+}";
+
+pub async fn anilist_get_anime_info_single(anime_id: i32) {
+
+    // create client and query json
+    let json = json!({"query": MEDIA_INFO, "variables": {"id": anime_id}});
+
+    // get media information from anilist api
+    let mut response = post(&json, None).await;
+    
+    // change json keys to snake case
+    response = response.replace("\"Media\"", "\"media\"")
+        .replace("averageScore", "average_score")
+        .replace("coverImage", "cover_image")
+        .replace("isAdult", "is_adult")
+        .replace("seasonYear", "season_year")
+        .replace("type", "media_type")
+        .replace("startDate", "start_date")
+        .replace("userPreferred", "user_preferred")
+        .replace("relationType", "relation_type")
+        .replace("mediaRecommendation", "media_recommendation")
+        .replace("isGeneralSpoiler", "is_general_spoiler")
+        .replace("isMediaSpoiler", "is_media_spoiler");
+
+    let mut anime_value: serde_json::Value = serde_json::from_str(&response).unwrap();
+    let anime_data: AnimeInfo = serde_json::from_value(anime_value["data"]["media"].take()).unwrap();
+    GLOBAL_ANIME_DATA.lock().await.insert(anime_data.id, anime_data);
+}
 
 // gets the users anime lists with all user data on each anime
 pub async fn anilist_list_query_call(username: String, access_token: String) -> String {

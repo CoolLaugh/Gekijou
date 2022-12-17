@@ -367,7 +367,7 @@ async function show_anime_list(name) {
         if(user_settings.show_adult == false && watching[0][i].is_adult == true) {
           continue;
         }
-        add_anime(watching[0][i], user_data[i], i, user_settings.title_language);
+        add_anime(watching[0][i], user_data[i], i);
       }
 
       sort_anime();
@@ -410,7 +410,7 @@ async function show_anime_list_paged(page) {
         if(user_settings.show_adult == false && watching[i][0].is_adult == true) {
           continue;
         }
-        add_anime(watching[i][0], watching[i][1], i, user_settings.title_language);
+        await add_anime(watching[i][0], watching[i][1], i);
       }
       current_page++;
   }
@@ -437,7 +437,10 @@ async function change_sort_type() {
   if (current_tab == "BROWSE") {
     browse_update();
   } else {
-    sort_anime();
+    expected_page = 0;
+    current_page = 0;
+    has_next_page = true;
+    show_anime_list_paged(current_page);
   }
 }
 
@@ -449,7 +452,10 @@ async function change_sort_ascending() {
   if (current_tab == "BROWSE") {
     browse_update();
   } else {
-    sort_anime();
+    expected_page = 0;
+    current_page = 0;
+    has_next_page = true;
+    show_anime_list_paged(current_page);
   }
 }
 
@@ -530,7 +536,7 @@ async function sort_anime() {
 
 // add an anime to the ui
 window.add_anime = add_anime;
-async function add_anime(anime, user_data, cover_id, language) {
+async function add_anime(anime, user_data, cover_id) {
 
   var title = await determine_title(anime.title, null);
 
@@ -588,52 +594,96 @@ async function add_anime(anime, user_data, cover_id, language) {
     average_score = anime.average_score;
   }
 
-  add_cover_card(anime.id, cover_id, cover_image, start_date, anime.popularity, average_score, title, episode_text, anime.trailer, anime.trending, started_date, completed_date);
-
-  if (user_data != null) {
-    draw_episode_canvas(user_data.progress, anime.episodes, anime.id);
-  }
-}
-
-// insert a card into the ui
-window.add_cover_card = add_cover_card;
-async function add_cover_card(anime_id, cover_id, cover_image, start_date, popularity, score, title, episode_text, trailer, trending, started, completed) {
-
   var display_browse = "none";
   var display_not_browse = "none";
-  var display_trailer = "none";
-
   if (current_tab == "BROWSE") {
     display_browse = "block";
   } else {
     display_not_browse = "block";
   }
 
-  if (current_tab == "BROWSE" && trailer != null) {
+  var display_trailer = "none";
+  if (current_tab == "BROWSE" && anime.trailer != null) {
     display_trailer = "block";
+  }
+
+  var sort_value = determine_sort_value(anime, user_data);
+  var display_sort_value = "none";
+  if (sort_value.length > 0) {
+    display_sort_value = "block";
   }
 
   var html = "";
 
-  html += "<div id=\"" + anime_id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + popularity + "\" score=\"" + score + "\" title=\"" + title + "\" trending=\"" + trending + "\" started=\"" + started + "\" completed=\"" + completed + "\">"
+  html += "<div id=\"" + anime.id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + anime.popularity + "\" score=\"" + average_score + "\" title=\"" + title + "\" trending=\"" + anime.trending + "\" started=\"" + started_date + "\" completed=\"" + completed_date + "\">"
   html +=   "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=\"" + cover_image + "\" width=\"200\">"
-  html +=   "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes_" + anime_id + "\" width=\"200\"></canvas>"
-  html +=   "<div class=\"cover_title\"><p id=\"title" + anime_id + "\">" + title + "</p></div>"
+  html +=   "<div class=\"sort_value_display\" style=\"display: " + display_sort_value + ";\"><p id=\"sort_value\">" + sort_value + "</p></div>"
+  html +=   "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes_" + anime.id + "\" width=\"200\"></canvas>"
+  html +=   "<div class=\"cover_title\"><p id=\"title" + anime.id + "\">" + title + "</p></div>"
   html +=   "<div class=\"overlay\">"
-  html +=     "<div class=\"add_buttons\"><a href=\"#\" onclick=\"show_anime_info_window(" + anime_id + ")\" title=\"See the description, score, episodes, etc\">Information</a></div>"
-  html +=     "<div class=\"add_buttons\" style=\"top: 93px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime_id + ", 'PLANNING')\" title=\"Add this anime to your plan to watch list\">Add to Planning</a></div>"
-  html +=     "<div class=\"add_buttons\" style=\"top: 163px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime_id + ", 'CURRENT')\" title=\"Add this anime to your watching list\">Add to Watching</a></div>"
-  html +=     "<div class=\"add_buttons\" style=\"top: 232px; display: " + display_trailer + ";\"><a href=\"#\" onclick=\"show_anime_info_window_trailer(" + anime_id + ")\" title=\"Watch the trailer\">Watch Trailer</a></div>"
-  html +=     "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime_id + ")\" type=\"button\" style=\"display: " + display_not_browse + ";\" title=\"Play Next Episode\"><img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\"></button>"
+  html +=     "<div class=\"add_buttons\"><a href=\"#\" onclick=\"show_anime_info_window(" + anime.id + ")\" title=\"See the description, score, episodes, etc\">Information</a></div>"
+  html +=     "<div class=\"add_buttons\" style=\"top: 93px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime.id + ", 'PLANNING')\" title=\"Add this anime to your plan to watch list\">Add to Planning</a></div>"
+  html +=     "<div class=\"add_buttons\" style=\"top: 163px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime.id + ", 'CURRENT')\" title=\"Add this anime to your watching list\">Add to Watching</a></div>"
+  html +=     "<div class=\"add_buttons\" style=\"top: 232px; display: " + display_trailer + ";\"><a href=\"#\" onclick=\"show_anime_info_window_trailer(" + anime.id + ")\" title=\"Watch the trailer\">Watch Trailer</a></div>"
+  html +=     "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime.id + ")\" type=\"button\" style=\"display: " + display_not_browse + ";\" title=\"Play Next Episode\"><img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\"></button>"
   html +=     "<div class=\"cover_nav\" style=\"display: " + display_not_browse + ";\">"
-  html +=       "<a href=\"#\" onclick=\"decrease_episode(" + anime_id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px; font-size: 24px;\" title=\"Decrease episode progress\">-</a>"
-  html +=       "<a href=\"#\" onclick=\"show_anime_info_window_edit(" + anime_id + ")\" id=\"episode_text_" + anime_id + "\" title=\"Edit episode and other data\">" + episode_text + "</a>"
-  html +=       "<a href=\"#\" onclick=\"increase_episode(" + anime_id + ")\" style=\"border-top-right-radius: 12px; border-bottom-right-radius:12px; font-size: 24px;\" title=\"Increase episode progress\">+</a>"
+  html +=       "<a href=\"#\" onclick=\"decrease_episode(" + anime.id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px; font-size: 24px;\" title=\"Decrease episode progress\">-</a>"
+  html +=       "<a href=\"#\" onclick=\"show_anime_info_window_edit(" + anime.id + ")\" id=\"episode_text_" + anime.id + "\" title=\"Edit episode and other data\">" + episode_text + "</a>"
+  html +=       "<a href=\"#\" onclick=\"increase_episode(" + anime.id + ")\" style=\"border-top-right-radius: 12px; border-bottom-right-radius:12px; font-size: 24px;\" title=\"Increase episode progress\">+</a>"
   html +=     "</div>"
   html +=   "</div>"
   html += "</div>"
 
   document.getElementById("cover_panel_grid").insertAdjacentHTML("beforeend", html);
+
+  if (user_data != null) {
+    draw_episode_canvas(user_data.progress, anime.episodes, anime.id);
+  }
+}
+
+function determine_sort_value(anime, user_data) {
+
+  switch(document.getElementById("sort_order").value) {
+    case "Alphabetical":
+      return "";
+      break;
+    case "Score":
+      return anime.average_score + "%";
+      break;
+    case "Date":
+      if (anime.start_date != null) {
+        return anime.start_date.year + "-" + anime.start_date.month + "-" + anime.start_date.day;
+      } else {
+        return "????-??-??";
+      }
+      break;
+    case "Popularity":
+      return anime.popularity + "";
+      break;
+    case "Trending":
+      return anime.trending + "";
+      break;
+    case "Started":
+      if (user_data.started_at != null) {
+        if (user_data.started_at.year == null && user_data.started_at.month == null && user_data.started_at.day == null){
+          return "No Date";
+        }
+        return user_data.started_at.year + "-" + user_data.started_at.month + "-" + user_data.started_at.day;
+      } else {
+        return "????-??-??";
+      }
+      break;
+    case "Completed":
+      if (user_data.completed_at != null) {
+        if (user_data.started_at.year == null && user_data.started_at.month == null && user_data.started_at.day == null){
+          return "No Date";
+        }
+        return user_data.completed_at.year + "-" + user_data.completed_at.month + "-" + user_data.completed_at.day;
+      } else {
+        return "????-??-??";
+      }
+      break;
+  }
 }
 
 // fills in the episode progress bar to show episodes available on disk and episodes watched
@@ -762,7 +812,7 @@ async function browse_update() {
     if(user_settings.show_adult == false && list[i].is_adult == true) {
       continue;
     }
-    add_anime(list[i], null, i, user_settings.title_language);
+    add_anime(list[i], null, i);
   }
   sort_anime();
 }
@@ -908,6 +958,8 @@ async function show_anime_info_window(anime_id) {
   }
   document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(user_data.media_id)};
 
+  add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
+
   openTab('information', 'underline_tab_0');
   document.getElementById("info_panel").style.display = "block";
   document.getElementById("cover_panel_grid").style.opacity = 0.3;
@@ -931,6 +983,60 @@ function setup_score_dropdown(format) {
       document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">🙁</option><option value=\"2\">😐</option><option value=\"3\">🙂</option></select>";
       break;
   }
+}
+
+function add_related_anime(related, recommendations, title_language) {
+
+  var related_grid = document.getElementById("related_grid");
+  removeChildren(related_grid);
+  for(var i = 0; i < related.length; i++) {
+
+    var title = related[i].node.title.romaji;
+    if (title_language == "english" && related[i].node.title != null) {
+      title = related[i].node.title.english;
+    } else if (title_language == "native") {
+      title = related[i].node.title.native;
+    }
+    var relation_type = related[i].relation_type.charAt(0) + related[i].relation_type.toLowerCase().slice(1);
+    relation_type.replace("_", " ");
+
+    var html = "";
+    html +=  "<div style=\"width: 116px; text-align: center; background: var(--background-color1);\">"
+    //html +=    "<div><p>" + relation_type + "</p></div>"
+    html +=    "<a href=\"#\"><img class=image href=\"#\" height=\"174px\" src=\"" + related[i].node.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + related[i].node.id + ")\"></a>"
+    html +=    "<div style=\"height: 44px; overflow: hidden;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\">" + title + "</p></a></div>"
+    html +=  "</div>"
+
+    related_grid.innerHTML += html;
+  }
+
+  var recommended_grid = document.getElementById("recommended_grid");
+  removeChildren(recommended_grid);
+
+  recommendations.sort(function(a,b) {
+    return b.rating-a.rating;
+  });
+
+  for(var i = 0; i < recommendations.length; i++) {
+
+    var title = recommendations[i].media_recommendation.title.romaji;
+    if (title_language == "english" && recommendations[i].media_recommendation.title != null) {
+      title = recommendations[i].media_recommendation.title.english;
+    } else if (title_language == "native") {
+      title = recommendations[i].media_recommendation.title.native;
+    }
+    var rating = recommendations[i].rating;
+
+    var html = "";
+    html +=  "<div style=\"width: 116px; text-align: center; background: var(--background-color1);\">"
+    //html +=    "<div><p>" + rating + "</p></div>"
+    html +=    "<a href=\"#\"><img class=image height=\"174px\" src=\"" + recommendations[i].media_recommendation.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\"></a>"
+    html +=    "<div style=\"height: 44px; overflow: hidden;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\">" + title + "</p></a></div>"
+    html +=  "</div>"
+
+    recommended_grid.innerHTML += html;
+  }
+
 }
 
 // decrease the users progress by 1
@@ -1004,7 +1110,11 @@ function openTab(tab_name, underline_name) {
   }
 
   // Show the current tab, and an underline to the button that opened the tab
-  document.getElementById(tab_name).style.display = "block";
+  if (tab_name == "related"){
+    document.getElementById(tab_name).style.display = "grid"; 
+  } else {
+    document.getElementById(tab_name).style.display = "block";
+  }
   document.getElementById(underline_name).style.visibility = "visible";
 }
 
