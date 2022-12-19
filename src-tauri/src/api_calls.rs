@@ -288,24 +288,25 @@ mutation ($id: Int, $media_id: Int, $status: MediaListStatus, $score: Float, $pr
 }";
 
 // query for a specific list along with all user data and media data for the anime on that list
-const USER_LIST_WITH_MEDIA: &str = "query($userName: String, $status: MediaListStatus) {
-    MediaListCollection(userName: $userName, type:ANIME, status:$status) {
-      lists {
-        name 
-        entries {
-          id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day }
-          media {
-            id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
-            duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
-            relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
-            recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
-            tags { name isGeneralSpoiler isMediaSpoiler description }
-            studios(isMain: true) { nodes { name } }
-          }
+const USER_LIST_WITH_MEDIA: &str = "
+query($userName: String, $status: [MediaListStatus]) {
+  MediaListCollection(userName: $userName, type:ANIME, status_in:$status) {
+    lists {
+      name 
+      entries {
+        id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day }
+        media {
+          id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+          duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
+          relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+          tags { name isGeneralSpoiler isMediaSpoiler description }
+          studios(isMain: true) { nodes { name } }
         }
       }
     }
-  }";
+  }
+}";
 
 // retrieve a list of anime based on criteria like the year/season it was released, format, or genre
 pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String, order: String) -> serde_json::Value {
@@ -394,7 +395,14 @@ pub async fn anilist_api_call(id: i32) -> AnimeInfo {
 pub async fn anilist_get_list(username: String, status: String, access_token: String) -> Option<String> {
 
     // create query json
-    let json = json!({"query": USER_LIST_WITH_MEDIA, "variables": {"userName": username, "status": status}});
+    let status_array = 
+    if status == "CURRENT" { // rewatching is included in watching in UI but not in anilist api
+        vec![status.clone(), String::from("REPEATING")]
+    } else {
+        vec![status.clone()]
+    };
+
+    let json = json!({"query": USER_LIST_WITH_MEDIA, "variables": {"userName": username, "status": status_array}});
 
     let mut response = post(&json, Some(&access_token)).await;
 
@@ -417,7 +425,7 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
         let message = response_json["errors"][0]["message"].as_str().unwrap().to_string();
         return Some(message)
     }
-    let list: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["MediaListCollection"]["lists"][0]["entries"].take();
+    let lists: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["MediaListCollection"]["lists"].take();
 
     let mut anime_user_data = GLOBAL_USER_ANIME_DATA.lock().await;
     let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
@@ -425,22 +433,25 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
     let anime_user_list = anime_user_list_lock.entry(status).or_default();
 
     anime_user_list.clear();
-    for entry in list.as_array().unwrap() {
+    for list in lists.as_array().unwrap() {
         
-        let user_info: UserAnimeInfo = UserAnimeInfo { id: entry["id"].as_i64().unwrap() as i32, 
-                                                        media_id: entry["mediaId"].as_i64().unwrap() as i32, 
-                                                        status: entry["status"].as_str().unwrap().to_string(), 
-                                                        score: entry["score"].as_f64().unwrap() as f32, 
-                                                        progress: entry["progress"].as_i64().unwrap() as i32, 
-                                                        started_at: serde_json::from_value(entry["startedAt"].clone()).unwrap(), 
-                                                        completed_at: serde_json::from_value(entry["completedAt"].clone()).unwrap() };
+        for entry in list["entries"].as_array().unwrap() {
+            
+            let user_info: UserAnimeInfo = UserAnimeInfo { id: entry["id"].as_i64().unwrap() as i32, 
+                                                            media_id: entry["mediaId"].as_i64().unwrap() as i32, 
+                                                            status: entry["status"].as_str().unwrap().to_string(), 
+                                                            score: entry["score"].as_f64().unwrap() as f32, 
+                                                            progress: entry["progress"].as_i64().unwrap() as i32, 
+                                                            started_at: serde_json::from_value(entry["startedAt"].clone()).unwrap(), 
+                                                            completed_at: serde_json::from_value(entry["completedAt"].clone()).unwrap() };
 
-        anime_user_data.insert(user_info.media_id, user_info);
+            anime_user_data.insert(user_info.media_id, user_info);
 
-        let media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
+            let media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
 
-        anime_user_list.push(media.id);
-        anime_data.insert(media.id, media);
+            anime_user_list.push(media.id);
+            anime_data.insert(media.id, media);
+        }
     }
     
     None

@@ -2,17 +2,17 @@ const { invoke } = window.__TAURI__.tauri;
 
 window.addEventListener("DOMContentLoaded", async () => {
 
+  populate_year_dropdown();
+
+  document.getElementById("information").style.display = "block";
+  document.getElementById("underline_tab_0").style.visibility = "visible";
+
   await invoke("load_user_settings");
 
   var user_settings = await invoke("get_user_settings");
   document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
 
   await invoke("on_startup");
-
-  populate_year_dropdown();
-
-  document.getElementById("information").style.display = "block";
-  document.getElementById("underline_tab_0").style.visibility = "visible";
 
   invoke("anime_update_delay_loop");
 
@@ -36,6 +36,8 @@ async function set_color(element) {
   element.style.setProperty("margin", "0px");
 
   document.styleSheets[0].cssRules[0].style.setProperty("--highlight", element.style.getPropertyValue("background"));
+  
+  redraw_episode_canvas()
 }
 
 window.get_user_settings = get_user_settings;
@@ -648,6 +650,9 @@ function determine_sort_value(anime, user_data) {
       return "";
       break;
     case "Score":
+      if (anime.average_score == null) {
+        return "??%";
+      }
       return anime.average_score + "%";
       break;
     case "Date":
@@ -658,9 +663,15 @@ function determine_sort_value(anime, user_data) {
       }
       break;
     case "Popularity":
+      if (anime.popularity == null) {
+        return "??";
+      }
       return anime.popularity + "";
       break;
     case "Trending":
+      if (anime.trending == null) {
+        return "??";
+      }
       return anime.trending + "";
       break;
     case "Started":
@@ -683,6 +694,22 @@ function determine_sort_value(anime, user_data) {
         return "????-??-??";
       }
       break;
+  }
+}
+
+async function redraw_episode_canvas() {
+
+  var grid_children = document.getElementById("cover_panel_grid").childNodes;
+
+  for(var i = 0; i < grid_children.length; i++) {
+
+    if (grid_children[i].nodeType == 1) {
+
+      var id = parseInt(grid_children[i].getAttribute("id"));
+      var anime = await invoke("get_anime_info", {id: id});
+      var user = await invoke("get_user_info", {id: id});
+      draw_episode_canvas(user.progress, anime.episodes, id);
+    }
   }
 }
 
@@ -767,6 +794,7 @@ async function draw_episode_canvas(episode, total_episodes, media_id) {
 window.browse_update = browse_update;
 async function browse_update() {
 
+  document.getElementById("loader").style.display = "inline-block";
   var year = document.getElementById("year_select").value;
   var season = document.getElementById("season_select").value;
   var format = document.getElementById("format_select").value;
@@ -815,6 +843,7 @@ async function browse_update() {
     add_anime(list[i], null, i);
   }
   sort_anime();
+  document.getElementById("loader").style.display = "none";
 }
 
 // opens the file for the next episode in the default program
@@ -895,11 +924,7 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("info_cover").src = info.cover_image.large;
   document.getElementById("studio").innerHTML = info.studios.nodes[0].name;
   document.getElementById("info_description").innerHTML = info.description;
-  if(title.length > 55) {
-    document.getElementById("info_title").textContent = title.substring(0, 55) + "...";
-  } else {
-    document.getElementById("info_title").textContent = title;
-  }
+  document.getElementById("info_title").textContent = title;
   if (info.format != "TV") {
     document.getElementById("info_format").textContent = info.format.charAt(0) + info.format.toLowerCase().slice(1);
   } else {
@@ -1004,7 +1029,7 @@ function add_related_anime(related, recommendations, title_language) {
     html +=  "<div style=\"width: 116px; text-align: center; background: var(--background-color1);\">"
     //html +=    "<div><p>" + relation_type + "</p></div>"
     html +=    "<a href=\"#\"><img class=image href=\"#\" height=\"174px\" src=\"" + related[i].node.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + related[i].node.id + ")\"></a>"
-    html +=    "<div style=\"height: 44px; overflow: hidden;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\">" + title + "</p></a></div>"
+    html +=    "<div style=\"height: 44px; overflow: hidden;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + related[i].node.id + ")\">" + title + "</p></a></div>"
     html +=  "</div>"
 
     related_grid.innerHTML += html;

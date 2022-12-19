@@ -225,7 +225,7 @@ async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
 
     let mut list: Vec<UserAnimeInfo> = Vec::new();
     let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-    for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name).or_insert(Vec::new()) {
+    for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name.clone()).or_insert(Vec::new()) {
         list.push(user_data.entry(*item).or_insert(UserAnimeInfo::new()).clone());
     }
 
@@ -285,26 +285,34 @@ async fn update_user_entry(anime: UserAnimeInfo) {
     } else {
         String::new()
     };
+
+    let old_list: String = if old_status == "REPEATING" {
+        String::from("CURRENT")
+    } else {
+        old_status.clone()
+    };
     
-    let new_status = if anime.status == "REPEATING" {
+    let new_list = if anime.status == "REPEATING" {
         String::from("CURRENT")
     } else {
         anime.status.clone()
     };
 
-    if old_status != new_status {
+    // we need to change what list the anime is in
+    if old_list != new_list {
         
+        // if the anime is not newly added
         if old_status.is_empty() == false {
 
-            GLOBAL_USER_ANIME_LISTS.lock().await.entry(old_status.clone()).and_modify(|data|{ 
+            GLOBAL_USER_ANIME_LISTS.lock().await.entry(old_list.clone()).and_modify(|data|{ 
                 data.remove(data.iter().position(|&v| v == anime.media_id).unwrap());
             });
         }
         
         let mut lists = GLOBAL_USER_ANIME_LISTS.lock().await;
-        if lists.contains_key(&new_status) {
+        if lists.contains_key(&new_list) {
             
-            let list = lists.entry(new_status).or_default();
+            let list = lists.entry(new_list).or_default();
             if list.len() > 0 {
 
                 list.push(anime.media_id);
@@ -599,15 +607,25 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: i
 async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
 
     let mut lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+    let old_list = if anime.status == "REPEATING" {
+        String::from("CURRENT")
+    } else {
+        anime.status.clone()
+    };
 
-    lists.entry(anime.status.clone()).and_modify(|list| {
+    lists.entry(old_list).and_modify(|list| {
         let index = list.iter().position(|v| *v == anime.media_id).unwrap();
         list.remove(index);
     });
 
     anime.status = new_list;
+    let new_list = if anime.status == "REPEATING" {
+        String::from("CURRENT")
+    } else {
+        anime.status.clone()
+    };
 
-    lists.entry(anime.status.clone()).and_modify(|list| {
+    lists.entry(new_list).and_modify(|list| {
         list.push(anime.media_id);
     });
 }
@@ -726,8 +744,13 @@ async fn remove_anime(id: i32, media_id: i32) -> bool {
     if removed == true {
 
         let status = GLOBAL_USER_ANIME_DATA.lock().await.get(&media_id).unwrap().status.clone();
+        let list = if status == "REPEATING" {
+            String::from("CURRENT")
+        } else {
+            status
+        };
 
-        GLOBAL_USER_ANIME_LISTS.lock().await.entry(status).and_modify(|list| {
+        GLOBAL_USER_ANIME_LISTS.lock().await.entry(list).and_modify(|list| {
 
             let position = list.iter().position(|v| *v == media_id).unwrap();
             list.remove(position);

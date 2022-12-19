@@ -159,7 +159,7 @@ body {
 .anime_info_panel p {
   margin-block-start: 0px;
   margin-block-end: 0px;
-  display: contents;
+  display: inline-block;
 }
 
 .anime_info_panel table {
@@ -180,6 +180,27 @@ body {
   width: 161.2px;
 }
 
+.loader {
+  width: 25px;
+  height: 25px;
+  border: 5px solid #FFF;
+  border-bottom-color: var(--highlight);
+  border-radius: 50%;
+  display: none;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+  margin-bottom: -6px;
+}
+
+@keyframes rotation {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+      transform: rotate(360deg);
+  }
+} 
+
 .anime_info_panel_title {
   border-top: 0px;
   border-bottom: 0px;
@@ -195,12 +216,16 @@ body {
 }
 
 .anime_info_title_row {
-  /* scroll-snap-align: center; */
-  /* align-content: baseline; */
   font-size: 24px;
   vertical-align: bottom;
-  /* max-height: 24px; */
   height: 30px;
+}
+
+.anime_info_title_row p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 702px;
 }
 
 .anime_info_lower {
