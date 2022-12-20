@@ -497,37 +497,61 @@ async fn anime_update_delay_loop() {
 #[tauri::command]
 async fn anime_update_delay() {
 
-    //let mut filename: String = String::new();
-    //let mut ignore_filenames: Vec<String> = Vec::new();
     let regex = Regex::new(r"\.mkv|\.avi|\.mp4").unwrap();
+
+    let vlc_remove = Regex::new(r" - VLC media player").unwrap();
+    let gom_remove = Regex::new(r" - GOM Player").unwrap();
+    let zoom_remove = Regex::new(r" - Zoom Player MAX").unwrap();
+    let mpv_remove = Regex::new(r" - mpv").unwrap();
+    let pot_remove = Regex::new(r" - PotPlayer").unwrap();
+
     let delay = (GLOBAL_USER_SETTINGS.lock().await.update_delay * 60)  as u64;
     let language = GLOBAL_USER_SETTINGS.lock().await.title_language.clone();
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut watching_data = WATCHING_TRACKING.lock().await;
     let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+
+    // reset monitoring
     watching_data.iter_mut().for_each(|entry| {
         entry.1.monitoring = false;
     });
 
-    let mut titles: Vec<String> = get_titles();
+    let mut titles: Vec<String> = get_titles(); // for some reason mutex locking has to happen before this function
     titles.retain(|v| regex.is_match(v));
 
     for title in titles {
 
+        // remove file extension
         let mut title_edit: String = regex.replace(&title, "").to_string();
+        // remove video player suffixes 
+        title_edit = vlc_remove.replace(&title_edit, "").to_string();
+        title_edit = gom_remove.replace(&title_edit, "").to_string();
+        title_edit = zoom_remove.replace(&title_edit, "").to_string();
+        title_edit = mpv_remove.replace(&title_edit, "").to_string();
+        title_edit = pot_remove.replace(&title_edit, "").to_string();
+        //println!("{} {}", title, title_edit);
         title_edit = file_name_recognition::remove_brackets(&title_edit);
+        // get the episode number from the filename
         let (episode_str, episode) = file_name_recognition::identify_number(&title_edit);
+        // remove episode number from filename
         title_edit = title_edit.replace(episode_str.as_str(), "");
+        // remove irrelevant information like source, final, episode prefix, etc
         title_edit = file_name_recognition::irrelevant_information_removal(title_edit);
 
         let (media_id, _, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data, None);
-        if media_score < 0.8 { continue; }
+        if media_score < 0.8 { 
+            continue; 
+        }
 
-        if watching_data.contains_key(&media_id) {
+        // if the file is being monitored and the episode is the next episode
+        if watching_data.contains_key(&media_id) && user_data.get(&media_id).unwrap().progress + 1 == episode {
             watching_data.entry(media_id).and_modify(|entry| {
                 entry.monitoring = true;
             });
-        } else if user_data.contains_key(&media_id) && user_data.get(&media_id).unwrap().progress + 1 == episode { // only add if it is in the users list and it is the next episode
+        } else if user_data.contains_key(&media_id) && 
+            user_data.get(&media_id).unwrap().progress + 1 == episode && 
+            episode > 0 && episode <= anime_data.get(&media_id).unwrap().episodes.unwrap() { // only add if it is in the users list, it is the next episode, and the episode is within range
+
             if language == "romaji" {
                 watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.romaji.clone().unwrap()});
             } else if language == "english" {
@@ -538,32 +562,43 @@ async fn anime_update_delay() {
         }
     }
 
+    let mut save_file = false;
     let mut update_entries: Vec<UserAnimeInfo> = Vec::new();
+    // check if media has been playing for long enough to update
     for (media_id, tracking_info) in watching_data.iter_mut() {
         let seconds = tracking_info.timer.elapsed().as_secs();
         if seconds >= delay {
+            // user progress will be updated to this episode so we no longer want to monitor it
             tracking_info.monitoring = false;
-            // update anime
             
+            // update anime
             let anime = user_data.get_mut(&media_id).unwrap();
             change_episode(anime, tracking_info.episode, anime_data.get(media_id).unwrap().episodes.unwrap()).await;
+            save_file = true;
 
+            // store entry for later after mutexes are dropped
             update_entries.push(user_data.get(media_id).unwrap().clone());
+            // update ui with episode progress
             *GLOBAL_REFRESH_UI.lock().await = true;
         }
     }
 
+    // remove episodes that are no longer being played
     watching_data.retain(|_, v| v.monitoring == true);
 
-    // unlock mutexes before doing api calls which might take awhile
+    // unlock mutexes before doing api calls which might block other threads
     drop(anime_data);
     drop(watching_data);
     drop(user_data);
 
     let access_token = GLOBAL_TOKEN.lock().await.access_token.clone();
     for anime in update_entries {
-
+        // update anilist with new episode/status
         api_calls::update_user_entry(access_token.clone(), anime).await;
+    }
+    // update the file with the new episode/status
+    if save_file {
+        file_operations::write_file_user_info().await;
     }
 }
 
