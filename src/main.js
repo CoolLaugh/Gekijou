@@ -15,7 +15,30 @@ window.addEventListener("DOMContentLoaded", async () => {
   await invoke("on_startup");
 
   invoke("anime_update_delay_loop");
-
+  
+  if (user_settings.current_tab != "") {
+    switch(user_settings.current_tab) {
+      case "CURRENT":
+        show_watching_anime();
+        break;
+      case "COMPLETED":
+        show_completed_anime();
+        break;
+      case "PAUSED":
+        show_paused_anime();
+        break;
+      case "DROPPED":
+        show_dropped_anime();
+        break;
+      case "PLANNING":
+        show_planning_anime();
+        break;
+      case "BROWSE":
+        show_browse_anime();
+        break;
+    }
+  }
+  invoke("close_splashscreen");
   check_for_refresh_ui();
 });
 
@@ -161,6 +184,7 @@ async function show_watching_anime() {
       show_anime_list_paged(current_page);
     }
   };
+  invoke("set_current_tab", {currentTab: current_tab});
 }
 
 // show the users watching list
@@ -179,6 +203,7 @@ async function show_completed_anime() {
       show_anime_list_paged(current_page);
     }
   };
+  invoke("set_current_tab", {currentTab: current_tab});
 }
 
 // show the users paused list
@@ -197,6 +222,7 @@ async function show_paused_anime() {
       show_anime_list_paged(current_page);
     }
   };
+  invoke("set_current_tab", {currentTab: current_tab});
 }
 
 // show the users dropped list
@@ -215,6 +241,7 @@ async function show_dropped_anime() {
       show_anime_list_paged(current_page);
     }
   };
+  invoke("set_current_tab", {currentTab: current_tab});
 }
 
 // show the users plan to watch list
@@ -233,6 +260,7 @@ async function show_planning_anime() {
       show_anime_list_paged(current_page);
     }
   };
+  invoke("set_current_tab", {currentTab: current_tab});
 }
 
 // show the controls to allow the user to look for anime based on year, season, genre, and format
@@ -244,6 +272,7 @@ async function show_browse_anime() {
   document.getElementById("browse_filters").style.display = "block";
   removeChildren(document.getElementById("cover_panel_grid"));
   document.getElementById("cover_panel_id").onscroll = null;
+  invoke("set_current_tab", {currentTab: current_tab});
 }
 
 function populate_sort_dropdown(browse) {
@@ -790,6 +819,13 @@ async function draw_episode_canvas(episode, total_episodes, media_id) {
   ctx.fillRect(0, 0, watch_percent * 200, 5);
 }
 
+// enter key on search text
+document.querySelector("#search_text").addEventListener("keyup", event => {
+  if(event.key !== "Enter") return;
+  browse_update();
+  event.preventDefault();
+});
+
 // fill in the ui with anime retrieved from anilist based on the categories selected
 window.browse_update = browse_update;
 async function browse_update() {
@@ -799,6 +835,7 @@ async function browse_update() {
   var season = document.getElementById("season_select").value;
   var format = document.getElementById("format_select").value;
   var genre = document.getElementById("genre_select").value;
+  var search = document.getElementById("search_text").value;
   var user_settings = await invoke("get_user_settings");
 
   var sort_value = "";
@@ -833,7 +870,7 @@ async function browse_update() {
     sort_value += "_DESC";
   }
 
-  var list = await invoke("browse", {year: year, season: season, genre: genre, format: format, order: sort_value});
+  var list = await invoke("browse", {year: year, season: season, genre: genre, format: format, search: search, order: sort_value});
 
   removeChildren(document.getElementById("cover_panel_grid"));
   for(var i = 0; i < list.length; i++) {
@@ -1251,6 +1288,7 @@ async function hide_setting_window() {
     update_delay: parseInt(document.getElementById("update_delay").value),
     score_format: "",
     highlight_color: highlight_color,
+    current_tab: "",
   }
 
   invoke("set_user_settings", { settings: settings});

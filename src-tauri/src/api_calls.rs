@@ -199,11 +199,12 @@ pub struct UserSettings {
     pub update_delay: i32,
     pub score_format: String,
     pub highlight_color: String,
+    pub current_tab: String,
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new() }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new() }
     }
 }
 
@@ -265,10 +266,10 @@ query ($id: Int) { # Define which variables will be used in the query (id)
 
 // query to return all data based on a criteria of year, season, format, and/or genre
 const ANIME_BROWSE: &str = "
-query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $seasonYear: Int $genres: [String]$tags: [String] $sort: [MediaSort] = [POPULARITY_DESC, SCORE_DESC]) {
+query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $seasonYear: Int $genres: [String] $tags: [String] $search: String $sort: [MediaSort] = [POPULARITY_DESC, SCORE_DESC]) {
     Page(page: $page, perPage: 50) {
         pageInfo { total perPage currentPage lastPage hasNextPage }
-        media(type: $type season: $season format_in: $format seasonYear: $seasonYear genre_in: $genres tag_in: $tags sort: $sort) {
+        media(type: $type season: $season format_in: $format seasonYear: $seasonYear genre_in: $genres tag_in: $tags search: $search sort: $sort) {
             id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
             duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
             relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
@@ -309,7 +310,7 @@ query($userName: String, $status: [MediaListStatus]) {
 }";
 
 // retrieve a list of anime based on criteria like the year/season it was released, format, or genre
-pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String, order: String) -> serde_json::Value {
+pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String, search: String, order: String) -> serde_json::Value {
 
     let mut variables = json!({"page": page, "type": "ANIME"});
     if year.is_empty() == false {
@@ -326,6 +327,9 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
     }
     if order.is_empty() == false {
         variables["sort"] = Value::from(order);
+    }
+    if search.is_empty() == false {
+        variables["search"] = Value::from(search);
     }
 
     let json = json!({"query": ANIME_BROWSE, "variables": variables});

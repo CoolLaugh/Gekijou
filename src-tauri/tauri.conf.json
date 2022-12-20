@@ -72,7 +72,15 @@
         "resizable": true,
         "title": "Gekijou",
         "width": 1160,
-        "decorations": true
+        "decorations": true,
+        "visible": false
+      },
+      {
+        "width": 600,
+        "height": 400,
+        "decorations": false,
+        "url": "splashscreen.html",
+        "label": "splashscreen"
       }
     ]
   }

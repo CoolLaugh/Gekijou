@@ -17,6 +17,7 @@ use chrono::prelude::*;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
 use tauri::async_runtime::Mutex;
+use tauri::Manager;
 use window_titles::{Connection, ConnectionTrait};
 use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread};
 use open;
@@ -91,10 +92,12 @@ async fn set_user_settings(settings: UserSettings) {
         }
     }
 
+    let old_current_tab = user_settings.current_tab.clone();
     let score_format = user_settings.score_format.clone();
     let old_username = user_settings.username.clone();
     *user_settings = settings;
     user_settings.score_format = score_format;
+    user_settings.current_tab = old_current_tab;
 
     if old_username != user_settings.username {
         GLOBAL_USER_ANIME_LISTS.lock().await.clear();
@@ -115,6 +118,13 @@ async fn set_user_settings(settings: UserSettings) {
 #[tauri::command]
 async fn get_user_settings() -> UserSettings {
     GLOBAL_USER_SETTINGS.lock().await.clone()
+}
+
+// retrieves user's settings from a file
+#[tauri::command]
+async fn set_current_tab(current_tab: String) {
+    GLOBAL_USER_SETTINGS.lock().await.current_tab = current_tab;
+    file_operations::write_file_user_settings().await;
 }
 
 // gets anime data for all anime in a specific list
@@ -725,7 +735,7 @@ async fn episodes_exist_single(id: i32) -> Vec<i32> {
 
 
 #[tauri::command]
-async fn browse(year: String, season: String, genre: String, format: String, order: String) -> Vec<AnimeInfo> {
+async fn browse(year: String, season: String, genre: String, format: String, search: String, order: String) -> Vec<AnimeInfo> {
 
     let mut list: Vec<AnimeInfo> = Vec::new();
 
@@ -736,7 +746,7 @@ async fn browse(year: String, season: String, genre: String, format: String, ord
     while has_next_page {
         
         page += 1;
-        let response = api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone(), order.clone()).await;
+        let response = api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone(), search.clone(), order.clone()).await;
 
         for anime in response["data"]["Page"]["media"].as_array().unwrap() {
 
@@ -806,12 +816,23 @@ async fn get_highlight() -> String {
     GLOBAL_USER_SETTINGS.lock().await.highlight_color.clone()
 }
 
+
+#[tauri::command]
+async fn close_splashscreen(window: tauri::Window) {
+  // Close splashscreen
+  if let Some(splashscreen) = window.get_window("splashscreen") {
+    splashscreen.close().unwrap();
+  }
+  // Show main window
+  window.get_window("main").unwrap().show().unwrap();
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![get_anime_info_query,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
-            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged])
+            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
