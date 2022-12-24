@@ -19,3 +19,5 @@ Gekijou is a multiplatform user interface for browsing and watching anime on you
 ![Gekijou](https://raw.githubusercontent.com/rC5HUaxv9j/Gekijou/master/Gekijou.png)
 ![Gekijou](https://raw.githubusercontent.com/rC5HUaxv9j/Gekijou/master/Gekijou2.png)
 ![Gekijou](https://raw.githubusercontent.com/rC5HUaxv9j/Gekijou/master/Gekijou3.png)
+
+Gekijou is built in Tauri, primarily using Rust for functionality and HTML/CSS/JavaScript for the interface. 
