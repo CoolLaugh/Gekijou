@@ -137,7 +137,7 @@ pub struct AnimeInfo {
     pub description: Option<String>,
     pub duration: Option<i32>,
     pub episodes: Option<i32>,
-    pub format: String,
+    pub format: Option<String>,
     pub genres: Vec<String>,
     pub id: i32,
     pub is_adult: bool,
@@ -200,11 +200,12 @@ pub struct UserSettings {
     pub score_format: String,
     pub highlight_color: String,
     pub current_tab: String,
+    pub first_time_setup: bool,
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new() }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true }
     }
 }
 
@@ -690,14 +691,7 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
 }
 
 
-const USER_SCORE_FORMAT: &str = "
-query($username: String) {
-    User(name: $username) {
-        mediaListOptions {
-            scoreFormat
-        }
-    }
-}";
+const USER_SCORE_FORMAT: &str = " query($username: String) { User(name: $username) { mediaListOptions { scoreFormat } } }";
 pub async fn get_user_score_format(username: String) -> String {
 
     let json = json!({"query": USER_SCORE_FORMAT, "variables": {"username": username}});

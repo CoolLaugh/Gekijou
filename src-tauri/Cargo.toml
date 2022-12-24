@@ -1,10 +1,10 @@
 [package]
 name = "gekijou"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+description = "A multiplatform user interface for browsing and watching anime on your computer"
+authors = ["CoolLaugh"]
+license = "GNU GENERAL PUBLIC LICENSE"
+repository = "https://github.com/CoolLaugh/Gekijou"
 edition = "2021"
 rust-version = "1.57"
 

@@ -156,14 +156,14 @@ async fn get_list(list_name: String) -> (Vec<AnimeInfo>, Option<String>) {
 
 
 #[tauri::command]
-async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: usize) -> Vec<(AnimeInfo, UserAnimeInfo)> {
+async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: usize) -> (Vec<(AnimeInfo, UserAnimeInfo)>, Option<String>){
 
     let anime_per_page: usize = 50;
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
         if error_message.is_some() {
-            //return (Vec::new(), error_message)
-            println!("{}", error_message.unwrap());
+            //println!("{}", error_message.unwrap());
+            return (Vec::new(), Some(error_message.unwrap()));
         }
         file_operations::write_file_anime_info_cache().await;
         file_operations::write_file_user_info().await;
@@ -222,7 +222,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
         list_info.push((anime_data.get(id).unwrap().clone(), user_data.get(id).unwrap().clone()));
     }
 
-    list_info
+    (list_info, None)
 }
 
 // get all user data for all anime in a specific list
@@ -331,7 +331,7 @@ async fn update_user_entry(anime: UserAnimeInfo) {
     }
 
     let response = api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime).await;
-    println!("{}", response);
+    
     let json: serde_json::Value = serde_json::from_str(&response).unwrap();
     let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
     let media_id = new_info.media_id.clone();
@@ -386,7 +386,7 @@ async fn on_shutdown() {
 // this delay is to prevent spamming or locking when the user increases or decreases the episode count multiple times
 async fn check_delayed_updates(wait: bool) {
     
-    let delay = 15;
+    let delay = 5;
     let delayed_update = GLOBAL_UPDATE_ANIME_DELAYED.lock().await.clone();
     for entry in delayed_update.iter() {
         
@@ -751,7 +751,6 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
         for anime in response["data"]["Page"]["media"].as_array().unwrap() {
 
             let id = anime["id"].as_i64().unwrap() as i32;
-
             let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
             list.push(anime_entry.clone());
             anime_data.insert(id, anime_entry);
@@ -803,6 +802,7 @@ async fn remove_anime(id: i32, media_id: i32) -> bool {
 
         GLOBAL_USER_ANIME_DATA.lock().await.remove(&media_id);
     }
+    file_operations::write_file_user_info().await;
     removed
 }
 

@@ -39,7 +39,7 @@
             <option value="Drama">Drama</option>
             <option value="Ecchi">Ecchi</option>
             <option value="Fantasy">Fantasy</option>
-            <option value="Horror">Horror</option>
+            <option value="Horror" id="horror_option">Horror</option>
             <option value="Mahou Shoujo">Mahou Shoujo</option>
             <option value="Mecha">Mecha</option>
             <option value="Music">Music</option>
@@ -195,7 +195,7 @@
               </th>
               <th>
                 <select id="title_language" name="title_language">
-                  <option value="romaji">Romaji</option>
+                  <option value="romaji" selected="selected">Romaji</option>
                   <option value="english">English</option>
                   <option value="native">Native</option>
                 </select>
@@ -257,11 +257,29 @@
                 </div>
               </th>
             </tr>
+            <tr>
+              <th colspan="2">
+                <button onclick="hide_setting_window()" type="button" style="margin-top: 20px;">OK</button>
+              </th>
+            </tr>
           </tbody>
         </table>
-        <button onclick="hide_setting_window()" style="transform: translateX(50%);" type="button">OK</button>
       </div>
-      <p id="Error_text"></p>
+      <div class="first_time_setup" id="first_time_setup">
+        <h1>First Time Setup</h1>
+        <ol>
+          <li>Enter your anilist username</li>
+          <li>Enter your anilist access code</li>
+          <ol type="a">
+            <li>Click on Get Authorization code</li>
+            <li>Log into anilist</li>
+            <li>Copy Authorization code</li>
+            <li>Paste Authorization code into textbox</li>
+          </ol>
+          <li>Enter the path to where your anime is located</li>
+          <ul><li>For example "D:\Downloads\Anime"</li></ul>
+        </ol>
+      </div>
     </div>
   </body>
 </html>

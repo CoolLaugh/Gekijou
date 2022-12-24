@@ -73,7 +73,9 @@
         "title": "Gekijou",
         "width": 1160,
         "decorations": true,
-        "visible": false
+        "visible": false,
+        "minWidth": 700,
+        "minHeight": 420
       },
       {
         "width": 600,
