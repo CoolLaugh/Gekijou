@@ -131,6 +131,9 @@ async function check_for_refresh_ui() {
     if (refresh.anime_list == true) {
       show_anime_list(current_tab);
     }
+    if (refresh.canvas == true) {
+      redraw_episode_canvas();
+    }
     
     draw_delay_progress();
   }
@@ -312,6 +315,7 @@ function populate_sort_dropdown(browse) {
   removeChildren(document.getElementById("sort_order"));
   document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Alphabetical\">Alphabetical</option>");
   document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Score\">Score</option>");
+  document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"MyScore\">My Score</option>");
   document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Date\">Date</option>");
   document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Popularity\">Popularity</option>");
   document.getElementById("sort_order").insertAdjacentHTML("beforeend", "<option value=\"Trending\">Trending</option>");
@@ -457,7 +461,7 @@ async function show_anime_list(name) {
         if(user_settings.show_adult == false && watching[0][i].is_adult == true) {
           continue;
         }
-        add_anime(watching[0][i], user_data[i], i);
+        add_anime(watching[0][i], user_data[i], i, user_settings.score_format);
       }
 
       sort_anime();
@@ -505,7 +509,7 @@ async function show_anime_list_paged(page) {
         if(user_settings.show_adult == false && watching[i][0].is_adult == true) {
           continue;
         }
-        await add_anime(watching[i][0], watching[i][1], i);
+        await add_anime(watching[i][0], watching[i][1], i, user_settings.score_format);
       }
       current_page++;
   }
@@ -521,7 +525,7 @@ const removeChildren = (parent) => {
 // list of categories that can be searched by
 // variables are field name, display name, and default sorting order
 var sort_ascending = true;
-const default_order = {"Alphabetical": true, "Score": false, "Date": false, "Popularity": false, "Trending": false, "Started": false, "Completed": false}
+const default_order = {"Alphabetical": true, "Score": false, "MyScore": false, "Date": false, "Popularity": false, "Trending": false, "Started": false, "Completed": false}
 // cycle through different ways of sorting shows
 window.change_sort_type = change_sort_type;
 async function change_sort_type() {
@@ -631,7 +635,7 @@ async function sort_anime() {
 
 // add an anime to the ui
 window.add_anime = add_anime;
-async function add_anime(anime, user_data, cover_id) {
+async function add_anime(anime, user_data, cover_id, score_format) {
 
   var title = await determine_title(anime.title, null);
 
@@ -675,7 +679,7 @@ async function add_anime(anime, user_data, cover_id) {
     display_trailer = "block";
   }
 
-  var sort_value = determine_sort_value(anime, user_data);
+  var sort_value = await determine_sort_value(anime, user_data, score_format);
   var display_sort_value = "none";
   if (sort_value.length > 0) {
     display_sort_value = "block";
@@ -709,23 +713,52 @@ async function add_anime(anime, user_data, cover_id) {
   }
 }
 
-function determine_sort_value(anime, user_data) {
+async function determine_sort_value(anime, user_data, score_format) {
 
   switch(document.getElementById("sort_order").value) {
     case "Alphabetical":
+    case "Popularity":
+    case "Trending":
       return "";
     case "Score":
       return null_check(anime.average_score, anime.average_score + "%", "??%");
+    case "MyScore":
+      if (user_data.score == 0) {
+        return "No Score";
+      }
+      switch(score_format) {
+        case "POINT_100":
+          return user_data.score + "";
+        case "POINT_10_DECIMAL":
+          return user_data.score + "";
+        case "POINT_10":
+          return user_data.score + "";
+        case "POINT_5":
+          var text = "";
+          for(var i = 0; i < user_data.score; i++) {
+            text += "★";
+          }
+          for(var i = 0; i < (5 - user_data.score); i++) {
+            text += "☆";
+          }
+          return text;
+        case "POINT_3":
+          switch(user_data.score) {
+            case 1:
+              return "🙁";
+            case 2:
+              return "😐";
+            case 3:
+              return "🙂";
+          }
+      }
+      return "";
     case "Date":
       return null_check(anime.start_date, 
         null_check(anime.start_date.year, anime.start_date.year, "????") + 
         null_check(anime.start_date.month, "-" + anime.start_date.month, "-??") + 
         null_check(anime.start_date.day, "-" + anime.start_date.day, "-??"), 
         "????-??-??");
-    case "Popularity":
-      return null_check(anime.popularity, anime.popularity + "", "??");
-    case "Trending":
-      return null_check(anime.trending, anime.trending + "", "??");
     case "Started":
       return null_check(user_data.started_at, 
         null_check(user_data.started_at.year, user_data.started_at.year, "????") + 
@@ -837,9 +870,6 @@ async function draw_episode_canvas(episode, total_episodes, media_id) {
       return a-b;
     });
 
-    bar.title += "\nEpisodes on disk: ";
-
-    var comma = false;
     // cycle through episodes present on disk and draw rect to represent which episodes exist
     // consecutive episodes are drawn at the same time to eliminate ugly gaps
     for(var i = 0; i < episodes_exist.length; i++) {
@@ -852,9 +882,6 @@ async function draw_episode_canvas(episode, total_episodes, media_id) {
       } else {
         // draw rect to represent episodes on disk
         ctx.fillRect((start - 1) * width, 0, width * length, 5);
-        if (comma == true) { bar.title += ", "}
-        bar.title += start + "-" + (start + length - 1);
-        comma = true;
   
         // reset consecutive tracking
         last_episode = episode;
@@ -864,15 +891,61 @@ async function draw_episode_canvas(episode, total_episodes, media_id) {
       if (i == episodes_exist.length - 1) {
         // draw rect until end
         ctx.fillRect((start - 1) * width, 0, width * length, 5);
-        if (comma == true) { bar.title += ", "}
-        bar.title += start + "-" + (start + length - 1);
-        comma = true;
       }
     }
+
+    bar.title += episodes_on_disk_string(episodes_exist);
   }
+
 
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
   ctx.fillRect(0, 0, watch_percent * 200, 5);
+}
+
+function episodes_on_disk_string(episodes_exist) {
+
+  if (episodes_exist.length == 0) {
+    return "";
+  } else if (episodes_exist.length == 1) {
+    return "\nEpisodes on disk: " + episodes_exist[0];
+  }
+
+  var start = -1;
+  var end = -1;
+  var text = "";
+
+  for(var i = 0; i < episodes_exist.length; i++) {
+
+    if (start == -1) {
+      start = episodes_exist[i];
+    } else if ((i + 1) == episodes_exist.length) {
+      end = episodes_exist[i];
+    } else if (episodes_exist[i] != episodes_exist[i + 1] - 1) {
+      end = episodes_exist[i];
+    }
+
+    if (end != -1) {
+
+      if (text.length != 0) {
+        text += ", ";
+      }
+
+      if (start == end) {
+        text += start;
+      } else {
+        text += start + "-" + end;
+      }
+
+      if (i + 1 < episodes_exist.length) {
+        start = episodes_exist[i + 1];
+      } else {
+        start = -1;
+      }
+      end = -1;
+    }
+  }
+
+  return "\nEpisodes on disk: " + text;
 }
 
 // enter key on search text
@@ -933,7 +1006,7 @@ async function browse_update() {
     if(user_settings.show_adult == false && list[i].is_adult == true) {
       continue;
     }
-    add_anime(list[i], null, i);
+    add_anime(list[i], null, i, user_settings.score_format);
   }
   sort_anime();
   document.getElementById("loader").style.display = "none";
@@ -959,7 +1032,7 @@ async function hide_anime_info_window(anime_id) {
   document.getElementById("cover_panel_grid").style.opacity = 1;
   if (anime_id != null) {
     var refresh = await update_user_entry(anime_id);
-    if (refresh == true) {
+    if (refresh == true && current_tab != "BROWSE") {
       show_anime_list(current_tab);
     }
   }
@@ -1066,7 +1139,7 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("score_dropdown").value = user_data.score;
   document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
   document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
-  document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(user_data.media_id)};
+  document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
 
   add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
 

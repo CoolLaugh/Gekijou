@@ -680,9 +680,9 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
     }
 
     let json = json!({"query": mutation, "variables": variables});
-    
+
     let mut response = post(&json, Some(&access_token)).await;
-    
+
     response = response.replace("mediaId", "media_id")
         .replace("startedAt", "started_at")
         .replace("completedAt", "completed_at");

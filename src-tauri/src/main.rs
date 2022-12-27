@@ -26,6 +26,13 @@ use api_calls::{TokenData, UserSettings, AnilistDate};
 
 use crate::{api_calls::{AnimeInfo, UserAnimeInfo}, file_name_recognition::AnimePath};
 
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct RefreshUI {
+    pub anime_list: bool,
+    pub tracking_progress: bool,
+    pub canvas: bool,
+}
+
 lazy_static! {
     static ref GLOBAL_TOKEN: Mutex<TokenData> = Mutex::new(TokenData { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() });
     static ref GLOBAL_ANIME_DATA: Mutex<HashMap<i32, AnimeInfo>> = Mutex::new(HashMap::new());
@@ -33,7 +40,7 @@ lazy_static! {
     static ref GLOBAL_USER_ANIME_LISTS: Mutex<HashMap<String, Vec<i32>>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_SETTINGS: Mutex<UserSettings> = Mutex::new(UserSettings::new());
     static ref GLOBAL_ANIME_PATH: Mutex<HashMap<i32,HashMap<i32,AnimePath>>> = Mutex::new(HashMap::new());
-    static ref GLOBAL_REFRESH_UI: Mutex<bool> = Mutex::new(false);
+    static ref GLOBAL_REFRESH_UI: Mutex<RefreshUI> = Mutex::new(RefreshUI::default());
     static ref GLOBAL_UPDATE_ANIME_DELAYED: Mutex<HashMap<i32, Instant>> = Mutex::new(HashMap::new());
 }
 
@@ -196,6 +203,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
                 }
             },
             "Score" => list.sort_by(|i, j| { anime_data.get(i).unwrap().average_score.partial_cmp(&anime_data.get(j).unwrap().average_score).unwrap() }),
+            "MyScore" => list.sort_by(|i, j| { user_data.get(i).unwrap().score.partial_cmp(&user_data.get(j).unwrap().score).unwrap() }),
             "Date" => list.sort_by(|i, j| { anime_data.get(i).unwrap().start_date.partial_cmp(&anime_data.get(j).unwrap().start_date).unwrap() }),
             "Popularity" => list.sort_by(|i, j| { anime_data.get(i).unwrap().popularity.partial_cmp(&anime_data.get(j).unwrap().popularity).unwrap() }),
             "Trending" => list.sort_by(|i, j| { anime_data.get(i).unwrap().trending.partial_cmp(&anime_data.get(j).unwrap().trending).unwrap() }),
@@ -331,7 +339,7 @@ async fn update_user_entry(anime: UserAnimeInfo) {
     }
 
     let response = api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime).await;
-    
+
     let json: serde_json::Value = serde_json::from_str(&response).unwrap();
     let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
     let media_id = new_info.media_id.clone();
@@ -495,7 +503,10 @@ async fn anime_update_delay_loop() {
         check_delayed_updates(true).await;
 
         if hour_timer.elapsed() > one_hour {
-            file_name_recognition::parse_file_names(None).await;
+            if file_name_recognition::parse_file_names(None).await {
+
+                GLOBAL_REFRESH_UI.lock().await.canvas = true;
+            }
             hour_timer = Instant::now();
         }
 
@@ -589,7 +600,7 @@ async fn anime_update_delay() {
             // store entry for later after mutexes are dropped
             update_entries.push(user_data.get(media_id).unwrap().clone());
             // update ui with episode progress
-            *GLOBAL_REFRESH_UI.lock().await = true;
+            GLOBAL_REFRESH_UI.lock().await.anime_list = true;
         }
     }
 
@@ -675,25 +686,17 @@ async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
     });
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct RefreshUI {
-    pub anime_list: bool,
-    pub tracking_progress: bool,
-}
-
 // allows the ui to check if a anime has been updated to determine if the ui will be refreshed
 #[tauri::command]
 async fn get_refresh_ui() -> RefreshUI {
 
     thread::sleep(Duration::from_millis(1000));
 
-    let mut refresh_ui = RefreshUI::default();
-
     let mut refresh = GLOBAL_REFRESH_UI.lock().await;
-    refresh_ui.anime_list = refresh.clone();
-    *refresh = false;
-
+    let mut refresh_ui = refresh.clone();
     refresh_ui.tracking_progress = WATCHING_TRACKING.lock().await.len() > 0;
+    refresh.anime_list = false;
+    refresh.canvas = false;
 
     refresh_ui
 }

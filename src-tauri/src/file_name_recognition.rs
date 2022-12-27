@@ -35,8 +35,9 @@ pub struct AnimePath {
 // scans these folders and subfolders looking for files that match titles in the users anime list
 // found files are then stored in a global list for each anime and episode
 // media_id is for finding files for a specific anime instead of any anime known
-pub async fn parse_file_names(media_id: Option<i32>) {
+pub async fn parse_file_names(media_id: Option<i32>) -> bool {
     
+    let mut episode_found = false;
     let folders = GLOBAL_USER_SETTINGS.lock().await.folders.clone();
     for folder in folders {
 
@@ -81,10 +82,10 @@ pub async fn parse_file_names(media_id: Option<i32>) {
         
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
-
+        let anime_data = GLOBAL_ANIME_DATA.lock().await;
         for file in file_names {
 
-            if file.similarity_score > 0.8 {
+            if file.similarity_score > 0.8 && file.episode <= anime_data.get(&file.media_id).unwrap().episodes.unwrap() {
 
                 let media = file_paths.entry(file.media_id).or_default();
                 if media.contains_key(&file.episode) && media.get(&file.episode).unwrap().similarity_score < file.similarity_score {
@@ -93,14 +94,31 @@ pub async fn parse_file_names(media_id: Option<i32>) {
                         anime_path.similarity_score = file.similarity_score;
                         anime_path.path = file.path;
                     });
+                    episode_found = true;
                 } else {
 
                     media.insert(file.episode, AnimePath { path: file.path, similarity_score: file.similarity_score });
+                    episode_found = true;
                 }
             }
         }
     }
+
+    remove_missing_files().await;
+
     file_operations::write_file_episode_path().await;
+    episode_found
+}
+
+// remove all files that no longer exist
+async fn remove_missing_files() {
+
+    let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
+    for (_, anime) in file_paths.iter_mut() {
+
+        anime.retain(|_, episode| { Path::new(&episode.path).exists() });
+    }
+    file_paths.retain(|_,anime| { anime.len() > 0 });
 }
 
 // remove all brackets from a filename
