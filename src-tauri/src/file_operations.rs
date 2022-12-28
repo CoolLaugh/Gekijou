@@ -67,25 +67,25 @@ pub async fn read_file_episode_path() {
 // writes all held data on anime to a file
 async fn write_file_data<T: Serialize>(global: &Mutex<T>, filename: &str) {
 
-    let user_info = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
-    let user_info_backup = format!("{}/{}/{}_backup.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
-    let user_info_path = Path::new(&user_info);
-    let user_info_backup_path = Path::new(&user_info_backup);
+    let file_location = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
+    let file_backup_location = format!("{}/{}/{}_backup.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
+    let file_path = Path::new(&file_location);
+    let file_backup_path = Path::new(&file_backup_location);
     let mut file: File;
 
     // backup file before replacing it
-    if user_info_path.exists() {
+    if file_path.exists() {
 
         // remove backup so we can make a new one
-        if user_info_backup_path.exists() {
-            match fs::remove_file(user_info_backup_path) {
+        if file_backup_path.exists() {
+            match fs::remove_file(file_backup_path) {
                 Err(why) => panic!("unable to remove, {}", why),
                 Ok(file) => file,
             };
         }
 
         // change file into backup file
-        match fs::rename(user_info_path, user_info_backup_path) {
+        match fs::rename(file_path, file_backup_path) {
             Err(why) => panic!("unable to move, {}", why),
             Ok(file) => file,
         };
@@ -94,12 +94,12 @@ async fn write_file_data<T: Serialize>(global: &Mutex<T>, filename: &str) {
     if gekijou_folder_exists_or_created() {
 
         // create the file
-        file = match File::create(user_info_path) {
+        file = match File::create(file_path) {
             Err(why) => panic!("unable to open, {}", why),
             Ok(file) => file,
         };
 
-        // write user settings into file
+        // write contents into file
         match file.write_all(serde_json::to_string(&*global.lock().await).unwrap().as_bytes()) {
             Err(why) => panic!("ERROR: {}", why),
             Ok(file) => file,
@@ -107,29 +107,44 @@ async fn write_file_data<T: Serialize>(global: &Mutex<T>, filename: &str) {
     }
 }
 
-// reads all stored data on anime from a file
+// reads all stored data from a file into the global collection
 async fn read_file_data<T: DeserializeOwned>(global: &Mutex<T>, filename: &str) {
 
-    let user_info = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
-    let user_info_path = Path::new(&user_info);
+    let file_location = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
+    let file_backup_location = format!("{}/{}/{}_backup.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
+    let file_path = Path::new(&file_location);
+    let file_backup_path = Path::new(&file_backup_location);
 
-    if user_info_path.exists() {
+    if file_path.exists() {
 
-        let mut file = match File::open(&user_info_path) {
-            Err(why) => panic!("unable to open {}", why),
+        // open the file
+        let mut file = match File::open(&file_path) {
+            Err(why) => {
+                // try to use the backup file if the file doesn't work
+                if file_backup_path.exists() {
+                    match File::open(&file_backup_path) {
+                        Err(why2) => panic!("ERROR: {}", why2),
+                        Ok(file) => file,
+                    }
+                } else {
+                    panic!("ERROR: {}", why);
+                }
+            },
             Ok(file) => file,
         };
     
+        // read all data out of the file
         let mut buffer = String::new();
         match file.read_to_string(&mut buffer) {
             Err(why) => panic!("ERROR: {}", why),
             Ok(file) => file,
         };
-    
+        
         *global.lock().await = serde_json::from_str(&buffer).unwrap();
     }
 }
 
+// checks if gekijou folder exists, if it does not exist it will try to create it
 fn gekijou_folder_exists_or_created() -> bool {
 
     let folder = format!("{}/{}", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER);
