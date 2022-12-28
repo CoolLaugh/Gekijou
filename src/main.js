@@ -131,7 +131,7 @@ async function check_for_refresh_ui() {
     if (refresh.anime_list == true) {
       show_anime_list(current_tab);
     }
-    if (refresh.canvas == true) {
+    if (refresh.canvas == true && current_tab != "BROWSE") {
       redraw_episode_canvas();
     }
     
