@@ -25,6 +25,7 @@ open = "3"
 window_titles = { git = "https://github.com/HiruNya/window_titles" }
 chrono = "0.4"
 dirs = "4.0"
+xml-rs = "0.8.4"
 
 [features]
 # by default Tauri runs in production mode

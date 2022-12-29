@@ -9,6 +9,7 @@ pub mod secrets;
 pub mod api_calls;
 pub mod file_operations;
 pub mod file_name_recognition;
+pub mod rss_parser;
 
 #[macro_use]
 extern crate lazy_static;
@@ -830,12 +831,19 @@ async fn close_splashscreen(window: tauri::Window) {
   window.get_window("main").unwrap().show().unwrap();
 }
 
+
+#[tauri::command]
+async fn get_torrents(search: String) {
+
+    rss_parser::get_rss(search).await;
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![get_anime_info_query,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
-            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen])
+            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

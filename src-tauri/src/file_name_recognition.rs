@@ -156,8 +156,6 @@ fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
     })
 }
 
-
-
 // compares filename to anime titles using multiple string matching algorithms and remembers the most similar title
 async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>) {
 
@@ -385,4 +383,53 @@ pub fn irrelevant_information_removal(filename: String) -> String {
 
     // convert title to lowercase so the comparison doesn't think upper/lower case letters are different
     filename_clean.to_ascii_lowercase()
+}
+
+pub fn extract_resolution(title: &String) -> i32 {
+
+    let resolution_1080 = Regex::new(r"1080p|1080|1920x1080").unwrap();
+    if resolution_1080.is_match(title) {
+        return 1080;
+    }
+
+    let resolution_720 = Regex::new(r"720p|720|960x720|1280x720").unwrap();
+    if resolution_720.is_match(title) {
+        return 720;
+    }
+
+    let resolution_480 = Regex::new(r"480p|480|720x480|852x480").unwrap();
+    if resolution_480.is_match(title) {
+        return 480;
+    }
+
+    let resolution_other = Regex::new(r"\d\d\d\d?x(\d\d\d\d?)").unwrap();
+    if resolution_other.is_match(title) {
+        let captures = resolution_other.captures(title).unwrap();
+        return captures.get(1).unwrap().as_str().parse().unwrap()
+    }
+
+    let resolution_other2 = Regex::new(r"(\d\d\d\d?)p").unwrap();
+    if resolution_other2.is_match(title) {
+        let captures = resolution_other2.captures(title).unwrap();
+        return captures.get(1).unwrap().as_str().parse().unwrap()
+    }
+
+    let dvd = Regex::new(r"[Dd][Vv][Dd]").unwrap();
+    if dvd.is_match(title) {
+        return 480;
+    }
+
+    0
+}
+
+
+pub fn extract_sub_group(title: &String) -> String {
+
+    let sub_group_find = Regex::new(r"^\[([^\[\]]+)\]").unwrap();
+    if sub_group_find.is_match(title) {
+        let captures = sub_group_find.captures(title).unwrap();
+        return captures.get(1).unwrap().as_str().to_string();
+    }
+
+    return String::new()
 }

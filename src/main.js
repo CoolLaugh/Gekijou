@@ -1420,6 +1420,11 @@ async function hide_setting_window() {
   add_adult_genres();
 }
 
+window.get_torrents = get_torrents;
+async function get_torrents() {
+  invoke("get_torrents", {search: ""});
+}
+
 // close the window
 window.exitWindow = exitWindow;
 async function exitWindow() {

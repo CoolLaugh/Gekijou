@@ -879,6 +879,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "window_titles",
+ "xml-rs",
 ]
 
 [[package]]
