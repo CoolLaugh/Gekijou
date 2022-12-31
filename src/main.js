@@ -12,7 +12,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   var user_settings = await invoke("get_user_settings");
   document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
 
-  add_adult_genres();
+  add_adult_genres(user_settings.show_adult);
 
   if (user_settings.first_time_setup == true) {
 
@@ -22,7 +22,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("first_time_setup").style.visibility = "visible";
 
   } else {
-
+    
     await invoke("on_startup");
 
     if (user_settings.current_tab != "") {
@@ -329,11 +329,9 @@ function populate_sort_dropdown(browse) {
   document.getElementById("sort_order").selectedIndex = index;
 }
 
-async function add_adult_genres() {
+async function add_adult_genres(show_adult) {
 
-  var user_settings = await invoke("get_user_settings");
-
-  if (user_settings.show_adult == true) {
+  if (show_adult == true) {
 
     var hentai_option = document.getElementById("hentai_option");
 
@@ -825,8 +823,19 @@ async function redraw_episode_canvas() {
 
       var id = parseInt(grid_children[i].getAttribute("id"));
       var anime = await invoke("get_anime_info", {id: id});
-      var user = await invoke("get_user_info", {id: id});
-      draw_episode_canvas(user.progress, anime.episodes, id);
+      var user_data = await invoke("get_user_info", {id: id});
+      draw_episode_canvas(user_data.progress, anime.episodes, id);
+
+      // left side of episode text
+      var episode_text = "";
+      if (user_data != null) {
+        episode_text = null_check(user_data.progress, user_data.progress + "/", "0/");
+      } else {
+        episode_text = "0/";
+      }
+      // right side of episode text
+      episode_text += null_check(anime.episodes, anime.episodes, "??");
+      document.getElementById("episode_text_" + anime.id).innerText = episode_text;
     }
   }
 }

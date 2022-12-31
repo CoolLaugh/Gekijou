@@ -363,14 +363,13 @@ async fn update_user_entry(anime: UserAnimeInfo) {
 // loads data from files and looks for episodes on disk
 #[tauri::command]
 async fn on_startup() {
-
     file_operations::read_file_token_data().await;
     file_operations::read_file_anime_info_cache().await;
     file_operations::read_file_user_info().await;
     file_operations::read_file_episode_path().await;
-    let score_format = api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await;
-    GLOBAL_USER_SETTINGS.lock().await.score_format = score_format;
-    scan_anime_folder().await;
+    if GLOBAL_USER_SETTINGS.lock().await.score_format.is_empty() {
+        GLOBAL_USER_SETTINGS.lock().await.score_format = api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await;
+    }
 }
 
 // loads data from files and looks for episodes on disk
@@ -601,7 +600,7 @@ async fn anime_update_delay() {
             // store entry for later after mutexes are dropped
             update_entries.push(user_data.get(media_id).unwrap().clone());
             // update ui with episode progress
-            GLOBAL_REFRESH_UI.lock().await.anime_list = true;
+            GLOBAL_REFRESH_UI.lock().await.canvas = true;
         }
     }
 
