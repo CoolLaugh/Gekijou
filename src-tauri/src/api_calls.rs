@@ -1,7 +1,7 @@
 
 
 
-use std::{collections::HashMap, cmp::Ordering};
+use std::{collections::HashMap, cmp::{Ordering, max}};
 
 use reqwest::Client;
 use serde::{Serialize, Deserialize};
@@ -335,19 +335,18 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
 
     let json = json!({"query": ANIME_BROWSE, "variables": variables});
 
-    let mut response = post(&json, None).await;
-
-    response = response.replace("averageScore", "average_score");
-    response = response.replace("coverImage", "cover_image");
-    response = response.replace("isAdult", "is_adult");
-    response = response.replace("seasonYear", "season_year");
-    response = response.replace("type", "media_type");
-    response = response.replace("startDate", "start_date");
-    response = response.replace("userPreferred", "user_preferred");
-    response = response.replace("relationType", "relation_type");
-    response = response.replace("mediaRecommendation", "media_recommendation");
-    response = response.replace("isGeneralSpoiler", "is_general_spoiler");
-    response = response.replace("isMediaSpoiler", "is_media_spoiler");
+    let response = post(&json, None).await
+        .replace("averageScore", "average_score")
+        .replace("coverImage", "cover_image")
+        .replace("isAdult", "is_adult")
+        .replace("seasonYear", "season_year")
+        .replace("type", "media_type")
+        .replace("startDate", "start_date")
+        .replace("userPreferred", "user_preferred")
+        .replace("relationType", "relation_type")
+        .replace("mediaRecommendation", "media_recommendation")
+        .replace("isGeneralSpoiler", "is_general_spoiler")
+        .replace("isMediaSpoiler", "is_media_spoiler");
 
     serde_json::from_str(&response).unwrap()
 }
@@ -394,6 +393,67 @@ pub async fn anilist_api_call(id: i32) -> AnimeInfo {
     json.data.media
 }
 
+
+const ANIME_INFO_QUERY_MULTIPLE: &str = "
+query($page: Int $ids: [Int]) {
+    Page(page: $page, perPage: 50) {
+        pageInfo { total perPage currentPage lastPage hasNextPage }
+        media(type: ANIME, id_in: $ids) {
+          id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+          duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
+          relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+          tags { name isGeneralSpoiler isMediaSpoiler description }
+          studios(isMain: true) { nodes { name } }
+        }
+    }
+}";
+
+// get anime data from anilist for all ids
+pub async fn anilist_api_call_multiple(ids: Vec<i32>) {
+
+    let pages = ceiling_div(ids.len(), 50);
+    println!("ids {} pages {}", ids.len(), pages);
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+    for i in 0..pages {
+
+        println!("page {}", i);
+        let start = i * 50;
+        let end = 
+        if start + 50 > ids.len() {
+            ids.len()
+        } else {
+            start + 50
+        };
+        let sub_vec = &ids[start..end];
+        let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE, "variables": { "page": 0, "ids": sub_vec}});
+
+        let response = post(&json, None).await
+            .replace("averageScore", "average_score")
+            .replace("coverImage", "cover_image")
+            .replace("isAdult", "is_adult")
+            .replace("seasonYear", "season_year")
+            .replace("type", "media_type")
+            .replace("startDate", "start_date")
+            .replace("userPreferred", "user_preferred")
+            .replace("relationType", "relation_type")
+            .replace("mediaRecommendation", "media_recommendation")
+            .replace("isGeneralSpoiler", "is_general_spoiler")
+            .replace("isMediaSpoiler", "is_media_spoiler");
+    
+        let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
+        let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
+    
+        for anime in anime_vec {
+            anime_data.insert(anime.id, anime);
+        }
+    }
+    drop(anime_data);
+}
+
+fn ceiling_div(x: usize, y: usize) -> usize {
+    max(x / y, (x + y - 1) / y)
+}
 
 // retrieve information on anime using it's anilist id
 // returns a message if a error occurred

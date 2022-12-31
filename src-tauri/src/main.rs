@@ -10,6 +10,7 @@ pub mod api_calls;
 pub mod file_operations;
 pub mod file_name_recognition;
 pub mod rss_parser;
+pub mod recommendation;
 
 #[macro_use]
 extern crate lazy_static;
@@ -837,12 +838,25 @@ async fn get_torrents(search: String) {
     rss_parser::get_rss(search).await;
 }
 
+
+#[tauri::command]
+async fn recommend_anime() -> Vec<AnimeInfo> {
+
+    let ids = recommendation::tally_recommendations().await;
+    let mut anime: Vec<AnimeInfo> = Vec::new();
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    for id in ids {
+        anime.push(anime_data.get(&id).unwrap().clone());
+    }
+    anime
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![get_anime_info_query,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
-            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents])
+            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

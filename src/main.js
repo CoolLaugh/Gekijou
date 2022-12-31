@@ -495,21 +495,56 @@ async function show_anime_list_paged(page) {
   // user didn't change the tab while getting the list from anilist
   if (name == current_tab) {
 
-      // add anime to UI
-      if (page == 0) {
-        removeChildren(document.getElementById("cover_panel_grid"));
-      }
-      if (watching.length < 50) {
-        has_next_page = false;
-      }
+    // add anime to UI
+    if (page == 0) {
+      removeChildren(document.getElementById("cover_panel_grid"));
+    }
+    if (watching.length < 50) {
+      has_next_page = false;
+    }
 
-      for(var i = 0; i < watching.length; i++) {
-        if(user_settings.show_adult == false && watching[i][0].is_adult == true) {
-          continue;
-        }
-        await add_anime(watching[i][0], watching[i][1], i, user_settings.score_format);
+    for(var i = 0; i < watching.length; i++) {
+      if(user_settings.show_adult == false && watching[i][0].is_adult == true) {
+        continue;
       }
-      current_page++;
+      await add_anime(watching[i][0], watching[i][1], i, user_settings.score_format);
+    }
+    current_page++;
+  }
+}
+
+window.show_recommended_anime_list = show_recommended_anime_list;
+async function show_recommended_anime_list() {
+
+  if (current_tab == "RECOMMENDED") {
+    return;
+  }
+  current_tab = "RECOMMENDED";
+  exclusive_underline(7);
+  document.getElementById("cover_panel_id").onscroll = null;
+
+  var name = current_tab;
+  
+  document.getElementById("browse_filters").style.display = "none";
+
+  document.getElementById("cover_panel_grid").innerHTML = "<a>Wait one moment<a>";
+
+  var recommended_list = await invoke("recommend_anime");
+
+  var user_settings = await invoke("get_user_settings");
+
+  // user didn't change the tab while getting the list from anilist
+  if (name == current_tab) {
+
+    document.getElementById("cover_panel_grid").innerHTML = "";
+    removeChildren(document.getElementById("cover_panel_grid"));
+    
+    for(var i = 0; i < recommended_list.length; i++) {
+      if(user_settings.show_adult == false && recommended_list[i].is_adult == true) {
+        continue;
+      }
+      await add_anime(recommended_list[i], null, i, user_settings.score_format);
+    }
   }
 }
 
@@ -666,14 +701,14 @@ async function add_anime(anime, user_data, cover_id, score_format) {
 
   var display_browse = "none";
   var display_not_browse = "none";
-  if (current_tab == "BROWSE") {
+  if (current_tab == "BROWSE" || current_tab == "RECOMMENDED") {
     display_browse = "block";
   } else {
     display_not_browse = "block";
   }
 
   var display_trailer = "none";
-  if (current_tab == "BROWSE" && anime.trailer != null) {
+  if ((current_tab == "BROWSE" || current_tab == "RECOMMENDED") && anime.trailer != null) {
     display_trailer = "block";
   }
 
@@ -1211,6 +1246,10 @@ function add_related_anime(related, recommendations, title_language) {
 
   for(var i = 0; i < recommendations.length; i++) {
 
+    if (recommendations[i].media_recommendation == null) {
+      continue;
+    }
+
     var title = recommendations[i].media_recommendation.title.romaji;
     if (title_language == "english" && recommendations[i].media_recommendation.title != null) {
       title = recommendations[i].media_recommendation.title.english;
@@ -1221,7 +1260,6 @@ function add_related_anime(related, recommendations, title_language) {
 
     var html = "";
     html +=  "<div style=\"width: 116px; text-align: center; background: var(--background-color1);\">"
-    //html +=    "<div><p>" + rating + "</p></div>"
     html +=    "<a href=\"#\"><img class=image height=\"174px\" src=\"" + recommendations[i].media_recommendation.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\"></a>"
     html +=    "<div style=\"height: 44px; overflow: hidden;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\">" + title + "</p></a></div>"
     html +=  "</div>"
