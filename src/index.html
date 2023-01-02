@@ -8,14 +8,14 @@
 </head>
   <body>
     <div class="top_navigation">
-      <a href="#Watching" onclick="show_watching_anime()" title="See your watching list">Watching<div class="underline" id="underline0" style="visibility: hidden;"></div></a>
-      <a href="#Completed" onclick="show_completed_anime()" title="See your completed list">Completed<div class="underline" id="underline1" style="visibility: hidden;"></div></a>
-      <a href="#Onhold" onclick="show_paused_anime()" title="See your on hold list">On Hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
-      <a href="#Dropped" onclick="show_dropped_anime()" title="See your dropped list">Dropped<div class="underline" id="underline3" style="visibility: hidden;"></div></a>
-      <a href="#Plantowatch" onclick="show_planning_anime()" title="See your plan to watch list">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
-      <a href="#Browse" onclick="show_browse_anime()" title="Browse anilist for anime">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
-      <a href="#" onclick="get_torrents()" title="Test">Test<div class="underline" id="underline6" style="visibility: hidden;"></div></a>
-      <a href="#" onclick="show_recommended_anime_list()" title="Recommended">Recommended<div class="underline" id="underline7" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="show_watching_anime()" title="See your watching list">Watching<div class="underline" id="underline0" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="show_completed_anime()" title="See your completed list">Completed<div class="underline" id="underline1" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="show_paused_anime()" title="See your on hold list">On Hold<div class="underline" id="underline2" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="show_dropped_anime()" title="See your dropped list">Dropped<div class="underline" id="underline3" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="show_planning_anime()" title="See your plan to watch list">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="show_browse_anime()" title="Browse anilist for anime">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="show_recommended_anime_list()" title="User recommended anime from shows you have completed">Recommended<div class="underline" id="underline6" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="get_torrents()" title="Download">Download<div class="underline" id="underline7" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
       <canvas class="recognition_delay" id="recognition_delay" height="52" width="52" title="" onclick="draw_delay_progress()"></canvas>
     </div>
@@ -84,7 +84,7 @@
         </div>
         <div class="anime_info_lower">
           <div class="anime_info_cover">
-            <img alt="Cover Image" height="300" id="info_cover" src="/assets/CoverImageTest.png" width="200">
+            <img style="cursor:pointer" alt="Cover Image" height="300" id="info_cover" src="/assets/CoverImageTest.png" width="200">
             <table><tbody><tr><th><p id="studio">Studio</p></th></tr></tbody></table>
           </div>
           <div style="width: 527px;">

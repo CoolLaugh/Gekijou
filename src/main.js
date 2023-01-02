@@ -427,7 +427,7 @@ async function show_setting_window() {
 // hide all underlines except one to show the current list being shown
 function exclusive_underline(index) {
 
-  for(var i = 0; i < 6; i++) {
+  for(var i = 0; i < 8; i++) {
     document.getElementById("underline" + i).style.visibility = "hidden";
   }
   document.getElementById("underline" + index).style.visibility = "visible";
@@ -520,7 +520,7 @@ async function show_recommended_anime_list() {
     return;
   }
   current_tab = "RECOMMENDED";
-  exclusive_underline(7);
+  exclusive_underline(6);
   document.getElementById("cover_panel_id").onscroll = null;
 
   var name = current_tab;
@@ -1122,6 +1122,7 @@ async function show_anime_info_window(anime_id) {
   episode_text += null_check(info.duration, info.duration + " Minutes", "?? Minutes");
 
   document.getElementById("info_cover").src = info.cover_image.large;
+  document.getElementById("info_cover").setAttribute("onclick", "open_window(\"https://anilist.co/anime/" + anime_id + "\")");
   if (info.studios.nodes.length == 0 || info.studios.nodes[0].name == null) {
     document.getElementById("studio").innerHTML = "Unknown Studio";
   } else {
@@ -1266,7 +1267,6 @@ function add_related_anime(related, recommendations, title_language) {
 
     recommended_grid.innerHTML += html;
   }
-
 }
 
 // decrease the users progress by 1
@@ -1469,7 +1469,13 @@ async function hide_setting_window() {
 
 window.get_torrents = get_torrents;
 async function get_torrents() {
+  exclusive_underline(7);
   invoke("get_torrents", {search: ""});
+}
+
+window.open_window = open_window;
+async function open_window(url) {
+  invoke("open_url", { url: url});
 }
 
 // close the window
