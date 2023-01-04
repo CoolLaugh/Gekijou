@@ -277,7 +277,7 @@ body {
   width: 20px;
   height: 20px;
   border-width: 0px;
-  border: #f6f6f6;
+  border: var(--text-color);
   border-style: hidden;
   margin: 2.5px;
 }
@@ -396,7 +396,21 @@ body {
   width: 100%;
   position: absolute;
   top: 276px;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.66);
+}
+
+.airing_value_display {
+  width: 100%;
+  position: absolute;
+  top: 0px;
+  background: rgba(0,0,0,0.66);
+}
+
+.related_category {
+  width: 100%;
+  position: absolute;
+  top: 150px;
+  background: rgba(0,0,0,0.66);
 }
 
 .CoverButton {
@@ -438,7 +452,7 @@ body {
 }
 
 .cover_title {
-  height: 44px;
+  height: 49px;
   overflow: hidden;
 }
 
@@ -543,7 +557,7 @@ select {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  color: #ffffff;
+  color: var(--text-color);
   background-color: var(--background-color2);
   transition: border-color 0.25s;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);

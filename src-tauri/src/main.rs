@@ -382,6 +382,9 @@ async fn load_user_settings() {
     if user_settings.highlight_color.is_empty() {
         user_settings.highlight_color = String::from("rgb(96, 217, 236)");
     }
+    if user_settings.show_airing_time.is_none() {
+        user_settings.show_airing_time = Some(true);
+    }
 }
 
 // go ahead with any updates that haven't been completed yet before closing
@@ -447,13 +450,20 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
 
         let progress = user_data.get(&anime_id).unwrap().progress;
         
-        let max_episodes = GLOBAL_ANIME_DATA.lock().await.get(&anime_id).unwrap().episodes.unwrap();
-        if (change == -1 && progress == 0) || (change == 1 && progress == max_episodes) {
+        let anime_data = GLOBAL_ANIME_DATA.lock().await;
+        if anime_data.get(&anime_id).unwrap().episodes.is_some() {
+            let max_episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
+            if change == 1 && progress == max_episodes {
+                return;
+            }
+        }
+
+        if change == -1 && progress == 0 {
             return;
         }
 
         let anime = user_data.get_mut(&anime_id).unwrap();
-        change_episode(anime, anime.progress + change, GLOBAL_ANIME_DATA.lock().await.get(&anime.media_id).unwrap().episodes.unwrap()).await;
+        change_episode(anime, anime.progress + change, anime_data.get(&anime.media_id).unwrap().episodes).await;
 
         let mut delayed_update = GLOBAL_UPDATE_ANIME_DELAYED.lock().await;
         if delayed_update.contains_key(&anime_id) {
@@ -464,6 +474,8 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
             delayed_update.insert(anime_id, Instant::now());
         }
     }
+    drop(user_data);
+    file_operations::write_file_user_info().await;
 }
 
 // scan folders for episodes of anime
@@ -595,7 +607,7 @@ async fn anime_update_delay() {
             
             // update anime
             let anime = user_data.get_mut(&media_id).unwrap();
-            change_episode(anime, tracking_info.episode, anime_data.get(media_id).unwrap().episodes.unwrap()).await;
+            change_episode(anime, tracking_info.episode, anime_data.get(media_id).unwrap().episodes).await;
             save_file = true;
 
             // store entry for later after mutexes are dropped
@@ -625,7 +637,7 @@ async fn anime_update_delay() {
 }
 
 // change the episode for the user entry and trigger other changes depending on the episode
-async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: i32) {
+async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: Option<i32>) {
 
     let progress = anime.progress;
     anime.progress = episode;
@@ -641,13 +653,13 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: i
     }
 
     // add anime to watching if progress increases
-    if episode > progress && episode != max_episodes && anime.status != "CURRENT"{
+    if episode > progress && (max_episodes.is_none() || episode != max_episodes.unwrap()) && anime.status != "CURRENT"{
 
         change_list(anime, String::from("CURRENT")).await;
     }
 
     // add anime to completed if the last episode was watched and set complete date
-    if episode == max_episodes {
+    if max_episodes.is_some() && episode == max_episodes.unwrap() {
         let now: DateTime<Local> = Local::now();
         anime.completed_at = Some(AnilistDate {
             year: Some(now.year()),

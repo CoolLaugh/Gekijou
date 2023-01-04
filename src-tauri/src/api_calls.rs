@@ -153,6 +153,14 @@ pub struct AnimeInfo {
     pub tags: Vec<Tag>,
     pub trending: i32,
     pub studios: Studio,
+    pub next_airing_episode: Option<NextAiringEpisode>,
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct NextAiringEpisode {
+    pub airing_at: i32,
+    pub episode: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -201,11 +209,12 @@ pub struct UserSettings {
     pub highlight_color: String,
     pub current_tab: String,
     pub first_time_setup: bool,
+    pub show_airing_time: Option<bool>,
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true) }
     }
 }
 
@@ -277,6 +286,7 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
             recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
             tags { name isGeneralSpoiler isMediaSpoiler description }
             studios(isMain: true) { nodes { name } }
+            nextAiringEpisode { airingAt, episode }
         }
     }
 }";
@@ -304,6 +314,7 @@ query($userName: String, $status: [MediaListStatus]) {
           recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
           tags { name isGeneralSpoiler isMediaSpoiler description }
           studios(isMain: true) { nodes { name } }
+          nextAiringEpisode { airingAt, episode }
         }
       }
     }
@@ -346,7 +357,9 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
         .replace("relationType", "relation_type")
         .replace("mediaRecommendation", "media_recommendation")
         .replace("isGeneralSpoiler", "is_general_spoiler")
-        .replace("isMediaSpoiler", "is_media_spoiler");
+        .replace("isMediaSpoiler", "is_media_spoiler")
+        .replace("nextAiringEpisode", "next_airing_episode")
+        .replace("airingAt", "airing_at");
 
     serde_json::from_str(&response).unwrap()
 }
@@ -405,6 +418,7 @@ query($page: Int $ids: [Int]) {
           recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
           tags { name isGeneralSpoiler isMediaSpoiler description }
           studios(isMain: true) { nodes { name } }
+          nextAiringEpisode { airingAt, episode }
         }
     }
 }";
@@ -439,7 +453,9 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>) {
             .replace("relationType", "relation_type")
             .replace("mediaRecommendation", "media_recommendation")
             .replace("isGeneralSpoiler", "is_general_spoiler")
-            .replace("isMediaSpoiler", "is_media_spoiler");
+            .replace("isMediaSpoiler", "is_media_spoiler")
+            .replace("nextAiringEpisode", "next_airing_episode")
+            .replace("airingAt", "airing_at");
     
         let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
         let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
@@ -482,7 +498,9 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
         .replace("relationType", "relation_type")
         .replace("mediaRecommendation", "media_recommendation")
         .replace("isGeneralSpoiler", "is_general_spoiler")
-        .replace("isMediaSpoiler", "is_media_spoiler");
+        .replace("isMediaSpoiler", "is_media_spoiler")
+        .replace("nextAiringEpisode", "next_airing_episode")
+        .replace("airingAt", "airing_at");
     
     let response_json: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap();
 
@@ -627,6 +645,7 @@ const MEDIA_INFO: &str = "query ($id: Int) {
         recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
         tags { name isGeneralSpoiler isMediaSpoiler description }
         studios(isMain: true) { nodes { name } }
+        nextAiringEpisode { airingAt, episode }
     }
 }";
 
@@ -650,7 +669,9 @@ pub async fn anilist_get_anime_info_single(anime_id: i32) {
         .replace("relationType", "relation_type")
         .replace("mediaRecommendation", "media_recommendation")
         .replace("isGeneralSpoiler", "is_general_spoiler")
-        .replace("isMediaSpoiler", "is_media_spoiler");
+        .replace("isMediaSpoiler", "is_media_spoiler")
+        .replace("nextAiringEpisode", "next_airing_episode")
+        .replace("airingAt", "airing_at");
 
     let mut anime_value: serde_json::Value = serde_json::from_str(&response).unwrap();
     let anime_data: AnimeInfo = serde_json::from_value(anime_value["data"]["media"].take()).unwrap();
