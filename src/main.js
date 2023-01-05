@@ -1,5 +1,17 @@
 const { invoke } = window.__TAURI__.tauri;
 
+loadScript('/settings_window.js');
+loadScript('/anime_info_window.js');
+
+function loadScript(url)
+{    
+    var head = document.getElementsByTagName('head')[0];
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = url;
+    head.appendChild(script);
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
 
   populate_year_dropdown();
@@ -54,88 +66,35 @@ window.addEventListener("DOMContentLoaded", async () => {
   check_for_refresh_ui();
 });
 
-window.set_color = set_color;
-async function set_color(element) {
 
-  var parent = document.getElementById("color_boxes");
-  var elements = parent.childNodes;
+async function add_adult_genres(show_adult) {
 
-  for (var i=0; i<elements.length; i++) {
+  if (show_adult == true) {
 
-    if(elements[i].nodeType == 1) {
-      elements[i].style.setProperty("border-style", "hidden");
-      elements[i].style.setProperty("margin", "2.5px");
+    var hentai_option = document.getElementById("hentai_option");
+
+    if (hentai_option == null) {
+
+      hentai_option = document.createElement("option");
+      hentai_option.value = "Hentai";
+      hentai_option.innerHTML = "Hentai";
+      hentai_option.id = "hentai_option"
+      
+      document.getElementById("horror_option").insertAdjacentElement("beforebegin", hentai_option);
     }
-  }
-  element.style.setProperty("border-style", "solid");
-  element.style.setProperty("margin", "0px");
+  } else {
+    
+    var hentai_option = document.getElementById("hentai_option");
 
-  document.styleSheets[0].cssRules[0].style.setProperty("--highlight", element.style.getPropertyValue("background"));
-  
-  redraw_episode_canvas()
-}
+    if (hentai_option != null) {
 
-var background_color_1 = ["#1f2122", "#0e0e10", "#ffffff", "#f7f9fa", "#eaeded", "#eef2fe", "#feffef", "#edeeee" ];
-var background_color_2 = ["#27292a", "#1f1f23", "#e5e5e5", "#edeeee", "#141921", "#d6dbef", "#ede0d7", "#dcdddd" ];
-var text_color = ["#f6f6f6", "#f6f6f6", "#1c0000", "#000000", "#f6f6f6", "#000000", "#000000", "#000000"];
-window.set_theme = set_theme;
-async function set_theme(element, index) {
-
-  var parent = document.getElementById("theme_boxes");
-  var elements = parent.childNodes;
-
-  for (var i=0; i<elements.length; i++) {
-
-    if(elements[i].nodeType == 1) {
-      elements[i].style.setProperty("border-style", "hidden");
-      elements[i].style.setProperty("margin", "2.5px");
-    }
-  }
-  element.style.setProperty("border-style", "solid");
-  element.style.setProperty("margin", "0px");
-
-  document.styleSheets[0].cssRules[0].style.setProperty("--background-color1", background_color_1[index]);
-  document.styleSheets[0].cssRules[0].style.setProperty("--background-color2", background_color_2[index]);
-  document.styleSheets[0].cssRules[0].style.setProperty("--text-color", text_color[index]);
-}
-
-window.get_user_settings = get_user_settings;
-async function get_user_settings() {
-  
-  var user_settings = await invoke("get_user_settings");
-  
-  document.getElementById("user_name").value = user_settings.username;
-  document.getElementById("title_language").value = user_settings.title_language;
-  document.getElementById("show_spoiler_tags").checked = user_settings.show_spoilers;
-  document.getElementById("show_adult").checked = user_settings.show_adult;
-  document.getElementById("show_airing").checked = user_settings.show_airing_time;
-  document.getElementById("update_delay").value = user_settings.update_delay;
-  var folder_textarea = document.getElementById("folders");
-  folder_textarea.value = "";
-  for(var i = 0; i < user_settings.folders.length; i++){
-    folder_textarea.value += user_settings.folders[i];
-    if(i + 1 != user_settings.folders.length) {
-      folder_textarea.value += "\n";
-    }
-  }
-  
-  document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
-  var elements = document.getElementById("color_boxes").childNodes;
-  for (var i=0; i<elements.length; i++) {
-
-    if(elements[i].nodeType != 1) { 
-      continue;
-    }
-
-    if (elements[i].style.getPropertyValue("background") == user_settings.highlight_color) {
-      elements[i].style.setProperty("border-style", "solid");
-      elements[i].style.setProperty("margin", "0px");
-    } else {
-      elements[i].style.setProperty("border-style", "hidden");
-      elements[i].style.setProperty("margin", "2.5px");
+      var drop_down = document.getElementById("genre_select");
+      drop_down.removeChild(hentai_option);
     }
   }
 }
+
+
 
 // add every year between next year and 1940 to the year dropdown
 async function populate_year_dropdown() {
@@ -184,28 +143,6 @@ async function confirm_delete_entry(id, media_id) {
   }
 }
 
-// open another window for the user to log in and get a code they can copy and paste
-window.open_oauth_window = open_oauth_window;
-async function open_oauth_window() {
-  window.open("https://anilist.co/api/v2/oauth/authorize?client_id=9965&redirect_uri=https://anilist.co/api/v2/oauth/pin&response_type=code");
-}
-
-// takes the oauth code and uses it to get a access token for editing the users list
-window.get_oauth_token = get_oauth_token;
-async function get_oauth_token() {
-  
-  var input = document.getElementById("oauth_code")
-  
-  var success = await invoke("anilist_oauth_token", { code: document.getElementById("oauth_code").value});
-
-  input.value = "";
-  if(success[0] == true) {
-    input.setAttribute("placeholder", "Success");
-  } else {
-    input.setAttribute("placeholder", "Failed");
-    alert(success[1]);
-  }
-}
 
 // show the users watching list
 var current_tab = "";
@@ -354,33 +291,6 @@ function populate_sort_dropdown(browse) {
   document.getElementById("sort_order").selectedIndex = index;
 }
 
-async function add_adult_genres(show_adult) {
-
-  if (show_adult == true) {
-
-    var hentai_option = document.getElementById("hentai_option");
-
-    if (hentai_option == null) {
-
-      hentai_option = document.createElement("option");
-      hentai_option.value = "Hentai";
-      hentai_option.innerHTML = "Hentai";
-      hentai_option.id = "hentai_option"
-      
-      document.getElementById("horror_option").insertAdjacentElement("beforebegin", hentai_option);
-    }
-  } else {
-    
-    var hentai_option = document.getElementById("hentai_option");
-
-    if (hentai_option != null) {
-
-      var drop_down = document.getElementById("genre_select");
-      drop_down.removeChild(hentai_option);
-    }
-  }
-}
-
 // draw progress bar for recognizing anime being played by media players
 window.draw_delay_progress = draw_delay_progress;
 async function draw_delay_progress() {
@@ -441,13 +351,6 @@ async function draw_delay_progress() {
   }
 }
 
-// shows the settings window
-window.show_setting_window = show_setting_window;
-async function show_setting_window() {
-  get_user_settings();
-  document.getElementById("login_panel").style.visibility = "visible";
-  document.getElementById("cover_panel_grid").style.opacity = 0.3;
-}
 
 // hide all underlines except one to show the current list being shown
 function exclusive_underline(index) {
@@ -746,18 +649,18 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
   var display_airing_value = "none";
   var airing_value = "";
   var airing_at = 0;
+  var airing_ep = 0;
   if (anime.next_airing_episode != null && show_airing == true) {
     display_airing_value = "block";
     airing_at = anime.next_airing_episode.airing_at * 1000;
-    //var date = new Date(anime.next_airing_episode.airing_at * 1000);
-    //airing_value = "Episode " + anime.next_airing_episode.episode + ": " + date.getFullYear() + "/" + date.getMonth() + "/" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes().toString().padStart(2,'0');
+    airing_ep = anime.next_airing_episode.episode;
   }
 
   var html = "";
 
   html += "<div id=\"" + anime.id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + anime.popularity + "\" score=\"" + average_score + "\" title=\"" + title + "\" trending=\"" + anime.trending + "\" started=\"" + started_date + "\" completed=\"" + completed_date + "\">"
   html +=   "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=\"" + cover_image + "\" width=\"200\">"
-  html +=   "<div class=\"airing_value_display\" style=\"display: " + display_airing_value + "; color: #f6f6f6;\"><p id=\"airing_value\" airing_at=\"" + airing_at + "\">" + airing_value + "</p></div>"
+  html +=   "<div class=\"airing_value_display\" style=\"display: " + display_airing_value + "; color: #f6f6f6;\"><p id=\"airing_value\" airing_at=\"" + airing_at + "\" airing_ep=\"" + airing_ep + "\">" + airing_value + "</p></div>"
   html +=   "<div class=\"sort_value_display\" style=\"display: " + display_sort_value + ";\"><p id=\"sort_value\">" + sort_value + "</p></div>"
   html +=   "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes_" + anime.id + "\" width=\"200\"></canvas>"
   html +=   "<div class=\"cover_title\"><p id=\"title" + anime.id + "\">" + title + "</p></div>"
@@ -791,13 +694,14 @@ var x = setInterval(function() {
     if (airing_at == 0) {
       continue;
     }
+    var airing_ep = parseInt(elements[i].childNodes[0].getAttribute("airing_ep"));
     var date = new Date(airing_at);
     var now = new Date().getTime();
     var distance = date - now;
 
     if (distance < 0) {
 
-      elements[i].childNodes[0].innerText = "Next Episode: Aired"
+      elements[i].childNodes[0].innerText = "Ep " + airing_ep + ": Aired"
 
     } else {
 
@@ -806,7 +710,7 @@ var x = setInterval(function() {
       var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       //var seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-      elements[i].childNodes[0].innerText = "Next Episode:";
+      elements[i].childNodes[0].innerText = "Ep " + airing_ep + ":";
       if (days > 0) { elements[i].childNodes[0].innerText += " " + days + "d"; }
       if (hours > 0) { elements[i].childNodes[0].innerText += " " + hours + "h"; }
       elements[i].childNodes[0].innerText += " " + minutes + "m";
@@ -1129,7 +1033,7 @@ async function browse_update() {
     }
     add_anime(list[i], null, i, user_settings.score_format, user_settings.show_airing_time);
   }
-  sort_anime();
+  //sort_anime();
   document.getElementById("loader").style.display = "none";
 }
 
@@ -1143,215 +1047,6 @@ async function play_next_episode(id) {
 window.add_to_list = add_to_list;
 async function add_to_list(id, list) {
   await invoke("add_to_list", { id: id, list: list});
-}
-
-// hide information window and return to cover grid
-window.hide_anime_info_window = hide_anime_info_window;
-async function hide_anime_info_window(anime_id) {
-  document.getElementById("youtube_embed").src = "";
-  document.getElementById("info_panel").style.display = "none";
-  document.getElementById("cover_panel_grid").style.opacity = 1;
-  if (anime_id != null) {
-    var refresh = await update_user_entry(anime_id);
-    if (refresh == true && current_tab != "BROWSE") {
-      show_anime_list(current_tab);
-    }
-  }
-}
-
-async function determine_title(title_struct, user_settings) {
-
-  if (user_settings == null) {
-    user_settings = await invoke("get_user_settings");
-  }
-
-  var title = null;
-  // try to use the language the user chose
-  if (user_settings.title_language == "romaji" && title_struct.romaji != null) {
-    title = title_struct.romaji;
-  } else if (user_settings.title_language == "english" && title_struct.english != null) {
-    title = title_struct.english;
-  } else if (user_settings.title_language == "native" && title_struct.native != null) {
-    title = title_struct.native;
-  }
-  // if the preferred language does not exist use another language
-  if (title == null) {
-    title = null_check(title_struct.romaji, title_struct.romaji, null_check(title_struct.english, title_struct.english, title_struct.native));
-  }
-
-  return title;
-}
-
-// show information window populated with the shows info
-window.show_anime_info_window = show_anime_info_window;
-async function show_anime_info_window(anime_id) {
-  
-  var user_settings = await invoke("get_user_settings");
-  var info = await invoke("get_anime_info", {id: anime_id});
-  var title = await determine_title(info.title, user_settings);
-
-  var episode_text = "";
-  if (info.episodes == null) {
-    episode_text = "?? x "
-  } else if (info.episodes > 1) {
-    episode_text = info.episodes + " x "
-  }
-  episode_text += null_check(info.duration, info.duration + " Minutes", "?? Minutes");
-
-  document.getElementById("info_cover").src = info.cover_image.large;
-  document.getElementById("info_cover").setAttribute("onclick", "open_window(\"https://anilist.co/anime/" + anime_id + "\")");
-  if (info.studios.nodes.length == 0 || info.studios.nodes[0].name == null) {
-    document.getElementById("studio").innerHTML = "Unknown Studio";
-  } else {
-    document.getElementById("studio").innerHTML = info.studios.nodes[0].name;
-  }
-  document.getElementById("info_description").innerHTML = info.description;
-  document.getElementById("info_title").textContent = title;
-  if (info.format == null) {
-    document.getElementById("info_format").textContent = "Unknown Format";
-  } else {
-    if (info.format != "TV") {
-      document.getElementById("info_format").textContent = info.format.charAt(0) + info.format.toLowerCase().slice(1);
-    } else {
-      document.getElementById("info_format").textContent = info.format;
-    }
-  }
-  document.getElementById("info_rating").textContent = null_check(info.average_score, info.average_score + "%", "No Score");
-  document.getElementById("info_duration").textContent = episode_text;
-  if (info.season != null) {
-
-    document.getElementById("info_season_year").textContent = info.season.charAt(0) + info.season.toLowerCase().slice(1) + " " + info.season_year; 
-  } else {
-    document.getElementById("info_season_year").textContent = "Unknown Date";
-  }
-
-
-  var genres_text = "";
-  for (var i = 0; i < info.genres.length; i++) {
-    genres_text += info.genres[i];
-    if (i != info.genres.length - 1) {
-      genres_text += ", ";
-    }
-  }
-  document.getElementById("info_genres").textContent = genres_text;
-  
-  var tags = "";
-  for (var i = 0; i < info.tags.length; i++) {
-    if (user_settings.show_spoilers == false && (info.tags[i].is_general_spoiler || info.tags[i].is_media_spoiler)) {
-      continue;
-    }
-    tags += info.tags[i].name + ", ";
-  }
-  tags = tags.substring(0, tags.length - 2);
-  document.getElementById("info_tags").textContent = tags;
-
-  if(info.trailer != null && info.trailer.site == "youtube") {
-    document.getElementById("trailer_button").style.display = "block";
-    document.getElementById("youtube_embed").src = "https://www.youtube.com/embed/" + info.trailer.id;
-  } else {
-    document.getElementById("trailer_button").style.display = "none";
-  }
-
-  var user_data = await invoke("get_user_info", {id: anime_id});
-
-  document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
-  document.getElementById("status_select").value = user_data.status;
-  document.getElementById("episode_number").value = user_data.progress;
-  setup_score_dropdown(user_settings.score_format);
-  document.getElementById("score_dropdown").value = user_data.score;
-  document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
-  document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
-  document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
-
-  add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
-
-  openTab('information', 'underline_tab_0');
-  document.getElementById("info_panel").style.display = "block";
-  document.getElementById("cover_panel_grid").style.opacity = 0.3;
-}
-
-function setup_score_dropdown(format) {
-  switch(format) {
-    case "POINT_100":
-      document.getElementById("score_cell").innerHTML = "<input id=\"score_dropdown\" format=\"" + format + "\" min=\"0\" max=\"100\" step=1 type=\"number\">";
-      break;
-    case "POINT_10_DECIMAL":
-      document.getElementById("score_cell").innerHTML = "<input id=\"score_dropdown\" format=\"" + format + "\" min=\"0.0\" max=\"10.0\" step=0.1 type=\"number\">";
-      break;
-    case "POINT_10":
-      document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">1</option><option value=\"2\">2</option><option value=\"3\">3</option><option value=\"4\">4</option><option value=\"5\">5</option><option value=\"6\">6</option><option value=\"7\">7</option><option value=\"8\">8</option><option value=\"9\">9</option><option value=\"10\">10</option></select>";
-      break;
-    case "POINT_5":
-      document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">★☆☆☆☆</option><option value=\"2\">★★☆☆☆</option><option value=\"3\">★★★☆☆</option><option value=\"4\">★★★★☆</option><option value=\"5\">★★★★★</option></select>";
-      break;
-    case "POINT_3":
-      document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">🙁</option><option value=\"2\">😐</option><option value=\"3\">🙂</option></select>";
-      break;
-  }
-}
-
-function add_related_anime(related, recommendations, title_language) {
-
-  var related_grid = document.getElementById("related_grid");
-  removeChildren(related_grid);
-  for(var i = 0; i < related.length; i++) {
-
-    var title = related[i].node.title.romaji;
-    if (title_language == "english" && related[i].node.title != null) {
-      title = related[i].node.title.english;
-    } else if (title_language == "native") {
-      title = related[i].node.title.native;
-    }
-    var relation_type = related[i].relation_type.charAt(0) + related[i].relation_type.toLowerCase().slice(1);
-    relation_type.replace("_", " ");
-
-    var href = " href=\"#\"";
-    var onclick = " onclick=\"show_anime_info_window(" + related[i].node.id + ")\"";
-    if (relation_type == "Adaptation") {
-      onclick = "";
-      href = "";
-    }
-
-
-    var html = "";
-    html +=  "<div style=\"width: 116px; text-align: center; background: var(--background-color1); position: relative;\">"
-    html +=    "<a" + href + "><img class=image href=\"#\" height=\"174px\" src=\"" + related[i].node.cover_image.large + "\" width=\"116px\"" + onclick + "></a>"
-    html +=    "<div style=\"height: 49px; overflow: hidden; margin-top: -5px;\"><a" + href + "><p" + onclick + ">" + title + "</p></a></div>"
-    html +=    "<div class=\"related_category\"><p style=\"color: #f6f6f6;\">" + relation_type + "</p></div>"
-    html +=  "</div>"
-
-    related_grid.innerHTML += html;
-  }
-
-  var recommended_grid = document.getElementById("recommended_grid");
-  removeChildren(recommended_grid);
-
-  recommendations.sort(function(a,b) {
-    return b.rating-a.rating;
-  });
-
-  for(var i = 0; i < recommendations.length; i++) {
-
-    if (recommendations[i].media_recommendation == null) {
-      continue;
-    }
-
-    var title = recommendations[i].media_recommendation.title.romaji;
-    if (title_language == "english" && recommendations[i].media_recommendation.title != null) {
-      title = recommendations[i].media_recommendation.title.english;
-    } else if (title_language == "native") {
-      title = recommendations[i].media_recommendation.title.native;
-    }
-    var rating = recommendations[i].rating;
-
-    var html = "";
-    html +=  "<div style=\"width: 116px; text-align: center; background: var(--background-color1);\">"
-    html +=    "<a href=\"#\"><img class=image height=\"174px\" src=\"" + recommendations[i].media_recommendation.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\"></a>"
-    html +=    "<div style=\"height: 49px; overflow: hidden; margin-top: -5px;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\">" + title + "</p></a></div>"
-    html +=  "</div>"
-
-    recommended_grid.innerHTML += html;
-  }
 }
 
 // decrease the users progress by 1
@@ -1375,19 +1070,6 @@ async function decrease_episode(anime_id) {
   }
 }
 
-// open the info window to the edit user info tab
-window.show_anime_info_window_edit = show_anime_info_window_edit;
-async function show_anime_info_window_edit(anime_id) {
-  await show_anime_info_window(anime_id);
-  openTab('user_entry', 'underline_tab_1');
-}
-
-// open the info window to the edit user info tab
-window.show_anime_info_window_trailer = show_anime_info_window_trailer;
-async function show_anime_info_window_trailer(anime_id) {
-  await show_anime_info_window(anime_id);
-  openTab('trailer', 'underline_tab_2')
-}
 
 // increases the users progress by 1
 window.increase_episode = increase_episode;
@@ -1412,31 +1094,6 @@ async function increase_episode(anime_id) {
       show_anime_list(current_tab);
     }
   }
-}
-
-// changes the opened tab in the anime info window
-window.openTab = openTab;
-function openTab(tab_name, underline_name) {
-
-  // Get all elements with class="tab_content" and hide them
-  var tab_content = document.getElementsByClassName("tab_content");
-  for (var i = 0; i < tab_content.length; i++) {
-    tab_content[i].style.display = "none";
-  }
-
-  // Get all elements with class="tab_underline" and hide them
-  var tab_content = document.getElementsByClassName("tab_underline");
-  for (var i = 0; i < tab_content.length; i++) {
-    tab_content[i].style.visibility = "hidden";
-  }
-
-  // Show the current tab, and an underline to the button that opened the tab
-  if (tab_name == "related"){
-    document.getElementById(tab_name).style.display = "grid"; 
-  } else {
-    document.getElementById(tab_name).style.display = "block";
-  }
-  document.getElementById(underline_name).style.visibility = "visible";
 }
 
 // updates the entry for the current anime with new information from the info window
@@ -1516,47 +1173,6 @@ async function update_user_entry(anime_id) {
 window.clearDate = clearDate;
 async function clearDate(date_id) {
   document.getElementById(date_id).value = "";
-}
-
-// hide the settings window and set the settings in rust
-window.hide_setting_window = hide_setting_window;
-async function hide_setting_window() {
-  document.getElementById("login_panel").style.visibility = "hidden";
-  document.getElementById("cover_panel_grid").style.opacity = 1;
-  document.getElementById("first_time_setup").style.visibility = "hidden";
-  document.getElementById("login_panel").style.setProperty("left", "50%");
-  document.getElementById("login_panel").style.setProperty("transform", "translate(-50%,-50%)");
-
-  var elements = document.getElementById("color_boxes").childNodes;
-  var highlight_color = "";
-  for (var i=0; i<elements.length; i++) {
-    
-    if(elements[i].nodeType != 1) { 
-      continue;
-    }
-
-    if (elements[i].style.getPropertyValue("border-style") == "solid") {
-      highlight_color = elements[i].style.getPropertyValue("background");
-      break;
-    } 
-  }
-
-  var settings = {
-    username: document.getElementById("user_name").value,
-    title_language: document.getElementById("title_language").value,
-    show_spoilers: document.getElementById("show_spoiler_tags").checked,
-    show_adult: document.getElementById("show_adult").checked,
-    show_airing_time: document.getElementById("show_airing").checked,
-    folders: document.getElementById("folders").value.split('\n'),
-    update_delay: parseInt(document.getElementById("update_delay").value),
-    score_format: "",
-    highlight_color: highlight_color,
-    current_tab: "",
-    first_time_setup: false,
-  }
-
-  await invoke("set_user_settings", { settings: settings});
-  add_adult_genres();
 }
 
 window.get_torrents = get_torrents;
