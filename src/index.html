@@ -14,7 +14,7 @@
       <a href="#" onclick="show_dropped_anime()" title="See your dropped list">Dropped<div class="underline" id="underline3" style="visibility: hidden;"></div></a>
       <a href="#" onclick="show_planning_anime()" title="See your plan to watch list">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
       <a href="#" onclick="show_browse_anime()" title="Browse anilist for anime">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
-      <a href="#" onclick="show_recommended_anime_list()" title="User recommended anime from shows you have completed">Recommended<div class="underline" id="underline6" style="visibility: hidden;"></div></a>
+      <a href="#" onclick="show_recommended_anime_list_tab()" title="User recommended anime from shows you have completed">Recommended<div class="underline" id="underline6" style="visibility: hidden;"></div></a>
       <a href="#" onclick="get_torrents()" title="Download">Download<div class="underline" id="underline7" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
       <canvas class="recognition_delay" id="recognition_delay" height="52" width="52" title="" onclick="draw_delay_progress()"></canvas>
@@ -29,49 +29,32 @@
         </select>
         <div class="filters" id="browse_filters">
           <select id="genre_select" name="genre_select">
-            <option value="">Genre</option>
-            <option value="Action">Action</option>
-            <option value="Adventure">Adventure</option>
-            <option value="Comedy">Comedy</option>
-            <option value="Drama">Drama</option>
-            <option value="Ecchi">Ecchi</option>
-            <option value="Fantasy">Fantasy</option>
-            <option value="Horror" id="horror_option">Horror</option>
-            <option value="Mahou Shoujo">Mahou Shoujo</option>
-            <option value="Mecha">Mecha</option>
-            <option value="Music">Music</option>
-            <option value="Mystery">Mystery</option>
-            <option value="Psychological">Psychological</option>
-            <option value="Romance">Romance</option>
-            <option value="Sci-Fi">Sci-Fi</option>
-            <option value="Slice of Life">Slice of Life</option>
-            <option value="Sports">Sports</option>
-            <option value="Supernatural">Supernatural</option>
-            <option value="Thriller">Thriller</option>
+            <option value="">Genre</option> <option value="Action">Action</option> <option value="Adventure">Adventure</option> <option value="Comedy">Comedy</option> <option value="Drama">Drama</option> <option value="Ecchi">Ecchi</option> <option value="Fantasy">Fantasy</option> <option value="Horror" id="horror_option">Horror</option> <option value="Mahou Shoujo">Mahou Shoujo</option> <option value="Mecha">Mecha</option> <option value="Music">Music</option> <option value="Mystery">Mystery</option> <option value="Psychological">Psychological</option> <option value="Romance">Romance</option> <option value="Sci-Fi">Sci-Fi</option> <option value="Slice of Life">Slice of Life</option> <option value="Sports">Sports</option> <option value="Supernatural">Supernatural</option> <option value="Thriller">Thriller</option>
           </select>
           <select id="year_select" name="year_select">
             <option value="">Year</option>
           </select>
           <select id="season_select" name="season_select">
-            <option value="">Season</option>
-            <option value="WINTER">Winter</option>
-            <option value="SPRING">Spring</option>
-            <option value="SUMMER">Summer</option>
-            <option value="FALL">Fall</option>
+            <option value="">Season</option> <option value="WINTER">Winter</option> <option value="SPRING">Spring</option> <option value="SUMMER">Summer</option> <option value="FALL">Fall</option>
           </select>
           <select id="format_select" name="format_select">
-            <option value="">Format</option>
-            <option value="TV">TV</option>
-            <option value="MOVIE">Movie</option>
-            <option value="TV_SHORT">TV Short</option>
-            <option value="SPECIAL">Special</option>
-            <option value="OVA">OVA</option>
-            <option value="ONA">ONA</option>
-            <option value="MUSIC">Music</option>
+            <option value="">Format</option> <option value="TV">TV</option> <option value="MOVIE">Movie</option> <option value="TV_SHORT">TV Short</option> <option value="SPECIAL">Special</option> <option value="OVA">OVA</option> <option value="ONA">ONA</option> <option value="MUSIC">Music</option>
           </select>
           <input type="search" id="search_text">
           <button onclick="browse_update()">Search</button>
           <span class="loader" id="loader"></span>
+        </div>
+        <div class="filters_recommended" id="recommended_filters">
+          <select id="genre_select_recommended" name="genre_select" onchange="show_recommended_anime_list()">
+            <option value="">Genre</option> <option value="Action">Action</option> <option value="Adventure">Adventure</option> <option value="Comedy">Comedy</option> <option value="Drama">Drama</option> <option value="Ecchi">Ecchi</option> <option value="Fantasy">Fantasy</option> <option value="Horror" id="horror_option">Horror</option> <option value="Mahou Shoujo">Mahou Shoujo</option> <option value="Mecha">Mecha</option> <option value="Music">Music</option> <option value="Mystery">Mystery</option> <option value="Psychological">Psychological</option> <option value="Romance">Romance</option> <option value="Sci-Fi">Sci-Fi</option> <option value="Slice of Life">Slice of Life</option> <option value="Sports">Sports</option> <option value="Supernatural">Supernatural</option> <option value="Thriller">Thriller</option>
+          </select>
+          <select id="year_select_recommended" name="year_select" onchange="show_recommended_anime_list()">
+            <option value="">Year</option><option value="2000|2004">2000 - 2004</option><option value="2005|2009">2005 - 2009</option><option value="2010|2014">2010 - 2014</option><option value="2015|2019">2015 - 2019</option><option value="2020|2024">2020 - 2024</option>
+          </select>
+          <select id="format_select_recommended" name="format_select" onchange="show_recommended_anime_list()">
+            <option value="">Format</option> <option value="TV">TV</option> <option value="MOVIE">Movie</option> <option value="TV_SHORT">TV Short</option> <option value="SPECIAL">Special</option> <option value="OVA">OVA</option> <option value="ONA">ONA</option> <option value="MUSIC">Music</option>
+          </select>
+          <span class="loader" id="loader_recommended"></span>
         </div>
       </div>
       <div class="cover_panel" id="cover_panel_grid" style="opacity: 1;">

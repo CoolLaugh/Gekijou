@@ -103,6 +103,10 @@ body {
   display: none;
 }
 
+.filters_recommended {
+  display: none;
+}
+
 .anime_info_panel {
   position: absolute;
   top: 50%;

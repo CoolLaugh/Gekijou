@@ -852,9 +852,9 @@ async fn get_torrents(search: String) {
 
 
 #[tauri::command]
-async fn recommend_anime() -> Vec<AnimeInfo> {
+async fn recommend_anime(genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<AnimeInfo> {
 
-    let ids = recommendation::tally_recommendations().await;
+    let ids = recommendation::tally_recommendations(genre_filter, year_min_filter, year_max_filter, format_filter).await;
     let mut anime: Vec<AnimeInfo> = Vec::new();
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     for id in ids {

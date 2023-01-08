@@ -346,20 +346,7 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
 
     let json = json!({"query": ANIME_BROWSE, "variables": variables});
 
-    let response = post(&json, None).await
-        .replace("averageScore", "average_score")
-        .replace("coverImage", "cover_image")
-        .replace("isAdult", "is_adult")
-        .replace("seasonYear", "season_year")
-        .replace("type", "media_type")
-        .replace("startDate", "start_date")
-        .replace("userPreferred", "user_preferred")
-        .replace("relationType", "relation_type")
-        .replace("mediaRecommendation", "media_recommendation")
-        .replace("isGeneralSpoiler", "is_general_spoiler")
-        .replace("isMediaSpoiler", "is_media_spoiler")
-        .replace("nextAiringEpisode", "next_airing_episode")
-        .replace("airingAt", "airing_at");
+    let response = anilist_to_snake_case(post(&json, None).await);
 
     serde_json::from_str(&response).unwrap()
 }
@@ -390,16 +377,7 @@ pub async fn anilist_api_call(id: i32) -> AnimeInfo {
     // create client and query json
     let json = json!({"query": ANIME_INFO_QUERY, "variables": {"id": id}});
 
-    let mut response = post(&json, None).await;
-
-    // change json keys to snake case
-    response = response.replace("\"Media\"", "\"media\"")
-        .replace("averageScore", "average_score")
-        .replace("coverImage", "cover_image")
-        .replace("isAdult", "is_adult")
-        .replace("seasonYear", "season_year")
-        .replace("type", "media_type") // type is already snake case but it is a rust keyword
-        .replace("startDate", "start_date");
+    let response = anilist_to_snake_case(post(&json, None).await);
 
     // return struct with media information
     let json: Data = serde_json::from_str(&response).unwrap();
@@ -442,20 +420,7 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>) {
         let sub_vec = &ids[start..end];
         let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE, "variables": { "page": 0, "ids": sub_vec}});
 
-        let response = post(&json, None).await
-            .replace("averageScore", "average_score")
-            .replace("coverImage", "cover_image")
-            .replace("isAdult", "is_adult")
-            .replace("seasonYear", "season_year")
-            .replace("type", "media_type")
-            .replace("startDate", "start_date")
-            .replace("userPreferred", "user_preferred")
-            .replace("relationType", "relation_type")
-            .replace("mediaRecommendation", "media_recommendation")
-            .replace("isGeneralSpoiler", "is_general_spoiler")
-            .replace("isMediaSpoiler", "is_media_spoiler")
-            .replace("nextAiringEpisode", "next_airing_episode")
-            .replace("airingAt", "airing_at");
+        let response = anilist_to_snake_case(post(&json, None).await);
     
         let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
         let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
@@ -465,6 +430,28 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>) {
         }
     }
     drop(anime_data);
+}
+
+fn anilist_to_snake_case(anilist_json: String) -> String {
+
+    anilist_json
+        .replace("\"Media\"", "\"media\"")
+        .replace("averageScore", "average_score")
+        .replace("coverImage", "cover_image")
+        .replace("isAdult", "is_adult")
+        .replace("seasonYear", "season_year")
+        .replace("type", "media_type")
+        .replace("startDate", "start_date")
+        .replace("userPreferred", "user_preferred")
+        .replace("relationType", "relation_type")
+        .replace("mediaRecommendation", "media_recommendation")
+        .replace("isGeneralSpoiler", "is_general_spoiler")
+        .replace("isMediaSpoiler", "is_media_spoiler")
+        .replace("nextAiringEpisode", "next_airing_episode")
+        .replace("airingAt", "airing_at")
+        .replace("mediaId", "media_id")
+        .replace("startedAt", "started_at")
+        .replace("completedAt", "completed_at")
 }
 
 fn ceiling_div(x: usize, y: usize) -> usize {
@@ -485,22 +472,7 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
 
     let json = json!({"query": USER_LIST_WITH_MEDIA, "variables": {"userName": username, "status": status_array}});
 
-    let mut response = post(&json, Some(&access_token)).await;
-
-    response = response.replace("\"Media\"", "\"media\"")
-        .replace("averageScore", "average_score")
-        .replace("coverImage", "cover_image")
-        .replace("isAdult", "is_adult")
-        .replace("seasonYear", "season_year")
-        .replace("type", "media_type")
-        .replace("startDate", "start_date")
-        .replace("userPreferred", "user_preferred")
-        .replace("relationType", "relation_type")
-        .replace("mediaRecommendation", "media_recommendation")
-        .replace("isGeneralSpoiler", "is_general_spoiler")
-        .replace("isMediaSpoiler", "is_media_spoiler")
-        .replace("nextAiringEpisode", "next_airing_episode")
-        .replace("airingAt", "airing_at");
+    let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
     
     let response_json: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap();
 
@@ -521,12 +493,12 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
         for entry in list["entries"].as_array().unwrap() {
             
             let user_info: UserAnimeInfo = UserAnimeInfo { id: entry["id"].as_i64().unwrap() as i32, 
-                                                            media_id: entry["mediaId"].as_i64().unwrap() as i32, 
+                                                            media_id: entry["media_id"].as_i64().unwrap() as i32, 
                                                             status: entry["status"].as_str().unwrap().to_string(), 
                                                             score: entry["score"].as_f64().unwrap() as f32, 
                                                             progress: entry["progress"].as_i64().unwrap() as i32, 
-                                                            started_at: serde_json::from_value(entry["startedAt"].clone()).unwrap(), 
-                                                            completed_at: serde_json::from_value(entry["completedAt"].clone()).unwrap() };
+                                                            started_at: serde_json::from_value(entry["started_at"].clone()).unwrap(), 
+                                                            completed_at: serde_json::from_value(entry["completed_at"].clone()).unwrap() };
 
             anime_user_data.insert(user_info.media_id, user_info);
 
@@ -603,17 +575,7 @@ pub async fn anilist_get_anime_info(anime: Vec<i32>) -> bool {
     let json = json!({"query": query, "variables": ids});
 
     // get media information from anilist api
-    let mut response = post(&json, None).await;
-    
-    // change json keys to snake case
-    response = response.replace("\"Media\"", "\"media\"")
-        .replace("averageScore", "average_score")
-        .replace("coverImage", "cover_image")
-        .replace("isAdult", "is_adult")
-        .replace("seasonYear", "season_year")
-        .replace("type", "media_type") // type is already snake case but it is a rust keyword
-        .replace("startDate", "start_date");
-
+    let response = anilist_to_snake_case(post(&json, None).await);
 
     let anime_data: serde_json::Value = serde_json::from_str(&response).unwrap();
     let anime_list = &mut *GLOBAL_ANIME_DATA.lock().await;
@@ -655,23 +617,7 @@ pub async fn anilist_get_anime_info_single(anime_id: i32) {
     let json = json!({"query": MEDIA_INFO, "variables": {"id": anime_id}});
 
     // get media information from anilist api
-    let mut response = post(&json, None).await;
-    
-    // change json keys to snake case
-    response = response.replace("\"Media\"", "\"media\"")
-        .replace("averageScore", "average_score")
-        .replace("coverImage", "cover_image")
-        .replace("isAdult", "is_adult")
-        .replace("seasonYear", "season_year")
-        .replace("type", "media_type")
-        .replace("startDate", "start_date")
-        .replace("userPreferred", "user_preferred")
-        .replace("relationType", "relation_type")
-        .replace("mediaRecommendation", "media_recommendation")
-        .replace("isGeneralSpoiler", "is_general_spoiler")
-        .replace("isMediaSpoiler", "is_media_spoiler")
-        .replace("nextAiringEpisode", "next_airing_episode")
-        .replace("airingAt", "airing_at");
+    let response = anilist_to_snake_case(post(&json, None).await);
 
     let mut anime_value: serde_json::Value = serde_json::from_str(&response).unwrap();
     let anime_data: AnimeInfo = serde_json::from_value(anime_value["data"]["media"].take()).unwrap();
@@ -685,11 +631,7 @@ pub async fn anilist_list_query_call(username: String, access_token: String) -> 
     let json = json!({"query": ANIME_LIST_QUERY, "variables": {"username": username}});
 
     // get media information from anilist api
-    let mut response = post(&json, Some(&access_token)).await;
-    
-    response = response.replace("mediaId", "media_id")
-        .replace("startedAt", "started_at")
-        .replace("completedAt", "completed_at");
+    let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
 
     response
 }
@@ -762,12 +704,8 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
 
     let json = json!({"query": mutation, "variables": variables});
 
-    let mut response = post(&json, Some(&access_token)).await;
+    let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
 
-    response = response.replace("mediaId", "media_id")
-        .replace("startedAt", "started_at")
-        .replace("completedAt", "completed_at");
-    
     response
 }
 

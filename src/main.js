@@ -265,6 +265,7 @@ async function show_browse_anime() {
   exclusive_underline(5);
   populate_sort_dropdown(true);
   document.getElementById("browse_filters").style.display = "block";
+  document.getElementById("recommended_filters").style.display = "none";
   removeChildren(document.getElementById("cover_panel_grid"));
   document.getElementById("cover_panel_id").onscroll = null;
   invoke("set_current_tab", {currentTab: current_tab});
@@ -366,6 +367,7 @@ window.show_anime_list = show_anime_list;
 async function show_anime_list(name) {
 
   document.getElementById("browse_filters").style.display = "none";
+  document.getElementById("recommended_filters").style.display = "none";
   var watching = await invoke("get_list", { listName: name });
 
   if (watching[1] != null) {
@@ -411,6 +413,7 @@ async function show_anime_list_paged(page) {
   var name = current_tab;
   
   document.getElementById("browse_filters").style.display = "none";
+  document.getElementById("recommended_filters").style.display = "none";
 
   var get_list_response = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order").value, ascending: sort_ascending, page: page});
   if (get_list_response[1] != null) {
@@ -441,8 +444,8 @@ async function show_anime_list_paged(page) {
   }
 }
 
-window.show_recommended_anime_list = show_recommended_anime_list;
-async function show_recommended_anime_list() {
+window.show_recommended_anime_list_tab = show_recommended_anime_list_tab;
+async function show_recommended_anime_list_tab() {
 
   if (current_tab == "RECOMMENDED") {
     return;
@@ -451,18 +454,31 @@ async function show_recommended_anime_list() {
   exclusive_underline(6);
   document.getElementById("cover_panel_id").onscroll = null;
 
-  var name = current_tab;
-  
   document.getElementById("browse_filters").style.display = "none";
+  document.getElementById("recommended_filters").style.display = "block";
+  removeChildren(document.getElementById("cover_panel_grid"));
 
-  document.getElementById("cover_panel_grid").innerHTML = "<a>Wait one moment<a>";
+  show_recommended_anime_list();
+}
 
-  var recommended_list = await invoke("recommend_anime");
+window.show_recommended_anime_list = show_recommended_anime_list;
+async function show_recommended_anime_list() {
 
+  document.getElementById("loader_recommended").style.display = "inline-block";
+  var genre = document.getElementById("genre_select_recommended").value;
+  var format = document.getElementById("format_select_recommended").value;
+  var year_split = document.getElementById("year_select_recommended").value.split("|");
+  var year_start = 0;
+  var year_end = 0;
+  if (year_split != null && year_split.length == 2) {
+    year_start = parseInt(year_split[0]);
+    year_end = parseInt(year_split[1]);
+  }
+
+  var recommended_list = await invoke("recommend_anime", { genreFilter: genre, yearMinFilter: year_start, yearMaxFilter: year_end, formatFilter: format });
   var user_settings = await invoke("get_user_settings");
 
-  // user didn't change the tab while getting the list from anilist
-  if (name == current_tab) {
+  if (current_tab == "RECOMMENDED") {
 
     document.getElementById("cover_panel_grid").innerHTML = "";
     removeChildren(document.getElementById("cover_panel_grid"));
@@ -474,6 +490,7 @@ async function show_recommended_anime_list() {
       await add_anime(recommended_list[i], null, i, user_settings.score_format, user_settings.show_airing_time);
     }
   }
+  document.getElementById("loader_recommended").style.display = "none";
 }
 
 // remove all html children of the current element.  used to clear the anime list on screen

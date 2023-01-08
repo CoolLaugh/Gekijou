@@ -30,7 +30,7 @@ async function show_anime_info_window(anime_id) {
 
     // fill in info window with data
     add_anime_data(info, title, user_settings.show_spoilers);
-    await add_user_data(anime_id);
+    await add_user_data(anime_id, user_settings);
     add_trailer(info.trailer);
     add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
 
@@ -121,7 +121,7 @@ function add_anime_data(info, title, show_spoilers) {
 }
 
 // fill in the user's data into the info window
-async function add_user_data(anime_id) {
+async function add_user_data(anime_id, user_settings) {
 
     var user_data = await invoke("get_user_info", {id: anime_id});
 

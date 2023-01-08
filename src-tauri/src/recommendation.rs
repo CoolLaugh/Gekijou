@@ -9,7 +9,7 @@ struct RecommendTally {
     pub rating: f32,
 }
 
-pub async fn tally_recommendations() -> Vec<i32> {
+pub async fn tally_recommendations(genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<i32> {
     
     let list = GLOBAL_USER_ANIME_LISTS.lock().await;
     let completed_list = list.get("COMPLETED").unwrap();
@@ -40,6 +40,9 @@ pub async fn tally_recommendations() -> Vec<i32> {
     }
     drop(list);
 
+    recommend_total.retain(|id, _| { user_data.contains_key(&id) == false });
+    drop(user_data);
+
     let mut recommendations: Vec<RecommendTally> = Vec::new();
     for entry in recommend_total {
         recommendations.push(RecommendTally {
@@ -48,15 +51,11 @@ pub async fn tally_recommendations() -> Vec<i32> {
         });
     }
 
-    let user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-    recommendations.retain(|entry| { user_data.contains_key(&entry.id) == false });
-    drop(user_data);
-
     recommendations.sort_by(| entry_a, entry_b | {
         entry_b.rating.partial_cmp(&entry_a.rating).unwrap()
     });
 
-    recommendations.truncate(100);
+    recommendations.truncate(1000);
     
     let mut unknown_ids: Vec<i32> = Vec::new();
     for entry in recommendations.clone() {
@@ -69,18 +68,46 @@ pub async fn tally_recommendations() -> Vec<i32> {
     api_calls::anilist_api_call_multiple(unknown_ids).await;
     file_operations::write_file_anime_info_cache().await;
 
-    //let anime_data2 = GLOBAL_ANIME_DATA.lock().await;
+    if genre_filter.is_empty() == false || year_min_filter != 0 || year_max_filter != 0 || format_filter.is_empty() == false {
 
+        let anime_data = GLOBAL_ANIME_DATA.lock().await;
+
+        if genre_filter.is_empty() == false {
+
+            recommendations.retain(|rec| { 
+                anime_data.get(&rec.id).unwrap().genres.contains(&genre_filter)
+            })
+        }
+
+        if year_min_filter != 0 {
+
+            recommendations.retain(|rec| { 
+                anime_data.get(&rec.id).unwrap().season_year.is_some() &&
+                anime_data.get(&rec.id).unwrap().season_year.unwrap() >= year_min_filter
+            })
+        }
+
+        if year_max_filter != 0 {
+
+            recommendations.retain(|rec| { 
+                anime_data.get(&rec.id).unwrap().season_year.is_some() &&
+                anime_data.get(&rec.id).unwrap().season_year.unwrap() <= year_max_filter
+            })
+        }
+
+        if format_filter.is_empty() == false {
+
+            recommendations.retain(|rec| { 
+                anime_data.get(&rec.id).unwrap().format.is_some() &&
+                anime_data.get(&rec.id).unwrap().format.as_ref().unwrap().eq(&format_filter)
+            })
+        }
+    }
+
+    recommendations.truncate(100);
     let mut recommend_list: Vec<i32> = Vec::new();
     for entry in recommendations {
 
-        // let title = if anime_data2.contains_key(&entry.id) {
-        //     anime_data2.get(&entry.id).unwrap().title.romaji.clone().unwrap()
-        // } else {
-        //     entry.id.to_string()
-        // };
-
-        // print!("{} {}|", title, entry.rating);
         recommend_list.push(entry.id);
     }
     recommend_list
