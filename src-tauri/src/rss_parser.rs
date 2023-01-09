@@ -2,11 +2,12 @@ use std::io::Cursor;
 
 use regex::Regex;
 use reqwest;
+use serde::{Deserialize, Serialize};
 use xml;
 
-use crate::file_name_recognition;
+use crate::{file_name_recognition, GLOBAL_ANIME_DATA};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct RssEntry {
     pub title: String,
     pub link: String,
@@ -15,28 +16,34 @@ pub struct RssEntry {
     pub downloads: i32,
     pub info_hash: String,
     pub category_id: String,
-    pub size: String,
+    pub size: i32,
+    pub size_string: String,
 
     pub derived_values: DerivedValues,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DerivedValues {
     pub episode: i32,
     pub resolution: i32,
     pub sub_group: String,
+    pub anime_id: i32,
+    pub title: String,
 }
 
-pub async fn get_rss(search: String) {
+pub async fn get_rss(anime_id: i32) -> Vec<RssEntry> {
 
-    let url = format!("https://nyaa.si/?page=rss&q={}&c=1_2&f=0", search.replace(" ", "+"));
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    let search = anime_data.get(&anime_id).unwrap().title.romaji.clone().unwrap().replace(" ", "+");
+    let url = format!("https://nyaa.si/?page=rss&q={}&c=1_2&f=0", search);
 
     let response = reqwest::get(url).await.unwrap().text().await.unwrap()
         .replace("\n", "")
         .replace("\t", "");
+    println!("{}", response);
 
     let cursor = Cursor::new(response);
-
+    
     // Parse the XML document
     let doc = xml::reader::EventReader::new(cursor);
 
@@ -59,7 +66,7 @@ pub async fn get_rss(search: String) {
                     "downloads" => { entry.downloads = text.parse().unwrap(); },
                     "infoHash" => { entry.info_hash = text; },
                     "categoryId" => { entry.category_id = text; },
-                    "size" => { entry.size = text; },
+                    "size" => { entry.size_string = text; },
                     &_ => (),
                 }
             }
@@ -74,11 +81,12 @@ pub async fn get_rss(search: String) {
         }
     }
 
-    for mut e in entrys {
+    let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
+    let file_size = Regex::new(r"(\d{1,3}\.\d?)").unwrap();
+    for e in entrys.iter_mut() {
 
         let mut title = e.title.clone();
         
-        let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
         title = valid_file_extensions.replace_all(&title, "").to_string();
 
         e.derived_values.resolution = file_name_recognition::extract_resolution(&title);
@@ -87,8 +95,35 @@ pub async fn get_rss(search: String) {
 
         title = file_name_recognition::remove_brackets(&title);
 
-        e.derived_values.episode = file_name_recognition::identify_number(&title).1;
+        let (episode_string, episode) = file_name_recognition::identify_number(&title);
+        e.derived_values.episode = episode;
+        title = title.replace(&episode_string, "");
 
-        println!("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", e.title, e.derived_values.sub_group, e.derived_values.resolution, e.derived_values.episode, title, e.link, e.guid, e.pub_date, e.downloads, e.info_hash, e.category_id, e.size);
+        let lowercase_title = title.to_ascii_lowercase();
+        let (mut identified_anime_id, mut identified_title, mut similarity) = file_name_recognition::identify_media_id(&lowercase_title, &anime_data, Some(anime_id));
+        //println!("{} {} {} ", identified_anime_id, identified_title, similarity);
+        if identified_anime_id == 0 {
+            (identified_anime_id, identified_title, similarity) = file_name_recognition::identify_media_id(&lowercase_title, &anime_data, None);
+            //print!("{} {} {} ", identified_anime_id, identified_title, similarity)
+        }
+        if similarity > 0.0 {
+            e.derived_values.anime_id = identified_anime_id;
+            e.derived_values.title = identified_title;
+        }
+
+        let captures = file_size.captures(&e.size_string).unwrap();
+        let size: f64 = captures.get(1).unwrap().as_str().parse().unwrap();
+
+        if e.size_string.contains("GiB") {
+            e.size = (size * 1024.0 * 1024.0) as i32;
+        } else if e.size_string.contains("MiB") {
+            e.size = (size * 1024.0) as i32;
+        } else {
+            e.size = size as i32;
+        }
+
+        //println!("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", e.title, e.derived_values.sub_group, e.derived_values.resolution, e.derived_values.episode, e.derived_values.anime_id, e.derived_values.title, title, e.link, e.guid, e.pub_date, e.downloads, e.info_hash, e.category_id, e.size);
     }
+
+    entrys
 }

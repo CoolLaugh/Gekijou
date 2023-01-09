@@ -113,7 +113,7 @@ body {
   left: 50%;
   transform: translate(-50%,-50%);
   background-color: var(--background-color2);
-  width: 732px;
+  width: 932px;
   min-height: 411px;
   display: grid;
   border-radius: 10px;

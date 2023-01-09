@@ -70,12 +70,13 @@
             <img style="cursor:pointer" alt="Cover Image" height="300" id="info_cover" src="/assets/CoverImageTest.png" width="200">
             <table><tbody><tr><th><p id="studio">Studio</p></th></tr></tbody></table>
           </div>
-          <div style="width: 527px;">
+          <div style="width: 727px;">
             <div class="tab_navigation">
               <a href="#information" onclick="openTab('information', 'underline_tab_0')">Information<div class="tab_underline" id="underline_tab_0" style="visibility: visible;"></div></a>
               <a href="#user_entry" onclick="openTab('user_entry', 'underline_tab_1')">My List<div class="tab_underline" id="underline_tab_1"></div></a>
               <a href="#trailer" onclick="openTab('trailer', 'underline_tab_2')" id="trailer_button">Trailer<div class="tab_underline" id="underline_tab_2"></div></a>
               <a href="#related" onclick="openTab('related', 'underline_tab_3')" id="trailer_button">Related<div class="tab_underline" id="underline_tab_3"></div></a>
+              <a href="#" onclick="openTab('torrent', 'underline_tab_4')" id="torrent_button">Torrent<div class="tab_underline" id="underline_tab_4"></div></a>
             </div>
             <div class="tab_content" id="information" style="display: block;">
               <div class="anime_info_text">
@@ -146,6 +147,39 @@
               <div id="recommended_grid" style="display: grid; grid-gap: 10px 10px; grid-template-columns: repeat(auto-fill, 116px)">
                 
               </div>
+            </div>
+            <div class="tab_content" id="torrent" style="overflow: auto; scroll-behavior: auto; max-height: 500px;">
+              <table id="torrent_table">
+                <tbody>
+                  <tr>
+                    <th style="width: 20px;"></th>
+                    <th style="width: 90px;">
+                      <select style="width: auto;" id="sub_group_filter" onchange="filter_sort_torrents(0)">
+                        <option>Any</option>
+                      </select>
+                    </th>
+                    <th></th>
+                    <th style="width: 85px;">
+                      <select style="width: auto;" id="episode_filter">
+                        <option>Any</option>
+                        <option>Batch</option>
+                      </select>
+                    </th>
+                    <th style="width: 85px;">
+                      <select style="width: auto;" id="resolution_filter" onchange="filter_sort_torrents(0)">
+                        <option>Any</option>
+                        <option>Other</option>
+                      </select>
+                    </th>
+                    <th style="width: 73px;">
+                      <button style="width: auto;" onclick="filter_sort_torrents(1)">Sort</button>
+                    </th>
+                    <th style="width: 71px;">
+                      <button style="width: auto;" onclick="filter_sort_torrents(2)">Sort</button>
+                    </th>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

@@ -33,6 +33,7 @@ async function show_anime_info_window(anime_id) {
     await add_user_data(anime_id, user_settings);
     add_trailer(info.trailer);
     add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
+    add_torrent_data(anime_id);
 
     // make the window visible
     openTab('information', 'underline_tab_0');
@@ -289,7 +290,154 @@ function add_related_anime(related, recommendations, title_language) {
         recommended_grid.innerHTML += html;
     }
 }
-  
+
+
+var rss_data;
+async function add_torrent_data(anime_id) {
+
+  size_sorted = false;
+  downloads_sorted = false;
+
+  rss_data = await invoke("get_torrents", {id: anime_id});
+
+  var table = document.getElementById("torrent_table");
+
+  var rows = table.rows.length - 1;
+  for(var i = 0; i < rows; i++) {
+    table.deleteRow(1);
+  }
+
+  var sub_groups = [];
+  var resolutions = [];
+
+  for(var i = 0; i < rss_data.length; i++) {
+
+    if (sub_groups.includes(rss_data[i].derived_values.sub_group) == false) {
+      sub_groups.push(rss_data[i].derived_values.sub_group);
+    }
+
+    if (resolutions.includes(rss_data[i].derived_values.resolution) == false) {
+      resolutions.push(rss_data[i].derived_values.resolution);
+    }
+  }
+
+  sub_groups.sort();
+  resolutions.sort(function(a,b) {
+    return b-a;
+  });
+
+  var sub_group_filter_select = document.getElementById("sub_group_filter");
+  removeChildren(sub_group_filter_select);
+  sub_group_filter_select.insertAdjacentHTML("beforeend", "<option>Any</option>");
+  for(var i = 0; i < sub_groups.length; i++) {
+    sub_group_filter_select.insertAdjacentHTML("beforeend", "<option>" + sub_groups[i] + "</option>");
+  }
+
+  var resolution_filter_select = document.getElementById("resolution_filter");
+  removeChildren(resolution_filter_select);
+  resolution_filter_select.insertAdjacentHTML("beforeend", "<option>Any</option>");
+  for(var i = 0; i < resolutions.length; i++) {
+    if(resolutions[i] == 0) {
+      resolution_filter_select.insertAdjacentHTML("beforeend", "<option>Unknown</option>");
+    } else {
+      resolution_filter_select.insertAdjacentHTML("beforeend", "<option value=" + resolutions[i] + ">" + resolutions[i] + "p</option>");
+    }
+  }
+
+  for(var i = 0; i < rss_data.length; i++) {
+
+    add_torrent_row(table,rss_data[i]);
+  }
+}
+
+
+
+var size_sorted = false;
+var downloads_sorted = false;
+window.filter_sort_torrents = filter_sort_torrents;
+function filter_sort_torrents(sort_category) {
+
+  var table = document.getElementById("torrent_table");
+
+  var rows = table.rows.length - 1;
+  for(var i = 0; i < rows; i++) {
+    table.deleteRow(1);
+  }
+
+  var sub_group_filter = document.getElementById("sub_group_filter").value;
+  var resolution_filter = document.getElementById("resolution_filter").value;
+  var episode_filter = document.getElementById("episode_filter").value;
+
+  if (sort_category == 1) {
+    downloads_sorted = false;
+    if (size_sorted == true) {
+      rss_data.sort(function(a,b) {
+        return b.size-a.size;
+      });
+    } else {
+      rss_data.sort(function(a,b) {
+        return a.size-b.size;
+      });
+    }
+    size_sorted = !size_sorted;
+  } else if (sort_category == 2) {
+    size_sorted = false;
+    if (downloads_sorted == true) {
+      rss_data.sort(function(a,b) {
+        return b.downloads-a.downloads;
+      });
+    } else {
+      rss_data.sort(function(a,b) {
+        return a.downloads-b.downloads;
+      });
+    }
+    downloads_sorted = !downloads_sorted;
+  }
+
+  for(var i = 0; i < rss_data.length; i++) {
+
+    if (sub_group_filter != "Any") {
+      if (sub_group_filter != rss_data[i].derived_values.sub_group){
+        continue;
+      }
+    }
+
+    if (resolution_filter != "Any") {
+      if (resolution_filter != rss_data[i].derived_values.resolution){
+        continue;
+      }
+    }
+
+    add_torrent_row(table, rss_data[i]);
+  }
+}
+
+function add_torrent_row(table, rss_entry) {
+
+  var row = table.insertRow(1);
+
+  var download_link_cell = row.insertCell(0);
+  download_link_cell.innerHTML = "<a href=\"magnet:?xt=urn:btih:" + rss_entry.info_hash + "&dn=" + rss_entry.title + "&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce\">⤓</a>";
+
+  var sub_group_cell = row.insertCell(1);
+  sub_group_cell.innerHTML = rss_entry.derived_values.sub_group;
+
+  var title_cell = row.insertCell(2);
+  title_cell.innerHTML = rss_entry.derived_values.title;
+
+  var episode_cell = row.insertCell(3);
+  episode_cell.innerHTML = "Ep " + rss_entry.derived_values.episode;
+
+  var resolution_cell = row.insertCell(4);
+  resolution_cell.innerHTML = rss_entry.derived_values.resolution + "p";
+
+  var size_cell = row.insertCell(5);
+  size_cell.innerHTML = rss_entry.size_string;
+
+  var downloads_cell = row.insertCell(6);
+  downloads_cell.innerHTML = rss_entry.downloads + " dl";
+
+}
 
 
 // changes the opened tab in the anime info window

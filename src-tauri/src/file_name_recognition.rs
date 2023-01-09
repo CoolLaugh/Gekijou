@@ -414,7 +414,7 @@ pub fn extract_resolution(title: &String) -> i32 {
         return captures.get(1).unwrap().as_str().parse().unwrap()
     }
 
-    let dvd = Regex::new(r"[Dd][Vv][Dd]").unwrap();
+    let dvd = Regex::new(r"([Dd][Vv][Dd])|[Ss][Dd]").unwrap();
     if dvd.is_match(title) {
         return 480;
     }

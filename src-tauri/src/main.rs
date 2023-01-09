@@ -17,6 +17,7 @@ extern crate lazy_static;
 
 use chrono::prelude::*;
 use regex::Regex;
+use rss_parser::RssEntry;
 use serde::{Serialize, Deserialize};
 use tauri::async_runtime::Mutex;
 use tauri::Manager;
@@ -845,9 +846,9 @@ async fn close_splashscreen(window: tauri::Window) {
 
 
 #[tauri::command]
-async fn get_torrents(search: String) {
+async fn get_torrents(id: i32) -> Vec<RssEntry> {
 
-    rss_parser::get_rss(search).await;
+    rss_parser::get_rss(id).await
 }
 
 

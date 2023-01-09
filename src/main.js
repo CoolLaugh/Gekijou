@@ -1193,9 +1193,9 @@ async function clearDate(date_id) {
 }
 
 window.get_torrents = get_torrents;
-async function get_torrents() {
+async function get_torrents(anime_id) {
   exclusive_underline(7);
-  invoke("get_torrents", {search: ""});
+  invoke("get_torrents", {id: anime_id});
 }
 
 window.open_window = open_window;
