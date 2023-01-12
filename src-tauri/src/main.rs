@@ -416,25 +416,31 @@ async fn check_delayed_updates(wait: bool) {
 async fn play_next_episode(id: i32) {
     
     let next_episode = GLOBAL_USER_ANIME_DATA.lock().await.get(&id).unwrap().progress + 1;
-    let paths = GLOBAL_ANIME_PATH.lock().await;
 
-    if paths.contains_key(&id) {
-        let media = paths.get(&id).unwrap();
-        if media.contains_key(&next_episode) {
+    if play_episode(id, next_episode).await == false {
+        file_name_recognition::parse_file_names(None).await;
+        play_episode(id, next_episode).await;
+    }
+}
+
+async fn play_episode(anime_id: i32, episode: i32) -> bool {
+
+    let mut episode_opened = false;
+    println!("play_episode");
+    let paths = GLOBAL_ANIME_PATH.lock().await;
+    if paths.contains_key(&anime_id) {
+        let media = paths.get(&anime_id).unwrap();
+        if media.contains_key(&episode) {
             
-            let next_episode_path = Path::new(&media.get(&next_episode).unwrap().path);
+            let next_episode_path = Path::new(&media.get(&episode).unwrap().path);
             match open::that(next_episode_path) {
                 Err(why) => panic!("{}",why),
-                Ok(e) => {e},
+                Ok(_e) => { episode_opened = true },
             }
-            println!("opened {}", next_episode_path.to_str().unwrap());
-        } else {
-            println!("no episode key {}", next_episode);
         }
-    } else {
-        println!("no media key {}", id);
     }
 
+    episode_opened
 }
 
 // changes the progress for a anime by +-1
@@ -671,6 +677,7 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: O
 
             change_list(anime, String::from("COMPLETED")).await;
         }
+        GLOBAL_REFRESH_UI.lock().await.anime_list = true;
     }
 }
 
@@ -703,8 +710,6 @@ async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
 // allows the ui to check if a anime has been updated to determine if the ui will be refreshed
 #[tauri::command]
 async fn get_refresh_ui() -> RefreshUI {
-
-    thread::sleep(Duration::from_millis(1000));
 
     let mut refresh = GLOBAL_REFRESH_UI.lock().await;
     let mut refresh_ui = refresh.clone();
@@ -873,12 +878,30 @@ async fn open_url(url: String) {
     }
 }
 
+#[tauri::command]
+async fn get_list_ids(list: String) -> Option<Vec<i32>> {
+
+    let user_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+    if user_lists.contains_key(&list) {
+        
+        let mut ids = user_lists.get(&list).unwrap().clone();
+        if GLOBAL_USER_SETTINGS.lock().await.show_adult == false {
+            let anime_data = GLOBAL_ANIME_DATA.lock().await;
+            ids.retain(|id| { anime_data.get(id).unwrap().is_adult == false });
+        }
+        return Some(ids);
+    }
+
+    None
+}
+
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![get_anime_info_query,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
-            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,open_url])
+            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,open_url,get_list_ids])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

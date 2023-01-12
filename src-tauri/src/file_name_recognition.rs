@@ -6,8 +6,8 @@ use regex::Regex;
 use serde::{Serialize, Deserialize};
 
 
-use crate::api_calls::AnimeInfo;
-use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_USER_SETTINGS, file_operations};
+use crate::api_calls::{AnimeInfo, self};
+use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_USER_SETTINGS, file_operations, GLOBAL_REFRESH_UI};
 use strsim;
 
 // working struct to store data while determining what anime a file belongs to
@@ -32,11 +32,14 @@ pub struct AnimePath {
     pub similarity_score: f64,
 }
 
+
 // scans these folders and subfolders looking for files that match titles in the users anime list
 // found files are then stored in a global list for each anime and episode
 // media_id is for finding files for a specific anime instead of any anime known
 pub async fn parse_file_names(media_id: Option<i32>) -> bool {
     
+    get_prequel_data().await;
+
     let mut episode_found = false;
     let folders = GLOBAL_USER_SETTINGS.lock().await.folders.clone();
     for folder in folders {
@@ -80,6 +83,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
         string_similarity(&mut file_names, media_id).await;
         
+        replace_with_sequel(&mut file_names).await;
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
         let anime_data = GLOBAL_ANIME_DATA.lock().await;
@@ -105,10 +109,11 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
     }
 
     remove_missing_files().await;
-
+    GLOBAL_REFRESH_UI.lock().await.canvas = true;
     file_operations::write_file_episode_path().await;
     episode_found
 }
+
 
 // remove all files that no longer exist
 async fn remove_missing_files() {
@@ -121,10 +126,12 @@ async fn remove_missing_files() {
     file_paths.retain(|_,anime| { anime.len() > 0 });
 }
 
+
 // remove all brackets from a filename
 pub fn remove_brackets(filename: &String) -> String {
     Regex::new(r"((\[[^\[\]]+\]|\([^\(\)]+\))[ _]*)+").unwrap().replace_all(&filename, "").to_string()
 }
+
 
 // removes any files that are the wrong file type or extra (openings, endings, etc)
 fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
@@ -155,6 +162,7 @@ fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
         path.filename = valid_file_extensions.replace_all(&path.filename, "").to_string();
     })
 }
+
 
 // compares filename to anime titles using multiple string matching algorithms and remembers the most similar title
 async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>) {
@@ -211,6 +219,7 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i
 
 }
 
+
 // returns the media id and similarity score based on the title
 pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>, only_compare: Option<i32>) -> (i32, String, f64) {
 
@@ -235,6 +244,10 @@ pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>,
 
 fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id: &mut i32, return_title: &mut String) {
     
+    if filename.len() == 0 {
+        return;
+    }
+
     let mut titles: Vec<String> = Vec::new();
     if anime.title.english.is_some() { titles.push(anime.title.english.clone().unwrap().to_ascii_lowercase()) }
     if anime.title.romaji.is_some() { titles.push(anime.title.romaji.clone().unwrap().to_ascii_lowercase()) }
@@ -252,6 +265,7 @@ fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id
     }
 }
 
+
 // find the episode number in the filename and store it
 fn identify_episode_number(paths: &mut Vec<AnimePathWorking>) {
 
@@ -264,6 +278,7 @@ fn identify_episode_number(paths: &mut Vec<AnimePathWorking>) {
         }
     });
 }
+
 
 // applies multiple regex to find the episode number
 pub fn identify_number(filename: &String) -> (String, i32) {
@@ -294,6 +309,7 @@ pub fn identify_number(filename: &String) -> (String, i32) {
 
     (String::new(), 0)
 }
+
 
 // finds and returns the episode number and wider string according to the regex rules
 fn extract_number(filename: &String, regex: Regex) -> (String, i32) {
@@ -340,6 +356,7 @@ fn irrelevant_information_removal_paths(paths: &mut Vec<AnimePathWorking>) {
     });
 }
 
+
 // regex used to filter out useless information
 lazy_static! {
     static ref VERSION: Regex = Regex::new(r"[vV]\d+").unwrap();
@@ -384,6 +401,7 @@ pub fn irrelevant_information_removal(filename: String) -> String {
     // convert title to lowercase so the comparison doesn't think upper/lower case letters are different
     filename_clean.to_ascii_lowercase()
 }
+
 
 pub fn extract_resolution(title: &String) -> i32 {
 
@@ -432,4 +450,84 @@ pub fn extract_sub_group(title: &String) -> String {
     }
 
     return String::new()
+}
+
+// replace a anime with its sequel if the episode number is too high
+async fn replace_with_sequel(paths: &mut Vec<AnimePathWorking>) {
+
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    for path in paths {
+
+        if anime_data.contains_key(&path.media_id) == false || anime_data.get(&path.media_id).unwrap().episodes.is_none() {
+            continue;
+        }
+
+        let mut episodes = anime_data.get(&path.media_id).unwrap().episodes.unwrap();
+
+        let mut sequel_exists = true;
+        while path.episode > episodes && sequel_exists {
+
+            sequel_exists = false;
+            for edge in anime_data.get(&path.media_id).unwrap().relations.edges.iter() {
+                if edge.relation_type == "SEQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&path.media_id).unwrap().format.as_ref().unwrap() == "TV" {
+                    path.media_id = edge.node.id;
+                    path.episode -= episodes;
+                    sequel_exists = true;
+                    break;
+                }
+            }
+            if anime_data.get(&path.media_id).unwrap().episodes.is_none() {
+                break;
+            }
+            episodes = anime_data.get(&path.media_id).unwrap().episodes.unwrap();
+        }
+    }
+
+}
+
+
+// get anime data for prequels of any anime that is in anime data global
+// necessary for recognizing anime that is labeled as one anime but belongs to a sequel of that anime
+// for example boku no hero academia episode 100 when no season has 100 episodes
+async fn get_prequel_data() {
+
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    let mut get_info: Vec<i32> = Vec::new();
+
+    for (_, anime) in anime_data.iter() {
+
+        for edge in anime.relations.edges.iter() {
+
+            if edge.relation_type == "PREQUEL" && edge.node.media_type == "ANIME" && anime_data.contains_key(&edge.node.id) == false {
+
+                get_info.push(edge.node.id);
+                println!("{} {}", anime.title.romaji.as_ref().unwrap(), edge.node.id);
+            }
+        }
+    }
+    drop(anime_data);
+
+    while get_info.is_empty() == false {
+        println!("get_info size {}", get_info.len());
+        api_calls::anilist_api_call_multiple(get_info.clone()).await;
+        let anime_ids = get_info.clone();
+        get_info.clear();
+        let anime_data = GLOBAL_ANIME_DATA.lock().await;
+        for id in anime_ids {
+
+            if anime_data.contains_key(&id) == false {
+
+                continue;
+            }
+            for edge in anime_data.get(&id).unwrap().relations.edges.iter() {
+
+                if edge.relation_type == "PREQUEL" && anime_data.contains_key(&edge.node.id) == false {
+    
+                    get_info.push(edge.node.id);
+                }
+            }
+        }
+        drop(anime_data);
+    }
+    file_operations::write_file_anime_info_cache().await;
 }

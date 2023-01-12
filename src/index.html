@@ -15,18 +15,18 @@
       <a href="#" onclick="show_planning_anime()" title="See your plan to watch list">Plan to Watch<div class="underline" id="underline4" style="visibility: hidden;"></div></a>
       <a href="#" onclick="show_browse_anime()" title="Browse anilist for anime">Browse<div class="underline" id="underline5" style="visibility: hidden;"></div></a>
       <a href="#" onclick="show_recommended_anime_list_tab()" title="User recommended anime from shows you have completed">Recommended<div class="underline" id="underline6" style="visibility: hidden;"></div></a>
-      <a href="#" onclick="get_torrents()" title="Download">Download<div class="underline" id="underline7" style="visibility: hidden;"></div></a>
       <a class="split" href="#Settings" onclick="show_setting_window()">Settings</a>
       <canvas class="recognition_delay" id="recognition_delay" height="52" width="52" title="" onclick="draw_delay_progress()"></canvas>
     </div>
     <a id="error_text"></a>
     <div id="cover_panel_id" class="container">
       <div class="sub_navigation">
-        <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="ASC" style="transform: rotate(180deg);"  title="Sort by ascending or descending">
-        <!--<a class="container_header" href="#sort_order" id="sort_order_text" onclick="change_sort_type()" title="Sorting category">Alphabetical</a>-->
-        <select class="container_header" id="sort_order" title="Sorting category" onchange="change_sort_type()">
-          <option value="Alphabetical">Alphabetical</option>
-        </select>
+        <div id="sort_area">
+          <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="ASC" style="transform: rotate(180deg);"  title="Sort by ascending or descending">
+          <select class="container_header" id="sort_order" title="Sorting category" onchange="change_sort_type()">
+            <option value="Alphabetical">Alphabetical</option>
+          </select>
+        </div>
         <div class="filters" id="browse_filters">
           <select id="genre_select" name="genre_select">
             <option value="">Genre</option> <option value="Action">Action</option> <option value="Adventure">Adventure</option> <option value="Comedy">Comedy</option> <option value="Drama">Drama</option> <option value="Ecchi">Ecchi</option> <option value="Fantasy">Fantasy</option> <option value="Horror" id="horror_option">Horror</option> <option value="Mahou Shoujo">Mahou Shoujo</option> <option value="Mecha">Mecha</option> <option value="Music">Music</option> <option value="Mystery">Mystery</option> <option value="Psychological">Psychological</option> <option value="Romance">Romance</option> <option value="Sci-Fi">Sci-Fi</option> <option value="Slice of Life">Slice of Life</option> <option value="Sports">Sports</option> <option value="Supernatural">Supernatural</option> <option value="Thriller">Thriller</option>
@@ -76,7 +76,7 @@
               <a href="#user_entry" onclick="openTab('user_entry', 'underline_tab_1')">My List<div class="tab_underline" id="underline_tab_1"></div></a>
               <a href="#trailer" onclick="openTab('trailer', 'underline_tab_2')" id="trailer_button">Trailer<div class="tab_underline" id="underline_tab_2"></div></a>
               <a href="#related" onclick="openTab('related', 'underline_tab_3')" id="trailer_button">Related<div class="tab_underline" id="underline_tab_3"></div></a>
-              <a href="#" onclick="openTab('torrent', 'underline_tab_4')" id="torrent_button">Torrent<div class="tab_underline" id="underline_tab_4"></div></a>
+              <a href="#" onclick="open_torrents_tab('torrent', 'underline_tab_4')" id="torrent_button">Torrent<div class="tab_underline" id="underline_tab_4"></div></a>
             </div>
             <div class="tab_content" id="information" style="display: block;">
               <div class="anime_info_text">
@@ -99,7 +99,7 @@
             </div>
             <div class="tab_content" id="user_entry">
               <table style="text-align: left;">
-                <tbody>
+                <thead>
                   <tr>
                     <th style="text-align: right; padding-right: 10px;"><p>Status:</p></th>
                     <th>
@@ -132,7 +132,8 @@
                     <th style="text-align: right; padding-right: 10px;"><p>Finished: </p></th>
                     <th><input id="finished_date" max="2100-12-31" min="1970-01-01" name="finished date" type="date" value=""><img class="anime_info_close" height="30" onclick="clearDate('finished_date')" src="/assets/close.png" style="vertical-align: middle;" width="30"></th>
                   </tr>
-                </tbody>
+                </thead>
+                <tbody></tbody>
               </table>
             </div>
             <div class="tab_content" id="trailer">
@@ -160,7 +161,7 @@
                     </th>
                     <th></th>
                     <th style="width: 85px;">
-                      <select style="width: auto;" id="episode_filter">
+                      <select style="width: auto;" id="episode_filter" onchange="filter_sort_torrents(0)">
                         <option>Any</option>
                         <option>Batch</option>
                       </select>
@@ -182,6 +183,10 @@
               </table>
             </div>
           </div>
+        </div>
+        <div>
+          <button class="anime_info_panel_navigation_button" id="info_window_previous">◄</button>
+          <button class="anime_info_panel_navigation_button" id="info_window_next">►</button>
         </div>
       </div>
       <div class="anilist_login_panel" id="login_panel">

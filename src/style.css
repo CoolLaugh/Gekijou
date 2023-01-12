@@ -123,6 +123,11 @@ body {
   border: 2px solid var(--highlight);
 }
 
+.anime_info_panel_navigation_button {
+  width: 49.7626%;
+  background: var(--background-color1);
+}
+
 .anime_info_close:hover {
   background-color:#b83c3c;
 }
@@ -235,6 +240,8 @@ body {
 .anime_info_lower {
   display: flex;
   gap: 10px;
+  min-height: 511px;
+  margin-bottom: 5px;
 }
 
 .anime_info_cover {

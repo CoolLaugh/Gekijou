@@ -29,6 +29,7 @@ pub struct DerivedValues {
     pub sub_group: String,
     pub anime_id: i32,
     pub title: String,
+    pub batch: bool,
 }
 
 pub async fn get_rss(anime_id: i32) -> Vec<RssEntry> {
@@ -40,7 +41,7 @@ pub async fn get_rss(anime_id: i32) -> Vec<RssEntry> {
     let response = reqwest::get(url).await.unwrap().text().await.unwrap()
         .replace("\n", "")
         .replace("\t", "");
-    println!("{}", response);
+    //println!("{}", response);
 
     let cursor = Cursor::new(response);
     
@@ -122,8 +123,41 @@ pub async fn get_rss(anime_id: i32) -> Vec<RssEntry> {
             e.size = size as i32;
         }
 
-        //println!("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", e.title, e.derived_values.sub_group, e.derived_values.resolution, e.derived_values.episode, e.derived_values.anime_id, e.derived_values.title, title, e.link, e.guid, e.pub_date, e.downloads, e.info_hash, e.category_id, e.size);
+        e.derived_values.batch = identify_batch(&e.title, e.derived_values.episode, e.size);
+
+        //println!("{}|{}|{}", e.title, e.derived_values.episode, e.size);
     }
 
     entrys
+}
+
+
+fn identify_batch(filename: &String, episode: i32, size: i32) -> bool {
+
+    let season = Regex::new(r"[Ss]eason ?\d+").unwrap();
+    let season_short = Regex::new(r"[Ss] ?\d").unwrap();
+    let season_short_not = Regex::new(r"[Ss] ?\d+[Ee]\d+").unwrap();
+    let episode_range = Regex::new(r"0?1 ?[-~] ?\d+").unwrap();
+    let batch = Regex::new(r"[Bb]atch").unwrap();
+
+    if batch.is_match(filename){
+        return true;
+    }
+    if episode_range.is_match(filename){
+        return true;
+    }
+    if season.is_match(filename){
+        return true;
+    }
+    if season_short.is_match(filename) && season_short_not.is_match(filename) == false {
+        return true;
+    }
+    if episode == 0 {
+        return true;
+    }
+    if size > 3 * 1024 * 1024 /* 3GB */ {
+        return true;
+    }
+
+    false
 }

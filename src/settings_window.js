@@ -90,7 +90,6 @@ async function hide_setting_window() {
   }
 
   await invoke("set_user_settings", { settings: settings});
-  add_adult_genres();
 }
 
 

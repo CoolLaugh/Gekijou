@@ -18,28 +18,47 @@ async function show_anime_info_window_trailer(anime_id) {
 }
 
 
-
+var list_ids = [];
+var info_window_anime_id = 0;
 // show information window populated with the shows info
 window.show_anime_info_window = show_anime_info_window;
 async function show_anime_info_window(anime_id) {
     
-    // retrieve necessary information
-    var user_settings = await invoke("get_user_settings");
-    var info = await invoke("get_anime_info", {id: anime_id});
-    var title = await determine_title(info.title, user_settings);
+  info_window_anime_id = anime_id;
 
-    // fill in info window with data
-    add_anime_data(info, title, user_settings.show_spoilers);
-    await add_user_data(anime_id, user_settings);
-    add_trailer(info.trailer);
-    add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
-    add_torrent_data(anime_id);
+  // retrieve necessary information
+  var user_settings = await invoke("get_user_settings");
+  var info = await invoke("get_anime_info", {id: anime_id});
+  var title = await determine_title(info.title, user_settings);
 
-    // make the window visible
-    openTab('information', 'underline_tab_0');
-    document.getElementById("info_panel").style.display = "block";
-    document.getElementById("cover_panel_grid").style.opacity = 0.3;
+  // fill in info window with data
+  add_anime_data(info, title, user_settings.show_spoilers);
+  await add_user_data(anime_id, user_settings);
+  add_trailer(info.trailer);
+  add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
+  var table = document.getElementById("torrent_table");
+  var rows = table.rows.length - 1;
+  for(var i = 0; i < rows; i++) {
+    table.deleteRow(1);
+  }
+
+  var index = list_ids.indexOf(anime_id);
+  var index_previous = (index - 1) % list_ids.length;
+  if (index == 0) {
+    index_previous = list_ids.length - 1;
+  }
+  var index_next = (index + 1) % list_ids.length;
+
+  document.getElementById("info_window_previous").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_previous] + ")");
+  document.getElementById("info_window_next").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_next] + ")");
+
+  // make the window visible
+  openTab('information', 'underline_tab_0');
+  document.getElementById("info_panel").style.display = "block";
+  document.getElementById("cover_panel_grid").style.opacity = 0.3;
 }
+
+
 
 // fill in data about the selected anime into the info window
 function add_anime_data(info, title, show_spoilers) {
@@ -161,6 +180,82 @@ async function hide_anime_info_window(anime_id) {
     }
   }
 }
+
+
+
+// updates the entry for the current anime with new information from the info window
+async function update_user_entry(anime_id) {
+
+  var user_data = await invoke("get_user_info", {id: anime_id});
+
+  // grab data from ui
+  var user_entry = {
+    'id': user_data.id,
+    'media_id': anime_id,
+    'status': document.getElementById("status_select").value,
+    'score': parseFloat(document.getElementById("score_dropdown").value),
+    'progress': parseInt(document.getElementById("episode_number").value)
+  };
+
+  switch(document.getElementById("score_dropdown").getAttribute("format")) {
+    case "POINT_100":
+      if (user_entry.score < 0) { user_entry.score = user_entry.score * -1 }
+      if (user_entry.score > 100) { user_entry.score = 100 }
+      break;
+    case "POINT_10_DECIMAL":
+      if (user_entry.score < 0) { user_entry.score = user_entry.score * -1 }
+      if (user_entry.score > 10) { user_entry.score = 10 }
+      break;
+    case "POINT_10":
+    case "POINT_5":
+    case "POINT_3":
+      break;
+  }
+
+  // fill in start date
+  var started = document.getElementById("started_date").value.split("-");
+  if (started.length == 3) {
+    user_entry.started_at = {year: parseInt(started[0]), month: parseInt(started[1]), day: parseInt(started[2])};
+  } else {
+    user_entry.started_at = {year: null, month: null, day: null};
+  }
+
+  // fill in finished date
+  var finished = document.getElementById("finished_date").value.split("-");
+  if (finished.length == 3) {
+    user_entry.completed_at = {year: parseInt(finished[0]), month: parseInt(finished[1]), day: parseInt(finished[2])};
+  } else {
+    user_entry.completed_at = {year: null, month: null, day: null};
+  }
+
+  // only update if something changed
+  if (user_entry.status != user_data.status ||
+    user_entry.score != user_data.score ||
+    user_entry.progress != user_data.progress ||
+    user_entry.started_at.year != user_data.started_at.year ||
+    user_entry.started_at.month != user_data.started_at.month ||
+    user_entry.started_at.day != user_data.started_at.day ||
+    user_entry.completed_at.year != user_data.completed_at.year ||
+    user_entry.completed_at.month != user_data.completed_at.month ||
+    user_entry.completed_at.day != user_data.completed_at.day) {
+
+      await invoke("update_user_entry", {anime: user_entry});
+  }
+
+  if (user_entry.progress != user_data.progress) {
+    
+    var text = document.getElementById("episode_text_"+ anime_id);
+    var total = text.textContent.split('/')[1];
+
+    text.textContent = user_entry.progress + "/" + total;
+
+    draw_episode_canvas(user_entry.progress, total, anime_id);
+  }
+
+  // return true if the status has changed and the list needs to be refreshed
+  return user_entry.status != user_data.status;
+}
+
 
 
 // determine which language to use for the title based on the users settings and which titles exist
@@ -300,13 +395,6 @@ async function add_torrent_data(anime_id) {
 
   rss_data = await invoke("get_torrents", {id: anime_id});
 
-  var table = document.getElementById("torrent_table");
-
-  var rows = table.rows.length - 1;
-  for(var i = 0; i < rows; i++) {
-    table.deleteRow(1);
-  }
-
   var sub_groups = [];
   var resolutions = [];
 
@@ -344,6 +432,9 @@ async function add_torrent_data(anime_id) {
     }
   }
 
+  document.getElementById("episode_filter").value = "Any";
+
+  var table = document.getElementById("torrent_table");
   for(var i = 0; i < rss_data.length; i++) {
 
     add_torrent_row(table,rss_data[i]);
@@ -408,6 +499,12 @@ function filter_sort_torrents(sort_category) {
       }
     }
 
+    if (episode_filter != "Any") {
+      if (rss_data[i].derived_values.batch == false) {
+        continue;
+      }
+    }
+
     add_torrent_row(table, rss_data[i]);
   }
 }
@@ -417,7 +514,7 @@ function add_torrent_row(table, rss_entry) {
   var row = table.insertRow(1);
 
   var download_link_cell = row.insertCell(0);
-  download_link_cell.innerHTML = "<a href=\"magnet:?xt=urn:btih:" + rss_entry.info_hash + "&dn=" + rss_entry.title + "&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce\">⤓</a>";
+  download_link_cell.innerHTML = "<a title=\"" + rss_entry.title + "\" href=\"magnet:?xt=urn:btih:" + rss_entry.info_hash + "&dn=" + rss_entry.title + "&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce\">⤓</a>";
 
   var sub_group_cell = row.insertCell(1);
   sub_group_cell.innerHTML = rss_entry.derived_values.sub_group;
@@ -426,10 +523,18 @@ function add_torrent_row(table, rss_entry) {
   title_cell.innerHTML = rss_entry.derived_values.title;
 
   var episode_cell = row.insertCell(3);
-  episode_cell.innerHTML = "Ep " + rss_entry.derived_values.episode;
+  if (rss_entry.derived_values.batch == false) {
+    episode_cell.innerHTML = "Ep " + rss_entry.derived_values.episode;
+  } else {
+    episode_cell.innerHTML = "Batch";
+  }
 
   var resolution_cell = row.insertCell(4);
-  resolution_cell.innerHTML = rss_entry.derived_values.resolution + "p";
+  if (rss_entry.derived_values.resolution == 0) {
+    resolution_cell.innerHTML = "Unknown";
+  } else {
+    resolution_cell.innerHTML = rss_entry.derived_values.resolution + "p";
+  }
 
   var size_cell = row.insertCell(5);
   size_cell.innerHTML = rss_entry.size_string;
@@ -463,6 +568,12 @@ function openTab(tab_name, underline_name) {
     document.getElementById(tab_name).style.display = "block";
   }
   document.getElementById(underline_name).style.visibility = "visible";
+}
+
+window.openTab = openTab;
+function open_torrents_tab(tab_name, underline_name){
+  openTab(tab_name, underline_name);
+  add_torrent_data(info_window_anime_id);
 }
 
 
