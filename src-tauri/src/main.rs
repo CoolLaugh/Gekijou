@@ -898,6 +898,23 @@ async fn get_list_ids(list: String) -> Option<Vec<i32>> {
 
 fn main() {
     tauri::Builder::default()
+    .setup(|app| {
+        let splashscreen_window = app.get_window("splashscreen").unwrap();
+        let main_window = app.get_window("main").unwrap();
+        
+        tauri::async_runtime::spawn(async move {
+
+            load_user_settings().await;
+
+            if GLOBAL_USER_SETTINGS.lock().await.first_time_setup == false {
+                on_startup().await;
+            }
+
+            splashscreen_window.close().unwrap();
+            main_window.show().unwrap();
+        });
+        Ok(())
+      })
         .invoke_handler(tauri::generate_handler![get_anime_info_query,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,

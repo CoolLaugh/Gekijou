@@ -19,8 +19,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("information").style.display = "block";
   document.getElementById("underline_tab_0").style.visibility = "visible";
 
-  await invoke("load_user_settings");
-
   var user_settings = await invoke("get_user_settings");
   document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
 
@@ -35,8 +33,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   } else {
     
-    await invoke("on_startup");
-
     if (user_settings.current_tab != "") {
       switch(user_settings.current_tab) {
         case "CURRENT":
@@ -62,7 +58,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   invoke("anime_update_delay_loop");
-  invoke("close_splashscreen");
 });
 
 
