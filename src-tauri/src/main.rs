@@ -358,8 +358,6 @@ async fn update_user_entry(anime: UserAnimeInfo) {
     } else {
         anime_data.insert(media_id, new_info);
     }
-
-
 }
 
 // loads data from files and looks for episodes on disk
@@ -426,7 +424,6 @@ async fn play_next_episode(id: i32) {
 async fn play_episode(anime_id: i32, episode: i32) -> bool {
 
     let mut episode_opened = false;
-    println!("play_episode");
     let paths = GLOBAL_ANIME_PATH.lock().await;
     if paths.contains_key(&anime_id) {
         let media = paths.get(&anime_id).unwrap();
@@ -456,7 +453,7 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
     if user_data.contains_key(&anime_id) {
 
         let progress = user_data.get(&anime_id).unwrap().progress;
-        
+
         let anime_data = GLOBAL_ANIME_DATA.lock().await;
         if anime_data.get(&anime_id).unwrap().episodes.is_some() {
             let max_episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
@@ -513,8 +510,10 @@ fn get_titles() -> Vec<String> {
 #[tauri::command]
 async fn anime_update_delay_loop() {
 
-    let mut hour_timer = Instant::now();
+    let mut on_startup_scan_completed = false;
+    let mut timer = Instant::now();
     let one_hour = Duration::from_secs(60 * 60);
+    let on_startup_delay = Duration::from_secs(30);
 
     loop { 
 
@@ -522,12 +521,13 @@ async fn anime_update_delay_loop() {
 
         check_delayed_updates(true).await;
 
-        if hour_timer.elapsed() > one_hour {
+        if timer.elapsed() > one_hour || (timer.elapsed() >= on_startup_delay && on_startup_scan_completed == false) {
             if file_name_recognition::parse_file_names(None).await {
 
                 GLOBAL_REFRESH_UI.lock().await.canvas = true;
             }
-            hour_timer = Instant::now();
+            on_startup_scan_completed = true;
+            timer = Instant::now();
         }
 
         thread::sleep(Duration::from_secs(5)); 
@@ -573,16 +573,17 @@ async fn anime_update_delay() {
         //println!("{} {}", title, title_edit);
         title_edit = file_name_recognition::remove_brackets(&title_edit);
         // get the episode number from the filename
-        let (episode_str, episode) = file_name_recognition::identify_number(&title_edit);
+        let (episode_str, mut episode) = file_name_recognition::identify_number(&title_edit);
         // remove episode number from filename
         title_edit = title_edit.replace(episode_str.as_str(), "");
         // remove irrelevant information like source, final, episode prefix, etc
         title_edit = file_name_recognition::irrelevant_information_removal(title_edit);
 
-        let (media_id, _, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data, None);
+        let (mut media_id, _, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data, None);
         if media_score < 0.8 { 
-            continue; 
+            continue;
         }
+        (media_id, episode) = file_name_recognition::replace_with_sequel(media_id, episode, &anime_data);
 
         // if the file is being monitored and the episode is the next episode
         if watching_data.contains_key(&media_id) && user_data.get(&media_id).unwrap().progress + 1 == episode {

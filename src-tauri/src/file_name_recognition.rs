@@ -37,7 +37,7 @@ pub struct AnimePath {
 // found files are then stored in a global list for each anime and episode
 // media_id is for finding files for a specific anime instead of any anime known
 pub async fn parse_file_names(media_id: Option<i32>) -> bool {
-    
+
     get_prequel_data().await;
 
     let mut episode_found = false;
@@ -83,7 +83,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
         string_similarity(&mut file_names, media_id).await;
         
-        replace_with_sequel(&mut file_names).await;
+        replace_with_sequel_batch(&mut file_names).await;
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
         let anime_data = GLOBAL_ANIME_DATA.lock().await;
@@ -111,8 +111,11 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
     remove_missing_files().await;
     GLOBAL_REFRESH_UI.lock().await.canvas = true;
     file_operations::write_file_episode_path().await;
+    println!("parse_file_names finished");
     episode_found
 }
+
+
 
 
 // remove all files that no longer exist
@@ -453,36 +456,42 @@ pub fn extract_sub_group(title: &String) -> String {
 }
 
 // replace a anime with its sequel if the episode number is too high
-async fn replace_with_sequel(paths: &mut Vec<AnimePathWorking>) {
+async fn replace_with_sequel_batch(paths: &mut Vec<AnimePathWorking>) {
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     for path in paths {
 
-        if anime_data.contains_key(&path.media_id) == false || anime_data.get(&path.media_id).unwrap().episodes.is_none() {
-            continue;
-        }
+        (path.media_id, path.episode) = replace_with_sequel(path.media_id, path.episode, &anime_data);
+    }
+}
 
-        let mut episodes = anime_data.get(&path.media_id).unwrap().episodes.unwrap();
+pub fn replace_with_sequel(mut anime_id: i32, mut episode: i32, anime_data: &HashMap<i32, AnimeInfo>) -> (i32, i32) {
 
-        let mut sequel_exists = true;
-        while path.episode > episodes && sequel_exists {
-
-            sequel_exists = false;
-            for edge in anime_data.get(&path.media_id).unwrap().relations.edges.iter() {
-                if edge.relation_type == "SEQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&path.media_id).unwrap().format.as_ref().unwrap() == "TV" {
-                    path.media_id = edge.node.id;
-                    path.episode -= episodes;
-                    sequel_exists = true;
-                    break;
-                }
-            }
-            if anime_data.get(&path.media_id).unwrap().episodes.is_none() {
-                break;
-            }
-            episodes = anime_data.get(&path.media_id).unwrap().episodes.unwrap();
-        }
+    if anime_data.contains_key(&anime_id) == false || anime_data.get(&anime_id).unwrap().episodes.is_none() {
+        return (anime_id, episode);
     }
 
+    let mut episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
+
+    let mut sequel_exists = true;
+    while episode > episodes && sequel_exists {
+
+        sequel_exists = false;
+        for edge in anime_data.get(&anime_id).unwrap().relations.edges.iter() {
+            if edge.relation_type == "SEQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&anime_id).unwrap().format.as_ref().unwrap() == "TV" {
+                anime_id = edge.node.id;
+                episode -= episodes;
+                sequel_exists = true;
+                break;
+            }
+        }
+        if anime_data.get(&anime_id).unwrap().episodes.is_none() {
+            break;
+        }
+        episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
+    }
+
+    (anime_id, episode)
 }
 
 
