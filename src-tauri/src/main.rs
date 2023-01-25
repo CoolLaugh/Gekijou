@@ -11,11 +11,13 @@ pub mod file_operations;
 pub mod file_name_recognition;
 pub mod rss_parser;
 pub mod recommendation;
+pub mod file_name_recognition_tests;
 
 #[macro_use]
 extern crate lazy_static;
 
 use chrono::prelude::*;
+use file_name_recognition_tests::FilenameTest;
 use regex::Regex;
 use rss_parser::RssEntry;
 use serde::{Serialize, Deserialize};
@@ -897,6 +899,12 @@ async fn get_list_ids(list: String) -> Option<Vec<i32>> {
 }
 
 
+#[tauri::command]
+async fn run_filename_tests() -> Vec<FilenameTest> {
+
+    file_name_recognition_tests::filename_tests().await
+}
+
 fn main() {
     tauri::Builder::default()
     .setup(|app| {
@@ -919,7 +927,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![get_anime_info_query,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
-            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,open_url,get_list_ids])
+            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
+            open_url,get_list_ids,run_filename_tests])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

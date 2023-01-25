@@ -1144,6 +1144,58 @@ async function toggleMaximizeWindow() {
   window.toggleMaximizeWindow();
 }
 
+window.run_tests = run_tests;
+async function run_tests() {
+
+  var results = await invoke("run_filename_tests");
+  console.log(results);
+  removeChildren(document.getElementById("cover_panel_grid"));
+
+  document.getElementById("cover_panel_grid").innerHTML = 
+  "<table id=\"tests_table\" style=\"width:1600px;\">" + 
+    "<tbody>" + 
+      "<tr>" + 
+        "<th>Filename</th>" + 
+        "<th>Similarity Score</th>" + 
+        "<th>Title</th>" + 
+        "<th>Expected Title</th>" + 
+        "<th>anime id</th>" + 
+        "<th>Expected anime id</th>" + 
+        "<th>Episode</th>" + 
+        "<th>Expected Episode</th>" + 
+        "<th>Resolution</th>" + 
+        "<th>Expected Resolution</th>" + 
+      "</tr>" + 
+    "</tbody>" + 
+  "</table>";
+
+  var table = document.getElementById("tests_table");
+
+  for(var i = 0; i < results.length; i++) {
+    
+    var title_color = "red";
+    var episode_color = "red";
+    var id_color = "red";
+    var resolution_color = "red";
+    if (results[i].title == results[i].expected_title){ title_color = "lightgreen"; }
+    if (results[i].episode == results[i].expected_episode){ episode_color = "lightgreen"; }
+    if (results[i].anime_id == results[i].expected_anime_id){ id_color = "lightgreen"; }
+    if (results[i].resolution == results[i].expected_resolution){ resolution_color = "lightgreen"; }
+
+    var row = table.insertRow(i + 1);
+    row.insertCell(0).innerHTML = results[i].filename;
+    row.insertCell(1).innerHTML = results[i].similarity_score;
+    row.insertCell(2).innerHTML = "<p style=\"color:" + title_color + ";\">" + results[i].title + "</p>";
+    row.insertCell(3).innerHTML = "<p style=\"color:" + title_color + ";\">" + results[i].expected_title + "</p>";
+    row.insertCell(4).innerHTML = "<p style=\"color:" + id_color + ";\">" + results[i].anime_id + "</p>";
+    row.insertCell(5).innerHTML = "<p style=\"color:" + id_color + ";\">" + results[i].expected_anime_id + "</p>";
+    row.insertCell(6).innerHTML = "<p style=\"color:" + episode_color + ";\">" + results[i].episode + "</p>";
+    row.insertCell(7).innerHTML = "<p style=\"color:" + episode_color + ";\">" + results[i].expected_episode + "</p>";
+    row.insertCell(8).innerHTML = "<p style=\"color:" + resolution_color + ";\">" + results[i].resolution + "</p>";
+    row.insertCell(9).innerHTML = "<p style=\"color:" + resolution_color + ";\">" + results[i].expected_resolution + "</p>";
+  }
+}
+
 
 
 //// settings window

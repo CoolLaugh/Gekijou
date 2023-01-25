@@ -117,7 +117,6 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
 
 
-
 // remove all files that no longer exist
 async fn remove_missing_files() {
 
@@ -130,10 +129,12 @@ async fn remove_missing_files() {
 }
 
 
+
 // remove all brackets from a filename
 pub fn remove_brackets(filename: &String) -> String {
     Regex::new(r"((\[[^\[\]]+\]|\([^\(\)]+\))[ _]*)+").unwrap().replace_all(&filename, "").to_string()
 }
+
 
 
 // removes any files that are the wrong file type or extra (openings, endings, etc)
@@ -165,6 +166,7 @@ fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
         path.filename = valid_file_extensions.replace_all(&path.filename, "").to_string();
     })
 }
+
 
 
 // compares filename to anime titles using multiple string matching algorithms and remembers the most similar title
@@ -221,6 +223,7 @@ async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i
     }
 
 }
+
 
 
 // returns the media id and similarity score based on the title
