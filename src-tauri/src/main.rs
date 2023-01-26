@@ -587,6 +587,8 @@ async fn anime_update_delay() {
         }
         (media_id, episode) = file_name_recognition::replace_with_sequel(media_id, episode, &anime_data);
 
+        file_name_recognition::episode_fix(media_id, &mut episode, &anime_data);
+
         let next_episode: bool = user_data.get(&media_id).unwrap().progress + 1 == episode || user_data.get(&media_id).unwrap().progress + 2 == episode;
 
         // if the file is being monitored and the episode is the next episode

@@ -298,10 +298,6 @@ fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id
             *score = normalized_levenshtein_score;
             *return_title = title.clone();
         }
-
-/*         if normalized_levenshtein_score > 0.5 && filename.contains("goddess") {
-            println!("{} {} {}", filename, normalized_levenshtein_score, title);
-        } */
     }
 }
 

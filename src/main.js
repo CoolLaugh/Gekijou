@@ -1,10 +1,7 @@
 const { invoke } = window.__TAURI__.tauri;
 
 
-
 window.addEventListener("DOMContentLoaded", async () => {
-
-  populate_year_dropdown();
 
   document.getElementById("information").style.display = "block";
   document.getElementById("underline_tab_0").style.visibility = "visible";
