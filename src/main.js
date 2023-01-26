@@ -1157,8 +1157,8 @@ async function run_tests() {
       "<tr>" + 
         "<th>Filename</th>" + 
         "<th>Similarity Score</th>" + 
+        "<th>Processed Title</th>" + 
         "<th>Title</th>" + 
-        "<th>Expected Title</th>" + 
         "<th>anime id</th>" + 
         "<th>Expected anime id</th>" + 
         "<th>Episode</th>" + 
@@ -1173,20 +1173,20 @@ async function run_tests() {
 
   for(var i = 0; i < results.length; i++) {
     
-    var title_color = "red";
+    var score_color = "red";
     var episode_color = "red";
     var id_color = "red";
     var resolution_color = "red";
-    if (results[i].title == results[i].expected_title){ title_color = "lightgreen"; }
+    if (results[i].similarity_score >= 0.65){ score_color = "lightgreen"; }
     if (results[i].episode == results[i].expected_episode){ episode_color = "lightgreen"; }
     if (results[i].anime_id == results[i].expected_anime_id){ id_color = "lightgreen"; }
     if (results[i].resolution == results[i].expected_resolution){ resolution_color = "lightgreen"; }
 
     var row = table.insertRow(i + 1);
     row.insertCell(0).innerHTML = results[i].filename;
-    row.insertCell(1).innerHTML = results[i].similarity_score;
-    row.insertCell(2).innerHTML = "<p style=\"color:" + title_color + ";\">" + results[i].title + "</p>";
-    row.insertCell(3).innerHTML = "<p style=\"color:" + title_color + ";\">" + results[i].expected_title + "</p>";
+    row.insertCell(1).innerHTML = "<p style=\"color:" + score_color + ";\">" + results[i].similarity_score.toFixed(3) + "</p>";
+    row.insertCell(2).innerHTML = "<p>" + results[i].title + "</p>";
+    row.insertCell(3).innerHTML = "<p>" + results[i].id_title + "</p>";
     row.insertCell(4).innerHTML = "<p style=\"color:" + id_color + ";\">" + results[i].anime_id + "</p>";
     row.insertCell(5).innerHTML = "<p style=\"color:" + id_color + ";\">" + results[i].expected_anime_id + "</p>";
     row.insertCell(6).innerHTML = "<p style=\"color:" + episode_color + ";\">" + results[i].episode + "</p>";

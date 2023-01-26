@@ -84,6 +84,8 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         string_similarity(&mut file_names, media_id).await;
         
         replace_with_sequel_batch(&mut file_names).await;
+
+        episode_fix_batch(&mut file_names).await;
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
         let anime_data = GLOBAL_ANIME_DATA.lock().await;
@@ -239,6 +241,34 @@ pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>,
             
             title_compare(data.1, filename, &mut score, &mut media_id, &mut title);
         });
+
+        if score < 0.7 {
+
+            let pre_dash = Regex::new(r"([^-]*).*").unwrap();
+            let captures = pre_dash.captures(filename);
+            if captures.is_some() {
+
+                let modified_filename = captures.unwrap().get(1).unwrap().as_str().to_string();
+                anime_data.iter().for_each(|data| {
+                    
+                    title_compare(data.1, &modified_filename, &mut score, &mut media_id, &mut title);
+                });
+            }
+        }
+
+/*         let season_shortened = Regex::new(r"[sS](\d+)").unwrap();
+        if season_shortened.is_match(filename) {
+
+            let mut season_number = season_shortened.captures(&filename).unwrap().get(1).unwrap().as_str().to_string();
+            season_number.insert_str(0, "season ");
+            let modified_filename = season_shortened.replace(&filename, season_number).to_string();
+
+            anime_data.iter().for_each(|data| {
+                
+                title_compare(data.1, &modified_filename, &mut score, &mut media_id, &mut title);
+            });
+        } */
+
     } else if anime_data.contains_key(&only_compare.unwrap()) {
         
         let anime = anime_data.get(&only_compare.unwrap()).unwrap();
@@ -261,13 +291,17 @@ fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id
 
     for title in titles {
 
-        if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue } // skip comparison if first character does not match
+        //if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue } // skip comparison if first character does not match
         let normalized_levenshtein_score = strsim::normalized_levenshtein(&filename, &title);
         if normalized_levenshtein_score > *score { 
             *media_id = anime.id; 
             *score = normalized_levenshtein_score;
-            *return_title = title;
+            *return_title = title.clone();
         }
+
+/*         if normalized_levenshtein_score > 0.5 && filename.contains("goddess") {
+            println!("{} {} {}", filename, normalized_levenshtein_score, title);
+        } */
     }
 }
 
@@ -288,6 +322,11 @@ fn identify_episode_number(paths: &mut Vec<AnimePathWorking>) {
 
 // applies multiple regex to find the episode number
 pub fn identify_number(filename: &String) -> (String, i32) {
+
+    let multiple_episodes= extract_number(&filename, Regex::new(r"[^sS](\d+) ?[&-] ?(\d+)").unwrap());
+    if multiple_episodes.1 != 0 {
+        return multiple_episodes;
+    }
 
     // remove episode titles with numbers that would be misidentified as episode numbers
     let episode_title_number = Regex::new(r"'.*\d+.*'").unwrap();
@@ -470,18 +509,39 @@ async fn replace_with_sequel_batch(paths: &mut Vec<AnimePathWorking>) {
 
 pub fn replace_with_sequel(mut anime_id: i32, mut episode: i32, anime_data: &HashMap<i32, AnimeInfo>) -> (i32, i32) {
 
+    // anime is not in list or anime has unknown number of episodes which means it has no sequels
     if anime_data.contains_key(&anime_id) == false || anime_data.get(&anime_id).unwrap().episodes.is_none() {
         return (anime_id, episode);
     }
 
+    // episode is within episode count
     let mut episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
+    if episode <= episodes {
+        return (anime_id, episode);
+    }
 
+    // start from the first season
+    let mut prequel_exists = true;
+    while prequel_exists {
+
+        prequel_exists = false;
+        for edge in anime_data.get(&anime_id).unwrap().relations.edges.iter() {
+
+            if edge.relation_type == "PREQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&edge.node.id).unwrap().format.as_ref().unwrap() == "TV" {
+                anime_id = edge.node.id;
+                episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
+                prequel_exists = true;
+            }
+        }
+    }
+
+    // traverse across sequels until episode is within episode count
     let mut sequel_exists = true;
     while episode > episodes && sequel_exists {
 
         sequel_exists = false;
         for edge in anime_data.get(&anime_id).unwrap().relations.edges.iter() {
-            if edge.relation_type == "SEQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&anime_id).unwrap().format.as_ref().unwrap() == "TV" {
+            if edge.relation_type == "SEQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&edge.node.id).unwrap().format.as_ref().unwrap() == "TV" {
                 anime_id = edge.node.id;
                 episode -= episodes;
                 sequel_exists = true;
@@ -501,7 +561,7 @@ pub fn replace_with_sequel(mut anime_id: i32, mut episode: i32, anime_data: &Has
 // get anime data for prequels of any anime that is in anime data global
 // necessary for recognizing anime that is labeled as one anime but belongs to a sequel of that anime
 // for example boku no hero academia episode 100 when no season has 100 episodes
-async fn get_prequel_data() {
+pub async fn get_prequel_data() {
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut get_info: Vec<i32> = Vec::new();
@@ -542,4 +602,32 @@ async fn get_prequel_data() {
         drop(anime_data);
     }
     file_operations::write_file_anime_info_cache().await;
+}
+
+
+async fn episode_fix_batch(paths: &mut Vec<AnimePathWorking>) {
+
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+
+    paths.iter_mut().for_each(|entry| {
+
+        episode_fix(entry.media_id, &mut entry.episode, &anime_data);
+    });
+}
+
+// will fix the episode number for numbers in titles of movies, ova's, etc
+pub fn episode_fix(anime_id: i32, episode: &mut i32, anime_data: &HashMap<i32, AnimeInfo>) {
+
+    let anime = anime_data.get(&anime_id);
+    if anime.is_some() {
+
+        let episodes = anime.unwrap().episodes;
+        if episodes.is_some() {
+
+            if episodes.unwrap() == 1 {
+
+                *episode = 1;
+            }
+        }
+    }
 }

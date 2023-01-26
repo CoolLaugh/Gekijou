@@ -2,7 +2,7 @@ use std::{path::Path, fs::File, io::Read};
 use serde::{Serialize, Deserialize};
 use regex::Regex;
 
-use crate::{file_name_recognition, GLOBAL_ANIME_DATA};
+use crate::{file_name_recognition, GLOBAL_ANIME_DATA, api_calls};
 
 
 
@@ -18,7 +18,7 @@ pub struct FilenameTest {
     pub resolution: i32,
 
     pub expected_anime_id: i32,
-    pub expected_title: String,
+    pub id_title: String,
     pub expected_episode: i32,
     pub expected_resolution: i32,
 }
@@ -57,11 +57,25 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
             episode: 0, 
             resolution: 0, 
             expected_anime_id: entry["expected_anime_id"].as_i64().unwrap() as i32, 
-            expected_title: entry["expected_title"].as_str().unwrap().to_string(), 
+            id_title: String::new(), 
             expected_episode: entry["expected_episode"].as_i64().unwrap() as i32, 
             expected_resolution: entry["expected_resolution"].as_i64().unwrap() as i32 
         });
     });
+
+    {
+        let anime_data = GLOBAL_ANIME_DATA.lock().await;
+        let mut missing_ids: Vec<i32> = Vec::new();
+        filenames.iter().for_each(|entry| {
+            if anime_data.contains_key(&entry.expected_anime_id) == false {
+                missing_ids.push(entry.expected_anime_id);
+            }
+        });
+        drop(anime_data);
+        api_calls::anilist_api_call_multiple(missing_ids).await;
+    }
+
+    file_name_recognition::get_prequel_data().await;
 
     let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
     filenames.iter_mut().for_each(|entry| {
@@ -104,6 +118,16 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
     filenames.iter_mut().for_each(|entry| {
 
         (entry.anime_id, entry.episode) = file_name_recognition::replace_with_sequel(entry.anime_id, entry.episode, &anime_data);
+    });
+
+    filenames.iter_mut().for_each(|entry| {
+
+        file_name_recognition::episode_fix(entry.anime_id, &mut entry.episode, &anime_data);
+    });
+
+    filenames.iter_mut().for_each(|entry| {
+
+        entry.id_title = anime_data.get(&entry.anime_id).unwrap().title.romaji.clone().unwrap();
     });
 
     filenames

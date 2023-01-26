@@ -587,13 +587,15 @@ async fn anime_update_delay() {
         }
         (media_id, episode) = file_name_recognition::replace_with_sequel(media_id, episode, &anime_data);
 
+        let next_episode: bool = user_data.get(&media_id).unwrap().progress + 1 == episode || user_data.get(&media_id).unwrap().progress + 2 == episode;
+
         // if the file is being monitored and the episode is the next episode
-        if watching_data.contains_key(&media_id) && user_data.get(&media_id).unwrap().progress + 1 == episode {
+        if watching_data.contains_key(&media_id) && next_episode {
             watching_data.entry(media_id).and_modify(|entry| {
                 entry.monitoring = true;
             });
         } else if user_data.contains_key(&media_id) && 
-            user_data.get(&media_id).unwrap().progress + 1 == episode && 
+            next_episode && 
             episode > 0 && episode <= anime_data.get(&media_id).unwrap().episodes.unwrap() { // only add if it is in the users list, it is the next episode, and the episode is within range
 
             if language == "romaji" {
@@ -899,10 +901,18 @@ async fn get_list_ids(list: String) -> Option<Vec<i32>> {
 }
 
 
+#[cfg(debug_assertions)]
+const DEBUG: bool = true;
+#[cfg(not(debug_assertions))]
+const DEBUG: bool = false;
+
 #[tauri::command]
 async fn run_filename_tests() -> Vec<FilenameTest> {
 
-    file_name_recognition_tests::filename_tests().await
+    if DEBUG {
+        return file_name_recognition_tests::filename_tests().await;
+    }
+    Vec::new()
 }
 
 fn main() {
