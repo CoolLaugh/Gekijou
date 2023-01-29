@@ -3,6 +3,8 @@ const { invoke } = window.__TAURI__.tauri;
 
 window.addEventListener("DOMContentLoaded", async () => {
 
+  populate_year_dropdown();
+
   document.getElementById("information").style.display = "block";
   document.getElementById("underline_tab_0").style.visibility = "visible";
 
@@ -951,7 +953,9 @@ function episodes_on_disk_string(episodes_exist) {
 
     if (start == -1) {
       start = episodes_exist[i];
-    } else if ((i + 1) == episodes_exist.length) {
+    }
+    
+    if ((i + 1) == episodes_exist.length) {
       end = episodes_exist[i];
     } else if (episodes_exist[i] != episodes_exist[i + 1] - 1) {
       end = episodes_exist[i];
@@ -1123,23 +1127,7 @@ async function open_window(url) {
   invoke("open_url", { url: url});
 }
 
-// close the window
-window.exitWindow = exitWindow;
-async function exitWindow() {
-  window.close();
-}
 
-// minimize the window
-window.minimizeWindow = minimizeWindow;
-async function minimizeWindow() {
-  window.minimize();
-}
-
-// maximize the window
-window.toggleMaximizeWindow = toggleMaximizeWindow;
-async function toggleMaximizeWindow() {
-  window.toggleMaximizeWindow();
-}
 
 window.run_tests = run_tests;
 async function run_tests() {
@@ -1186,12 +1174,28 @@ async function run_tests() {
     row.insertCell(3).innerHTML = "<p>" + results[i].id_title + "</p>";
     row.insertCell(4).innerHTML = "<p style=\"color:" + id_color + ";\">" + results[i].anime_id + "</p>";
     row.insertCell(5).innerHTML = "<p style=\"color:" + id_color + ";\">" + results[i].expected_anime_id + "</p>";
-    row.insertCell(6).innerHTML = "<p style=\"color:" + episode_color + ";\">" + results[i].episode + "</p>";
+    if (results[i].length > 1) {
+      row.insertCell(6).innerHTML = "<p style=\"color:" + episode_color + ";\">" + results[i].episode + "&" + (results[i].episode + (results[i].length - 1)) + "</p>";
+    } else {
+      row.insertCell(6).innerHTML = "<p style=\"color:" + episode_color + ";\">" + results[i].episode + "</p>";
+    }
     row.insertCell(7).innerHTML = "<p style=\"color:" + episode_color + ";\">" + results[i].expected_episode + "</p>";
     row.insertCell(8).innerHTML = "<p style=\"color:" + resolution_color + ";\">" + results[i].resolution + "</p>";
     row.insertCell(9).innerHTML = "<p style=\"color:" + resolution_color + ";\">" + results[i].expected_resolution + "</p>";
   }
 }
+
+
+
+var snow_counter = 0;
+document.addEventListener('keyup', (e) => {
+  if (e.code === "F1") {
+    snow_counter++;
+    if (snow_counter == 10) {
+      createSnow();
+    }
+  }
+});
 
 
 
@@ -1883,6 +1887,7 @@ function add_torrent_row(table, rss_entry) {
   var row = table.insertRow(1);
 
   var download_link_cell = row.insertCell(0);
+  /* cspell: disable-next-line */
   download_link_cell.innerHTML = "<a title=\"" + rss_entry.title + "\" href=\"magnet:?xt=urn:btih:" + rss_entry.info_hash + "&dn=" + rss_entry.title + "&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce\">⤓</a>";
 
   var sub_group_cell = row.insertCell(1);

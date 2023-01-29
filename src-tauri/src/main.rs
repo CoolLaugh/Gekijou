@@ -277,7 +277,7 @@ async fn get_delay_info() -> (f64, i32, String, i64) {
         
         let anime = found_anime.iter().next().unwrap();
         
-        return (anime.1.timer.elapsed().as_secs_f64() / delay, anime.1.episode, anime.1.title.clone(), (delay as i64) - (anime.1.timer.elapsed().as_secs() as i64));
+        return (anime.1.timer.elapsed().as_secs_f64() / delay, anime.1.episode + (anime.1.length - 1), anime.1.title.clone(), (delay as i64) - (anime.1.timer.elapsed().as_secs() as i64));
     }
 
     return (0.0, 0, String::new(), 0)
@@ -423,6 +423,8 @@ async fn play_next_episode(id: i32) {
     }
 }
 
+// play the episode from the anime id
+// returns true if the episode was played
 async fn play_episode(anime_id: i32, episode: i32) -> bool {
 
     let mut episode_opened = false;
@@ -495,6 +497,7 @@ struct WatchingTracking {
     timer: std::time::Instant,
     monitoring: bool,
     episode: i32,
+    length: i32,
     title: String,
 }
 lazy_static! {
@@ -575,7 +578,7 @@ async fn anime_update_delay() {
         //println!("{} {}", title, title_edit);
         title_edit = file_name_recognition::remove_brackets(&title_edit);
         // get the episode number from the filename
-        let (episode_str, mut episode) = file_name_recognition::identify_number(&title_edit);
+        let (episode_str, mut episode, length) = file_name_recognition::identify_number(&title_edit);
         // remove episode number from filename
         title_edit = title_edit.replace(episode_str.as_str(), "");
         // remove irrelevant information like source, final, episode prefix, etc
@@ -589,23 +592,25 @@ async fn anime_update_delay() {
 
         file_name_recognition::episode_fix(media_id, &mut episode, &anime_data);
 
-        let next_episode: bool = user_data.get(&media_id).unwrap().progress + 1 == episode || user_data.get(&media_id).unwrap().progress + 2 == episode;
+        let next_episode: bool = episode > user_data.get(&media_id).unwrap().progress && episode <= user_data.get(&media_id).unwrap().progress + length;
 
         // if the file is being monitored and the episode is the next episode
         if watching_data.contains_key(&media_id) && next_episode {
             watching_data.entry(media_id).and_modify(|entry| {
-                entry.monitoring = true;
+                if entry.episode == episode { 
+                    entry.monitoring = true;
+                }
             });
         } else if user_data.contains_key(&media_id) && 
             next_episode && 
             episode > 0 && episode <= anime_data.get(&media_id).unwrap().episodes.unwrap() { // only add if it is in the users list, it is the next episode, and the episode is within range
 
             if language == "romaji" {
-                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.romaji.clone().unwrap()});
+                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: anime_data.get(&media_id).unwrap().title.romaji.clone().unwrap()});
             } else if language == "english" {
-                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.english.clone().unwrap()});
+                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: anime_data.get(&media_id).unwrap().title.english.clone().unwrap()});
             } else if language == "native" {
-                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, title: anime_data.get(&media_id).unwrap().title.native.clone().unwrap()});
+                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: anime_data.get(&media_id).unwrap().title.native.clone().unwrap()});
             }
         }
     }
@@ -621,7 +626,7 @@ async fn anime_update_delay() {
             
             // update anime
             let anime = user_data.get_mut(&media_id).unwrap();
-            change_episode(anime, tracking_info.episode, anime_data.get(media_id).unwrap().episodes).await;
+            change_episode(anime, tracking_info.episode + tracking_info.length - 1, anime_data.get(media_id).unwrap().episodes).await;
             save_file = true;
 
             // store entry for later after mutexes are dropped
@@ -670,6 +675,7 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: O
     if episode > progress && (max_episodes.is_none() || episode != max_episodes.unwrap()) && anime.status != "CURRENT"{
 
         change_list(anime, String::from("CURRENT")).await;
+        GLOBAL_REFRESH_UI.lock().await.anime_list = true;
     }
 
     // add anime to completed if the last episode was watched and set complete date
@@ -944,6 +950,7 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
 
 async fn get_user_data() {
 

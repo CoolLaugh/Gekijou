@@ -15,6 +15,7 @@ pub struct FilenameTest {
     pub similarity_score: f64,
     pub title: String,
     pub episode: i32,
+    pub length: i32,
     pub resolution: i32,
 
     pub expected_anime_id: i32,
@@ -55,6 +56,7 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
             similarity_score: 0.0, 
             title: String::new(), 
             episode: 0, 
+            length: 0,
             resolution: 0, 
             expected_anime_id: entry["expected_anime_id"].as_i64().unwrap() as i32, 
             id_title: String::new(), 
@@ -95,6 +97,7 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
         let episode = file_name_recognition::identify_number(&entry.title);
         if episode.1 != 0 {
             entry.episode = episode.1;
+            entry.length = episode.2;
             entry.title = entry.title.replace(episode.0.as_str(), "");
         }
     });

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, recommendation, GLOBAL_USER_SETTINGS};
+use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_SETTINGS};
 
 
 #[derive(Debug, Clone, Default)]

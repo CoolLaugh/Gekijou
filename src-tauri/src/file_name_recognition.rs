@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs;
 use std::path::Path;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
@@ -317,11 +316,15 @@ fn identify_episode_number(paths: &mut Vec<AnimePathWorking>) {
 
 
 // applies multiple regex to find the episode number
-pub fn identify_number(filename: &String) -> (String, i32) {
+// returns the text containing episode information, the episode, and the number of episodes in the file
+pub fn identify_number(filename: &String) -> (String, i32, i32) {
 
-    let multiple_episodes= extract_number(&filename, Regex::new(r"[^sS](\d+) ?[&-] ?(\d+)").unwrap());
-    if multiple_episodes.1 != 0 {
-        return multiple_episodes;
+    let captures = Regex::new(r"[^sS](\d+)[&-](\d+)").unwrap().captures(filename);
+    if captures.is_some() {
+        let captures2 = captures.unwrap();
+        let episode = captures2.get(1).unwrap().as_str().parse().unwrap();
+        let length = 1 + captures2.get(2).unwrap().as_str().parse::<i32>().unwrap() - episode;
+        return (captures2.get(0).unwrap().as_str().to_string(), episode, length);
     }
 
     // remove episode titles with numbers that would be misidentified as episode numbers
@@ -331,24 +334,24 @@ pub fn identify_number(filename: &String) -> (String, i32) {
     // most anime fit this format
     let num1 = extract_number(&filename_episode_title_removed, Regex::new(r" - (\d+)").unwrap());
     if num1.1 != 0 {
-        return num1;
+        return (num1.0, num1.1, 1);
     }
     // less common formats
     let num2 = extract_number(&filename_episode_title_removed, Regex::new(r" - Episode (\d+)").unwrap());
     if num2.1 != 0 {
-        return num2;
+        return (num2.0, num2.1, 1);
     }
     let num3 = extract_number(&filename_episode_title_removed, Regex::new(r"[eE][pP] ?(\d+)").unwrap());
     if num3.1 != 0 {
-        return num3;
+        return (num3.0, num3.1, 1);
     }
     // wider search for numbers, use last number that is not a version or season number
     let num4 = extract_number(&filename_episode_title_removed, Regex::new(r"[^vsVS](\d+)").unwrap());
     if num4.1 != 0 {
-        return num4;
+        return (num4.0, num4.1, 1);
     }
 
-    (String::new(), 0)
+    (String::new(), 0, 0)
 }
 
 
@@ -356,6 +359,7 @@ pub fn identify_number(filename: &String) -> (String, i32) {
 fn extract_number(filename: &String, regex: Regex) -> (String, i32) {
 
     let last_match = regex.find_iter(&filename).last();
+    // no number found
     if last_match.is_none() { 
         return (String::new(),0)
     }

@@ -25,6 +25,7 @@ pub struct RssEntry {
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DerivedValues {
     pub episode: i32,
+    pub length: i32,
     pub resolution: i32,
     pub sub_group: String,
     pub anime_id: i32,
@@ -96,7 +97,8 @@ pub async fn get_rss(anime_id: i32) -> Vec<RssEntry> {
 
         title = file_name_recognition::remove_brackets(&title);
 
-        let (episode_string, episode) = file_name_recognition::identify_number(&title);
+        let (episode_string, episode, length) = file_name_recognition::identify_number(&title);
+        e.derived_values.length = length;
         e.derived_values.episode = episode;
         title = title.replace(&episode_string, "");
 

@@ -1,7 +1,7 @@
 
 
 
-use std::{collections::HashMap, cmp::{Ordering, max}};
+use std::cmp::{Ordering, max};
 
 use reqwest::Client;
 use serde::{Serialize, Deserialize};
@@ -237,7 +237,7 @@ impl UserAnimeInfo {
 
 // request json for anilist api
 const ANIME_INFO_QUERY: &str = "
-query ($id: Int) { # Define which variables will be used in the query (id)
+query ($id: Int) {
     Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
         id title { english } coverImage { large } season seasonYear type format episodes duration isAdult genres averageScore popularity description trailer { id site } startDate { year month day } trending
     }
@@ -256,7 +256,7 @@ query ($username: String) {
 // query for absolutely all data of a specific anime
 /*
 const ANIME_ALL_INFO_QUERY: &str = "
-query ($id: Int) { # Define which variables will be used in the query (id)
+query ($id: Int) {
     Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
         id idMal title { romaji english native userPreferred } type format status description startDate { year month day } endDate { year month day }
         season seasonYear seasonInt episodes duration chapters volumes countryOfOrigin isLicensed source hashtag trailer { id site } updatedAt coverImage { large } bannerImage
@@ -289,36 +289,6 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
             nextAiringEpisode { airingAt, episode }
         }
     }
-}";
-
-// query to change the users data for a specific anime
-const ANIME_UPDATE_ENTRY: &str = "
-mutation ($id: Int, $media_id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $start_year: Int, $start_month: Int, $start_day: Int, $end_year: Int, $end_month: Int, $end_day: Int) { 
-    SaveMediaListEntry (id: $id, mediaId: $media_id, status: $status, score: $score, progress: $progress, startedAt: {year: $start_year, month: $start_month, day: $start_day}, completedAt: {year: $end_year, month: $end_month, day: $end_day}) {
-        id mediaId status score progress startedAt { year month day } completedAt { year month day }
-    }
-}";
-
-// query for a specific list along with all user data and media data for the anime on that list
-const USER_LIST_WITH_MEDIA: &str = "
-query($userName: String, $status: [MediaListStatus]) {
-  MediaListCollection(userName: $userName, type:ANIME, status_in:$status) {
-    lists {
-      name 
-      entries {
-        id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day }
-        media {
-          id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
-          duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
-          relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
-          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
-          tags { name isGeneralSpoiler isMediaSpoiler description }
-          studios(isMain: true) { nodes { name } }
-          nextAiringEpisode { airingAt, episode }
-        }
-      }
-    }
-  }
 }";
 
 // retrieve a list of anime based on criteria like the year/season it was released, format, or genre
@@ -458,6 +428,30 @@ fn ceiling_div(x: usize, y: usize) -> usize {
     max(x / y, (x + y - 1) / y)
 }
 
+
+
+// query for a specific list along with all user data and media data for the anime on that list
+const USER_LIST_WITH_MEDIA: &str = "
+query($userName: String, $status: [MediaListStatus]) {
+  MediaListCollection(userName: $userName, type:ANIME, status_in:$status) {
+    lists {
+      name 
+      entries {
+        id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day }
+        media {
+          id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+          duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
+          relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+          tags { name isGeneralSpoiler isMediaSpoiler description }
+          studios(isMain: true) { nodes { name } }
+          nextAiringEpisode { airingAt, episode }
+        }
+      }
+    }
+  }
+}";
+
 // retrieve information on anime using it's anilist id
 // returns a message if a error occurred
 pub async fn anilist_get_list(username: String, status: String, access_token: String) -> Option<String> {
@@ -513,90 +507,6 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
 }
 
 
-
-// split requests for anime info to avoid the complexity limit of 500
-pub async fn anilist_get_anime_info_split(anime: Vec<i32>) {
-
-    // each entry has 26 complexity
-    // max entries is 19 (19 x 26 = 494)
-    let vec_length = 19;
-    let number_of_splits = (anime.len() + vec_length - 1) / (vec_length); // to ceil the value
-    let mut split_anime: Vec<Vec<i32>> = Vec::new();
-    split_anime.resize(number_of_splits, Vec::new());
-
-    for i in 0..anime.len() {
-        split_anime[i / vec_length].push(anime[i]);
-    }
-
-    for list in split_anime {
-        if anilist_get_anime_info(list).await == false{
-            break; // too many requests
-        }
-    }
-}
-
-// retrieves information for specific anime based on its id
-pub async fn anilist_get_anime_info(anime: Vec<i32>) -> bool {
-
-    if anime.len() == 0 {
-        return true;
-    }
-
-    const MULTI_ANIME_INFO_QUERY_START_FRONT: &str = "query ($id0: Int";
-    const MULTI_ANIME_INFO_QUERY_START_BACK: &str = ") { ";
-    const MULTI_ANIME_INFO_QUERY: &str = "R0:Media (id: $id0, type: ANIME) { id title { romaji english native } coverImage { large } season seasonYear type format episodes duration isAdult genres averageScore popularity description trailer { id site } startDate { year month day } } ";
-    const MULTI_ANIME_INFO_QUERY_END: &str = "}";
-
-    let mut query: String = MULTI_ANIME_INFO_QUERY_START_FRONT.to_string();
-    for i in 1..anime.len() {
-        query.push_str(", $id");
-        query.push_str(&i.to_string());
-        query.push_str(": Int");
-    }
-    query.push_str(MULTI_ANIME_INFO_QUERY_START_BACK);
-    for i in 0..anime.len() {
-        query.push_str(&MULTI_ANIME_INFO_QUERY.replace("0", &i.to_string()));
-    }
-    query.push_str(MULTI_ANIME_INFO_QUERY_END);
-
-
-
-    let mut ids: HashMap<String, i32> = HashMap::new();
-
-    for i in 0..anime.len() {
-        let mut id_name = String::from("id");
-        id_name.push_str(&i.to_string());
-        ids.insert(id_name, *anime.get(i).unwrap());
-    }
-
-
-
-    // create client and query json
-    let json = json!({"query": query, "variables": ids});
-
-    // get media information from anilist api
-    let response = anilist_to_snake_case(post(&json, None).await);
-
-    let anime_data: serde_json::Value = serde_json::from_str(&response).unwrap();
-    let anime_list = &mut *GLOBAL_ANIME_DATA.lock().await;
-
-    if anime_data["data"].as_object().is_none() {
-        if anime_data["errors"].is_array() {
-            return false;
-        }
-    }
-
-    for item in anime_data["data"].as_object().unwrap() {
-
-        let anime: AnimeInfo = match serde_json::from_str(&item.1.to_string()) {
-            Err(why) => panic!("error, {}, {}", why, item.1.to_string()),
-            Ok(anime) => anime,
-        };
-
-        anime_list.insert(anime.id, anime);
-    }
-    true
-}
 
 // query for a specific list along with all user data and media data for the anime on that list
 const MEDIA_INFO: &str = "query ($id: Int) {
@@ -669,6 +579,15 @@ pub async fn anilist_get_access_token(code: String) -> TokenData {
     return serde_json::from_str(&response_string).unwrap();
 }
 
+
+
+// query to change the users data for a specific anime
+const ANIME_UPDATE_ENTRY: &str = "
+mutation ($id: Int, $media_id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $start_year: Int, $start_month: Int, $start_day: Int, $end_year: Int, $end_month: Int, $end_day: Int) { 
+    SaveMediaListEntry (id: $id, mediaId: $media_id, status: $status, score: $score, progress: $progress, startedAt: {year: $start_year, month: $start_month, day: $start_day}, completedAt: {year: $end_year, month: $end_month, day: $end_day}) {
+        id mediaId status score progress startedAt { year month day } completedAt { year month day }
+    }
+}";
 
 // change the users entry data on anilist with the current data
 pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> String {
