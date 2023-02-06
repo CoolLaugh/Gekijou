@@ -24,6 +24,7 @@ html {height: 100%;}
 body {
   overflow: hidden;
   min-height: 100vh;
+  background-size: cover;
 }
 
 /* width */

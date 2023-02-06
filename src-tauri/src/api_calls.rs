@@ -498,8 +498,11 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
 
             let media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
 
-            anime_user_list.push(media.id);
-            anime_data.insert(media.id, media);
+            if anime_user_list.contains(&media.id) == false {
+
+                anime_user_list.push(media.id);
+                anime_data.insert(media.id, media);
+            }
         }
     }
     

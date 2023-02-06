@@ -129,6 +129,7 @@ async fn set_user_settings(settings: UserSettings) {
 // retrieves user's settings from a file
 #[tauri::command]
 async fn get_user_settings() -> UserSettings {
+    file_operations::read_file_user_settings().await;
     GLOBAL_USER_SETTINGS.lock().await.clone()
 }
 
@@ -249,6 +250,7 @@ async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
     let mut list: Vec<UserAnimeInfo> = Vec::new();
     let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
     for item in GLOBAL_USER_ANIME_LISTS.lock().await.entry(list_name.clone()).or_insert(Vec::new()) {
+
         list.push(user_data.entry(*item).or_insert(UserAnimeInfo::new()).clone());
     }
 
@@ -338,7 +340,10 @@ async fn update_user_entry(anime: UserAnimeInfo) {
             let list = lists.entry(new_list).or_default();
             if list.len() > 0 {
 
-                list.push(anime.media_id);
+                if list.contains(&anime.media_id) == false {
+        
+                    list.push(anime.media_id);
+                }
             }
         }
     }
@@ -716,7 +721,11 @@ async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
     };
 
     lists.entry(new_list).and_modify(|list| {
-        list.push(anime.media_id);
+        
+        if list.contains(&anime.media_id) == false {
+
+            list.push(anime.media_id);
+        }
     });
 }
 
@@ -923,6 +932,16 @@ async fn run_filename_tests() -> Vec<FilenameTest> {
     Vec::new()
 }
 
+
+
+#[tauri::command]
+async fn get_debug() -> bool {
+
+    return DEBUG;
+}
+
+
+
 fn main() {
     tauri::Builder::default()
     .setup(|app| {
@@ -946,7 +965,7 @@ fn main() {
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
-            open_url,get_list_ids,run_filename_tests])
+            open_url,get_list_ids,run_filename_tests,get_debug])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -977,7 +996,10 @@ async fn get_user_data() {
 
                 let entry: UserAnimeInfo = serde_json::from_value(item2.clone()).unwrap();
 
-                list.push(entry.media_id.clone());
+                if list.contains(&entry.media_id) == false {
+
+                    list.push(entry.media_id.clone());
+                }
                 user_data.insert(entry.media_id, entry);
             }
         });

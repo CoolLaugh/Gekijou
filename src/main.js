@@ -11,10 +11,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   var user_settings = await invoke("get_user_settings");
   document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
 
+  var debug = await invoke("get_debug");
+  if (debug) {
+    document.getElementById("test_button").style.display = "block"
+  }
+
   add_adult_genres(user_settings.show_adult);
 
   if (user_settings.first_time_setup == true) {
-
+    console.log(user_settings);
     show_setting_window();
     document.getElementById("login_panel").style.setProperty("left", "100%");
     document.getElementById("login_panel").style.setProperty("transform", "translate(-102%,-50%)");
@@ -1162,7 +1167,7 @@ async function run_tests() {
     var episode_color = "red";
     var id_color = "red";
     var resolution_color = "red";
-    if (results[i].similarity_score >= 0.65){ score_color = "lightgreen"; }
+    if (results[i].similarity_score >= 0.7){ score_color = "lightgreen"; }
     if (results[i].episode == results[i].expected_episode){ episode_color = "lightgreen"; }
     if (results[i].anime_id == results[i].expected_anime_id){ id_color = "lightgreen"; }
     if (results[i].resolution == results[i].expected_resolution){ resolution_color = "lightgreen"; }
@@ -1216,7 +1221,7 @@ window.get_user_settings = get_user_settings;
 async function get_user_settings() {
   
   var user_settings = await invoke("get_user_settings");
-  
+  console.log(user_settings);
   document.getElementById("user_name").value = user_settings.username;
   document.getElementById("title_language").value = user_settings.title_language;
   document.getElementById("show_spoiler_tags").checked = user_settings.show_spoilers;
@@ -1344,9 +1349,9 @@ async function set_color(element) {
 
 
 
-var background_color_1 = ["#1f2122", "#0e0e10", "#ffffff", "#f7f9fa", "#eaeded", "#eef2fe", "#feffef", "#edeeee" ];
-var background_color_2 = ["#27292a", "#1f1f23", "#e5e5e5", "#edeeee", "#141921", "#d6dbef", "#ede0d7", "#dcdddd" ];
-var text_color = ["#f6f6f6", "#f6f6f6", "#1c0000", "#000000", "#f6f6f6", "#000000", "#000000", "#000000"];
+var background_color_1 = ["#1f2122", "#0e0e10", "#edeeee", "#ffffff", "#f7f9fa", "#eaeded", "#eef2fe", "#feffef" ];
+var background_color_2 = ["#27292a", "#1f1f23", "#d2d2d2", "#e5e5e5", "#edeeee", "#141921", "#d6dbef", "#ede0d7" ];
+var text_color = ["#f6f6f6", "#f6f6f6", "#000000", "#1c0000", "#000000", "#f6f6f6", "#000000", "#000000"];
 window.set_theme = set_theme;
 async function set_theme(element, index) {
 

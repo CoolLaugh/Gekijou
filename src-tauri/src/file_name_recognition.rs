@@ -284,14 +284,15 @@ fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id
     }
 
     let mut titles: Vec<String> = Vec::new();
-    if anime.title.english.is_some() { titles.push(anime.title.english.clone().unwrap().to_ascii_lowercase()) }
-    if anime.title.romaji.is_some() { titles.push(anime.title.romaji.clone().unwrap().to_ascii_lowercase()) }
-    if anime.title.native.is_some() { titles.push(anime.title.native.clone().unwrap().to_ascii_lowercase()) }
+    if anime.title.english.is_some() { titles.push(replace_special_vowels(anime.title.english.clone().unwrap().to_ascii_lowercase())) }
+    if anime.title.romaji.is_some() { titles.push(replace_special_vowels(anime.title.romaji.clone().unwrap().to_ascii_lowercase())) }
+    if anime.title.native.is_some() { titles.push(replace_special_vowels(anime.title.native.clone().unwrap().to_ascii_lowercase())) }
 
     for title in titles {
 
         //if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue } // skip comparison if first character does not match
-        let normalized_levenshtein_score = strsim::normalized_levenshtein(&filename, &title);
+        let no_special_vowels_filename = replace_special_vowels(filename.to_ascii_lowercase());
+        let normalized_levenshtein_score = strsim::normalized_levenshtein(&no_special_vowels_filename, &title);
         if normalized_levenshtein_score > *score { 
             *media_id = anime.id; 
             *score = normalized_levenshtein_score;
@@ -299,6 +300,41 @@ fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id
         }
     }
 }
+
+
+
+lazy_static! {
+    static ref REPLACE_A: Regex = Regex::new(r"À|Á|Â|Ã|Ä|Å|à|á|â|ã|ä|å").unwrap();
+    static ref REPLACE_AE: Regex = Regex::new(r"Æ|æ").unwrap();
+    static ref REPLACE_C: Regex = Regex::new(r"Ç|ç").unwrap();
+    static ref REPLACE_E: Regex = Regex::new(r"È|É|Ê|Ë|è|é|ê|ë").unwrap();
+    static ref REPLACE_I: Regex = Regex::new(r"Ì|Í|Î|Ï|ì|í|î|ï").unwrap();
+    static ref REPLACE_D: Regex = Regex::new(r"Ð|ð").unwrap();
+    static ref REPLACE_N: Regex = Regex::new(r"Ñ|ñ").unwrap();
+    static ref REPLACE_O: Regex = Regex::new(r"Ò|Ó|Ô|Õ|Ö|Ø|ò|ó|ô|õ|ö|ø").unwrap();
+    static ref REPLACE_U: Regex = Regex::new(r"Ù|Ú|Û|Ü|ù|ú|û|ü").unwrap();
+    static ref REPLACE_Y: Regex = Regex::new(r"Ý|ý|ÿ").unwrap();
+    static ref REPLACE_B: Regex = Regex::new(r"ß|Þ|þ").unwrap();
+}
+// replaces vowels with special marks
+// most people don't have these characters on their keyboard so they may create a discrepancy between the filename and official title
+fn replace_special_vowels(text: String) -> String {
+
+    let mut result = REPLACE_A.replace_all(&text, "a").to_string();
+    result = REPLACE_AE.replace_all(&result, "ae").to_string();
+    result = REPLACE_C.replace_all(&result, "c").to_string();
+    result = REPLACE_E.replace_all(&result, "e").to_string();
+    result = REPLACE_I.replace_all(&result, "i").to_string();
+    result = REPLACE_D.replace_all(&result, "d").to_string();
+    result = REPLACE_N.replace_all(&result, "n").to_string();
+    result = REPLACE_O.replace_all(&result, "o").to_string();
+    result = REPLACE_U.replace_all(&result, "u").to_string();
+    result = REPLACE_Y.replace_all(&result, "y").to_string();
+    result = REPLACE_B.replace_all(&result, "b").to_string();
+
+    result
+}
+
 
 
 // find the episode number in the filename and store it
