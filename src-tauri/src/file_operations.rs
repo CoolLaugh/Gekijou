@@ -158,3 +158,26 @@ fn gekijou_folder_exists_or_created() -> bool {
         }
     }
 }
+
+
+
+pub fn delete_data() -> bool {
+
+    let files = vec!["token","token_backup","user_settings","user_settings_backup",
+                                "anime_cache","anime_cache_backup","user_data","user_data_backup",
+                                "user_Lists","user_Lists_backup","episode_path","episode_path_backup"];
+
+    for file in files {
+
+        let file_location = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, file);
+        let file_path = Path::new(&file_location);
+        if file_path.exists() {
+            match fs::remove_file(file_path) {
+                Err(_why) => return false,
+                Ok(file) => file,
+            };
+        }
+    }
+
+    true
+}

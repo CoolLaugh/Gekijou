@@ -129,7 +129,7 @@ async fn set_user_settings(settings: UserSettings) {
 // retrieves user's settings from a file
 #[tauri::command]
 async fn get_user_settings() -> UserSettings {
-    file_operations::read_file_user_settings().await;
+    load_user_settings().await;
     GLOBAL_USER_SETTINGS.lock().await.clone()
 }
 
@@ -390,6 +390,9 @@ async fn load_user_settings() {
     }
     if user_settings.show_airing_time.is_none() {
         user_settings.show_airing_time = Some(true);
+    }
+    if user_settings.theme.is_none() {
+        user_settings.theme = Some(0);
     }
 }
 
@@ -942,6 +945,14 @@ async fn get_debug() -> bool {
 
 
 
+#[tauri::command]
+fn delete_data() -> bool {
+
+    file_operations::delete_data()
+}
+
+
+
 fn main() {
     tauri::Builder::default()
     .setup(|app| {
@@ -965,7 +976,7 @@ fn main() {
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
-            open_url,get_list_ids,run_filename_tests,get_debug])
+            open_url,get_list_ids,run_filename_tests,get_debug,delete_data])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

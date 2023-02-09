@@ -210,11 +210,12 @@ pub struct UserSettings {
     pub current_tab: String,
     pub first_time_setup: bool,
     pub show_airing_time: Option<bool>,
+    pub theme: Option<i32>
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true) }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0) }
     }
 }
 

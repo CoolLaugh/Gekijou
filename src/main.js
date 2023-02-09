@@ -10,6 +10,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   var user_settings = await invoke("get_user_settings");
   document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
+  set_theme(null, user_settings.theme);
 
   var debug = await invoke("get_debug");
   if (debug) {
@@ -676,7 +677,7 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
   html += "<div id=\"" + anime.id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + anime.popularity + "\" score=\"" + average_score + "\" title=\"" + title + "\" trending=\"" + anime.trending + "\" started=\"" + started_date + "\" completed=\"" + completed_date + "\">"
   html +=   "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=\"" + cover_image + "\" width=\"200\">"
   html +=   "<div class=\"airing_value_display\" style=\"display: " + display_airing_value + "; color: #f6f6f6;\"><p id=\"airing_value\" airing_at=\"" + airing_at + "\" airing_ep=\"" + airing_ep + "\">" + airing_value + "</p></div>"
-  html +=   "<div class=\"sort_value_display\" style=\"display: " + display_sort_value + ";\"><p id=\"sort_value\">" + sort_value + "</p></div>"
+  html +=   "<div class=\"sort_value_display\" style=\"display: " + display_sort_value + "; color: #f6f6f6;\"><p id=\"sort_value\">" + sort_value + "</p></div>"
   html +=   "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes_" + anime.id + "\" width=\"200\"></canvas>"
   html +=   "<div class=\"cover_title\"><p id=\"title" + anime.id + "\">" + title + "</p></div>"
   html +=   "<div class=\"overlay\">"
@@ -1204,6 +1205,14 @@ document.addEventListener('keyup', (e) => {
 
 
 
+window.delete_data = delete_data;
+async function delete_data() {
+
+  await invoke("delete_data");
+}
+
+
+
 //// settings window
 
 
@@ -1253,6 +1262,22 @@ async function get_user_settings() {
       elements[i].style.setProperty("margin", "2.5px");
     }
   }
+
+  var elements = document.getElementById("theme_boxes").childNodes;
+  for (var i=0; i<elements.length; i++) {
+
+    if(elements[i].nodeType != 1) { 
+      continue;
+    }
+    console.log(user_settings.theme);
+    if (elements[i].getAttribute("index") == user_settings.theme) {
+      elements[i].style.setProperty("border-style", "solid");
+      elements[i].style.setProperty("margin", "0px");
+    } else {
+      elements[i].style.setProperty("border-style", "hidden");
+      elements[i].style.setProperty("margin", "2.5px");
+    }
+  }
 }
 
 
@@ -1280,6 +1305,20 @@ async function hide_setting_window() {
     } 
   }
 
+  var elements = document.getElementById("theme_boxes").childNodes;
+  var theme_index = 0;
+  for (var i=0; i<elements.length; i++) {
+    
+    if(elements[i].nodeType != 1) { 
+      continue;
+    }
+
+    if (elements[i].style.getPropertyValue("border-style") == "solid") {
+      theme_index = parseInt(elements[i].getAttribute("index"));
+      break;
+    } 
+  }
+
   var settings = {
     username: document.getElementById("user_name").value,
     title_language: document.getElementById("title_language").value,
@@ -1292,6 +1331,7 @@ async function hide_setting_window() {
     highlight_color: highlight_color,
     current_tab: "",
     first_time_setup: false,
+    theme: theme_index,
   }
 
   await invoke("set_user_settings", { settings: settings});
@@ -1355,18 +1395,21 @@ var text_color = ["#f6f6f6", "#f6f6f6", "#000000", "#1c0000", "#000000", "#f6f6f
 window.set_theme = set_theme;
 async function set_theme(element, index) {
 
-  var parent = document.getElementById("theme_boxes");
-  var elements = parent.childNodes;
+  if (element != null) {
 
-  for (var i=0; i<elements.length; i++) {
-
-    if(elements[i].nodeType == 1) {
-      elements[i].style.setProperty("border-style", "hidden");
-      elements[i].style.setProperty("margin", "2.5px");
+    var parent = document.getElementById("theme_boxes");
+    var elements = parent.childNodes;
+  
+    for (var i=0; i<elements.length; i++) {
+  
+      if(elements[i].nodeType == 1) {
+        elements[i].style.setProperty("border-style", "hidden");
+        elements[i].style.setProperty("margin", "2.5px");
+      }
     }
+    element.style.setProperty("border-style", "solid");
+    element.style.setProperty("margin", "0px");
   }
-  element.style.setProperty("border-style", "solid");
-  element.style.setProperty("margin", "0px");
 
   document.styleSheets[0].cssRules[0].style.setProperty("--background-color1", background_color_1[index]);
   document.styleSheets[0].cssRules[0].style.setProperty("--background-color2", background_color_2[index]);
