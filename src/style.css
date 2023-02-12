@@ -134,6 +134,20 @@ body {
   background-color:#b83c3c;
 }
 
+.anime_info_close {
+  padding: 0px;
+  font-size: 28px;
+  height: 30px;
+  width: 30px;
+  border-radius: 4px;
+  background: var(--background-color1);
+}
+
+.innerButton {
+  top: -6px;
+  position: relative;
+}
+
 .tab_navigation {
   background-color: var(--background-color1);
   overflow: hidden;
@@ -433,19 +447,20 @@ body {
 }
 
 .big_play_button {
-  border-radius: 60px;
+  border-radius: 68px;
   top: 90px;
   left: 39px;
-  padding: 20px;
+  padding-top: 15px;
+  padding-left: 28px;
+  font-size: 80px;
   display: block;
-}
-
-.big_play_button:hover img {
-  filter: invert(100%);
+  width: 125px;
+  height: 125px;
 }
 
 .big_play_button:hover {
-  background: var(--text-color);
+  background-color: var(--text-color);
+  color: var(--background-color1);
 }
 
 .add_planning_button {

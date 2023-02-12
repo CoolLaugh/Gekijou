@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_SETTINGS};
+use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN};
 
 
 
@@ -16,6 +16,15 @@ pub async fn tally_recommendations(genre_filter: String, year_min_filter: i32, y
     
     // use the completed list to grab user recommendations
     let list = GLOBAL_USER_ANIME_LISTS.lock().await;
+    if list.contains_key("COMPLETED") == false {
+        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), "COMPLETED".to_owned(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+        if error_message.is_some() {
+            
+            return Vec::new();
+        }
+        file_operations::write_file_anime_info_cache().await;
+        file_operations::write_file_user_info().await;
+    }
     let completed_list = list.get("COMPLETED").unwrap();
 
 

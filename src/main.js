@@ -104,7 +104,11 @@ async function refresh_ui() {
 
   var refresh = await invoke("get_refresh_ui");
   if (refresh.anime_list == true) {
-    show_anime_list(current_tab);
+    if (current_tab == "RECOMMENDED") {
+      show_recommended_anime_list();
+    } else {
+      show_anime_list(current_tab);
+    }
   }
   if (refresh.canvas == true && current_tab != "BROWSE") {
     redraw_episode_canvas();
@@ -523,8 +527,17 @@ async function change_sort_type() {
 // change between sorting ascending and descending
 window.change_sort_ascending = change_sort_ascending;
 async function change_sort_ascending() {
+
   sort_ascending = !sort_ascending;
-  change_ascending_indicator(sort_ascending)
+
+  if(sort_ascending){
+    document.getElementById("sort_order_ascending").textContent = "▲";
+    document.getElementById("sort_order_ascending").order = "AES";
+  } else {
+    document.getElementById("sort_order_ascending").textContent = "▼";
+    document.getElementById("sort_order_ascending").order = "DESC";
+  }
+
   if (current_tab == "BROWSE") {
     browse_update();
   } else {
@@ -532,18 +545,6 @@ async function change_sort_ascending() {
     current_page = 0;
     has_next_page = true;
     show_anime_list_paged(current_page);
-  }
-}
-
-// change the image to show if the list is being sorted ascending or descending
-function change_ascending_indicator(ascending) {
-  if(ascending == true) {
-    document.getElementById("sort_order_ascending").style.transform = 'rotate(180deg)';
-    document.getElementById("sort_order_ascending").order = "AES";
-  }
-  else {
-    document.getElementById("sort_order_ascending").style.transform = 'rotate(0deg)';
-    document.getElementById("sort_order_ascending").order = "DESC";
   }
 }
 
@@ -685,7 +686,7 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
   html +=     "<div class=\"add_buttons\" style=\"top: 93px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime.id + ", 'PLANNING')\" title=\"Add this anime to your plan to watch list\">Add to Planning</a></div>"
   html +=     "<div class=\"add_buttons\" style=\"top: 163px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime.id + ", 'CURRENT')\" title=\"Add this anime to your watching list\">Add to Watching</a></div>"
   html +=     "<div class=\"add_buttons\" style=\"top: 232px; display: " + display_trailer + ";\"><a href=\"#\" onclick=\"show_anime_info_window_trailer(" + anime.id + ")\" title=\"Watch the trailer\">Watch Trailer</a></div>"
-  html +=     "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime.id + ")\" type=\"button\" style=\"display: " + display_not_browse + ";\" title=\"Play Next Episode\"><img ,=\"\" height=\"80\" src=\"assets/play2.png\" width=\"80\"></button>"
+  html +=     "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime.id + ")\" type=\"button\" style=\"display: " + display_not_browse + ";\" title=\"Play Next Episode\">►</button>"
   html +=     "<div class=\"cover_nav\" style=\"display: " + display_not_browse + ";\">"
   html +=       "<a href=\"#\" onclick=\"decrease_episode(" + anime.id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px; font-size: 24px;\" title=\"Decrease episode progress\">-</a>"
   html +=       "<a href=\"#\" onclick=\"show_anime_info_window_edit(" + anime.id + ")\" id=\"episode_text_" + anime.id + "\" title=\"Edit episode and other data\">" + episode_text + "</a>"
@@ -1208,6 +1209,41 @@ document.addEventListener('keyup', (e) => {
 window.delete_data = delete_data;
 async function delete_data() {
 
+  document.getElementById("user_name").value = "";
+  document.getElementById("title_language").selectedIndex = 0;
+  document.getElementById("show_spoiler_tags").checked = false;
+  document.getElementById("show_adult").checked = false;
+  document.getElementById("show_airing").checked = true;
+  document.getElementById("folders").value = "";
+  document.getElementById("update_delay").selectedIndex = 0;
+  var elements = document.getElementById("color_boxes").childNodes;
+  var first = true;
+  for (var i=0; i<elements.length; i++) {
+
+    if(elements[i].nodeType == 1) {
+      if(first) {
+        elements[i].style.setProperty("border-style", "solid");
+        elements[i].style.setProperty("margin", "0px");
+        first = false;
+      } else {
+        elements[i].style.setProperty("border-style", "hidden");
+        elements[i].style.setProperty("margin", "2.5px");
+      }
+    }
+  }
+  var theme_elements = document.getElementById("theme_boxes").childNodes;
+  var theme_element = null;
+  for (var i=0; i<theme_elements.length; i++) {
+
+    if(theme_elements[i].nodeType == 1) {
+      theme_element = theme_elements[i];
+      break;
+    }
+  }
+  console.log(theme_element);
+  set_theme(theme_element,0);
+  removeChildren(document.getElementById("cover_panel_grid"));
+
   await invoke("delete_data");
 }
 
@@ -1230,7 +1266,6 @@ window.get_user_settings = get_user_settings;
 async function get_user_settings() {
   
   var user_settings = await invoke("get_user_settings");
-  console.log(user_settings);
   document.getElementById("user_name").value = user_settings.username;
   document.getElementById("title_language").value = user_settings.title_language;
   document.getElementById("show_spoiler_tags").checked = user_settings.show_spoilers;

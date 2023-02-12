@@ -27,7 +27,7 @@
     <div id="cover_panel_id" class="container">
       <div class="sub_navigation">
         <div id="sort_area">
-          <img class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" src="assets/order.png" order="ASC" style="transform: rotate(180deg);"  title="Sort by ascending or descending">
+          <a class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" order="ASC" title="Sort by ascending or descending" style="font-size: 25px;cursor: pointer;">▲</a>
           <select class="container_header" id="sort_order" title="Sorting category" onchange="change_sort_type()">
             <option value="Alphabetical">Alphabetical</option>
           </select>
@@ -54,7 +54,7 @@
             <option value="">Genre</option> <option value="Action">Action</option> <option value="Adventure">Adventure</option> <option value="Comedy">Comedy</option> <option value="Drama">Drama</option> <option value="Ecchi">Ecchi</option> <option value="Fantasy">Fantasy</option> <option value="Horror" id="horror_option">Horror</option> <option value="Mahou Shoujo">Mahou Shoujo</option> <option value="Mecha">Mecha</option> <option value="Music">Music</option> <option value="Mystery">Mystery</option> <option value="Psychological">Psychological</option> <option value="Romance">Romance</option> <option value="Sci-Fi">Sci-Fi</option> <option value="Slice of Life">Slice of Life</option> <option value="Sports">Sports</option> <option value="Supernatural">Supernatural</option> <option value="Thriller">Thriller</option>
           </select>
           <select id="year_select_recommended" name="year_select" onchange="show_recommended_anime_list()">
-            <option value="">Year</option><option value="2000|2004">2000 - 2004</option><option value="2005|2009">2005 - 2009</option><option value="2010|2014">2010 - 2014</option><option value="2015|2019">2015 - 2019</option><option value="2020|2024">2020 - 2024</option>
+            <option value="">Year</option><option value="1970|1974">1970 - 1974</option><option value="1975|1979">1975 - 1979</option><option value="1980|1984">1980 - 1984</option><option value="1985|1989">1985 - 1989</option><option value="1990|1994">1990 - 1994</option><option value="1995|1999">1995 - 1999</option><option value="2000|2004">2000 - 2004</option><option value="2005|2009">2005 - 2009</option><option value="2010|2014">2010 - 2014</option><option value="2015|2019">2015 - 2019</option><option value="2020|2024">2020 - 2024</option>
           </select>
           <select id="format_select_recommended" name="format_select" onchange="show_recommended_anime_list()">
             <option value="">Format</option> <option value="TV">TV</option> <option value="MOVIE">Movie</option> <option value="TV_SHORT">TV Short</option> <option value="SPECIAL">Special</option> <option value="OVA">OVA</option> <option value="ONA">ONA</option> <option value="MUSIC">Music</option>
@@ -68,11 +68,11 @@
       <div class="anime_info_panel" id="info_panel">
         <div class="anime_info_title_row">
           <p id="info_title" maxlength="50">title</p>
-          <img class="anime_info_close" height="30" id="info_close_button" onclick="hide_anime_info_window()" src="/assets/close.png" style="float: right;" width="30">
+          <button class="anime_info_close"id="info_close_button" onclick="hide_anime_info_window()" style="float: right;"><span href="#" class="innerButton">✖</span></button>
         </div>
         <div class="anime_info_lower">
           <div class="anime_info_cover">
-            <img style="cursor:pointer" alt="Cover Image" height="300" id="info_cover" src="/assets/CoverImageTest.png" width="200">
+            <img style="cursor:pointer" alt="Cover Image" height="300" id="info_cover" src="" width="200">
             <table><tbody><tr><th><p id="studio">Studio</p></th></tr></tbody></table>
           </div>
           <div style="width: 727px;">
@@ -131,11 +131,11 @@
                   </tr>
                   <tr>
                     <th style="text-align: right; padding-right: 10px;"><p>Started: </p></th>
-                    <th><input id="started_date" max="2100-12-31" min="1970-01-01" name="started date" type="date" value=""><img class="anime_info_close" height="30" onclick="clearDate('started_date')" src="/assets/close.png" style="vertical-align: middle;" width="30"></th>
+                    <th><input id="started_date" max="2100-12-31" min="1970-01-01" name="started date" type="date" value=""><button class="anime_info_close"id="info_close_button" onclick="clearDate('started_date')" style="vertical-align: middle;"><span href="#" class="innerButton">✖</span></button></th>
                   </tr>
                   <tr>
                     <th style="text-align: right; padding-right: 10px;"><p>Finished: </p></th>
-                    <th><input id="finished_date" max="2100-12-31" min="1970-01-01" name="finished date" type="date" value=""><img class="anime_info_close" height="30" onclick="clearDate('finished_date')" src="/assets/close.png" style="vertical-align: middle;" width="30"></th>
+                    <th><input id="finished_date" max="2100-12-31" min="1970-01-01" name="finished date" type="date" value=""><button class="anime_info_close"id="info_close_button" onclick="clearDate('finished_date')" style="vertical-align: middle;"><span href="#" class="innerButton">✖</span></button></th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -307,7 +307,7 @@
                 Clear Data:
               </th>
               <th style="text-align: -webkit-center;">
-                <button onclick="delete_data()" type="button" style="background-color: #b83c3c;">Delete All Data</button>
+                <button onclick="delete_data()" type="button" style="background-color: #b83c3c;">Delete Local Data</button>
               </th>
             </tr>
             <tr>

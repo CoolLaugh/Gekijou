@@ -195,6 +195,13 @@ impl TokenData {
     pub const fn new() -> TokenData {
         TokenData { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() }
     }
+
+    pub fn clear(&mut self) {
+        self.token_type.clear();
+        self.expires_in = 0;
+        self.access_token.clear();
+        self.refresh_token.clear();
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -215,7 +222,22 @@ pub struct UserSettings {
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: true, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0) }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: false, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0) }
+    }
+    
+    pub fn clear(&mut self) {
+        self.username.clear();
+        self.title_language.clear();
+        self.show_spoilers = false;
+        self.show_adult = false;
+        self.folders.clear();
+        self.update_delay = 0;
+        self.score_format.clear();
+        self.highlight_color.clear();
+        self.current_tab.clear();
+        self.first_time_setup = true;
+        self.show_airing_time = Some(true);
+        self.theme = Some(0);
     }
 }
 
@@ -626,7 +648,7 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
     }
 
     let json = json!({"query": mutation, "variables": variables});
-
+    
     let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
 
     response

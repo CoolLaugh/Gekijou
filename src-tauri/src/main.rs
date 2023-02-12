@@ -38,6 +38,15 @@ pub struct RefreshUI {
     pub canvas: bool,
 }
 
+impl RefreshUI {
+    
+    pub fn clear(&mut self) {
+        self.anime_list = false;
+        self.tracking_progress = false;
+        self.canvas = false;
+    }
+}
+
 lazy_static! {
     static ref GLOBAL_TOKEN: Mutex<TokenData> = Mutex::new(TokenData { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() });
     static ref GLOBAL_ANIME_DATA: Mutex<HashMap<i32, AnimeInfo>> = Mutex::new(HashMap::new());
@@ -126,6 +135,8 @@ async fn set_user_settings(settings: UserSettings) {
     file_operations::write_file_user_settings().await;
 }
 
+
+
 // retrieves user's settings from a file
 #[tauri::command]
 async fn get_user_settings() -> UserSettings {
@@ -170,6 +181,10 @@ async fn get_list(list_name: String) -> (Vec<AnimeInfo>, Option<String>) {
 
 #[tauri::command]
 async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: usize) -> (Vec<(AnimeInfo, UserAnimeInfo)>, Option<String>){
+
+    if GLOBAL_USER_SETTINGS.lock().await.username.is_empty() {
+        return (Vec::new(), None);
+    }
 
     let anime_per_page: usize = 50;
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
@@ -303,7 +318,7 @@ async fn get_anime_info(id: i32) -> AnimeInfo {
 
 // updates a entry on anilist with new information
 #[tauri::command]
-async fn update_user_entry(anime: UserAnimeInfo) {
+async fn update_user_entry(mut anime: UserAnimeInfo) {
 
     let old_status: String = if GLOBAL_USER_ANIME_DATA.lock().await.contains_key(&anime.media_id) {
         GLOBAL_USER_ANIME_DATA.lock().await.entry(anime.media_id).or_default().status.clone()
@@ -337,13 +352,31 @@ async fn update_user_entry(anime: UserAnimeInfo) {
         let mut lists = GLOBAL_USER_ANIME_LISTS.lock().await;
         if lists.contains_key(&new_list) {
             
-            let list = lists.entry(new_list).or_default();
+            let list = lists.entry(new_list.clone()).or_default();
             if list.len() > 0 {
 
                 if list.contains(&anime.media_id) == false {
         
                     list.push(anime.media_id);
                 }
+            }
+        }
+    }
+
+    if new_list == "COMPLETED" {
+        let now: DateTime<Local> = Local::now();
+        anime.completed_at = Some(AnilistDate {
+            year: Some(now.year()),
+            month: Some(now.month() as i32),
+            day: Some(now.day() as i32),
+        });
+
+        if anime.started_at.is_none() {
+            anime.started_at = anime.started_at.clone();
+        } else {
+            let started_at = anime.started_at.clone().unwrap();
+            if started_at.day.is_none() && started_at.month.is_none() && started_at.year.is_none() {
+                anime.started_at = anime.started_at.clone();
             }
         }
     }
@@ -379,11 +412,20 @@ async fn on_startup() {
     }
 }
 
+
+
+lazy_static! {
+    static ref GLOBAL_SETTINGS_LOADED: Mutex<bool> = Mutex::new(false);
+}
 // loads data from files and looks for episodes on disk
 #[tauri::command]
 async fn load_user_settings() {
 
-    file_operations::read_file_user_settings().await;
+    let mut loaded = GLOBAL_SETTINGS_LOADED.lock().await;
+    if *loaded == false {
+        file_operations::read_file_user_settings().await;
+        *loaded = true;
+    }
     let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
     if user_settings.highlight_color.is_empty() {
         user_settings.highlight_color = String::from("rgb(96, 217, 236)");
@@ -946,7 +988,16 @@ async fn get_debug() -> bool {
 
 
 #[tauri::command]
-fn delete_data() -> bool {
+async fn delete_data() -> bool {
+
+    GLOBAL_TOKEN.lock().await.clear();
+    GLOBAL_ANIME_DATA.lock().await.clear();
+    GLOBAL_USER_ANIME_DATA.lock().await.clear();
+    GLOBAL_USER_ANIME_LISTS.lock().await.clear();
+    GLOBAL_USER_SETTINGS.lock().await.clear();
+    GLOBAL_ANIME_PATH.lock().await.clear();
+    GLOBAL_REFRESH_UI.lock().await.clear();
+    GLOBAL_UPDATE_ANIME_DELAYED.lock().await.clear();
 
     file_operations::delete_data()
 }
@@ -984,7 +1035,12 @@ fn main() {
 
 async fn get_user_data() {
 
-    let response = api_calls::anilist_list_query_call(GLOBAL_USER_SETTINGS.lock().await.username.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+    let username = GLOBAL_USER_SETTINGS.lock().await.username.clone();
+    if username.is_empty() {
+        return;
+    }
+
+    let response = api_calls::anilist_list_query_call(username, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
     
     let json: serde_json::Value = serde_json::from_str(&response).unwrap();
 
