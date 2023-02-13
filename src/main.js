@@ -512,16 +512,7 @@ window.change_sort_type = change_sort_type;
 async function change_sort_type() {
 
   sort_ascending = default_order[document.getElementById("sort_order").value];
-  change_ascending_indicator(sort_ascending);
-
-  if (current_tab == "BROWSE") {
-    browse_update();
-  } else {
-    expected_page = 0;
-    current_page = 0;
-    has_next_page = true;
-    show_anime_list_paged(current_page);
-  }
+  sort_refresh_ui();
 }
 
 // change between sorting ascending and descending
@@ -529,6 +520,11 @@ window.change_sort_ascending = change_sort_ascending;
 async function change_sort_ascending() {
 
   sort_ascending = !sort_ascending;
+  sort_refresh_ui();
+}
+
+// refresh the ui with the new sorting settings
+async function sort_refresh_ui() {
 
   if(sort_ascending){
     document.getElementById("sort_order_ascending").textContent = "▲";
@@ -1891,6 +1887,10 @@ async function add_torrent_data(anime_id) {
   document.getElementById("episode_filter").value = "Any";
 
   var table = document.getElementById("torrent_table");
+  var rows = table.rows.length - 1;
+  for(var i = 0; i < rows; i++) {
+    table.deleteRow(1);
+  }
   for(var i = 0; i < rss_data.length; i++) {
 
     add_torrent_row(table,rss_data[i]);
