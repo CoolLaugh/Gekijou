@@ -1005,10 +1005,11 @@ async function browse_update() {
   var format = document.getElementById("format_select").value;
   var genre = document.getElementById("genre_select").value;
   var search = document.getElementById("search_text").value;
+  var sort = document.getElementById("sort_order").value
   var user_settings = await invoke("get_user_settings");
 
   var sort_value = "";
-  switch(document.getElementById("sort_order").value) {
+  switch(sort) {
     case "Alphabetical":
       switch(user_settings.title_language) {
         case "romaji":
@@ -1040,6 +1041,14 @@ async function browse_update() {
   }
 
   var list = await invoke("browse", {year: year, season: season, genre: genre, format: format, search: search, order: sort_value});
+
+  if (year != document.getElementById("year_select").value ||
+      season != document.getElementById("season_select").value ||
+      format != document.getElementById("format_select").value ||
+      genre != document.getElementById("genre_select").value ||
+      sort != document.getElementById("sort_order").value) {
+    return;
+  }
 
   removeChildren(document.getElementById("cover_panel_grid"));
   list_ids = [];
