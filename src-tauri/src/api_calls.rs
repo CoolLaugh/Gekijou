@@ -170,7 +170,8 @@ pub struct Studio {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct NodeName {
-    pub name: String
+    pub name: String,
+    pub is_animation_studio: bool
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -308,7 +309,7 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
             relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
             recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
             tags { name isGeneralSpoiler isMediaSpoiler description }
-            studios(isMain: true) { nodes { name } }
+            studios(isMain: true) { nodes { name isAnimationStudio } }
             nextAiringEpisode { airingAt, episode }
         }
     }
@@ -388,7 +389,7 @@ query($page: Int $ids: [Int]) {
           relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
           recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
           tags { name isGeneralSpoiler isMediaSpoiler description }
-          studios(isMain: true) { nodes { name } }
+          studios(isMain: true) { nodes { name isAnimationStudio } }
           nextAiringEpisode { airingAt, episode }
         }
     }
@@ -445,6 +446,7 @@ fn anilist_to_snake_case(anilist_json: String) -> String {
         .replace("mediaId", "media_id")
         .replace("startedAt", "started_at")
         .replace("completedAt", "completed_at")
+        .replace("isAnimationStudio", "is_animation_studio")
 }
 
 fn ceiling_div(x: usize, y: usize) -> usize {
@@ -467,7 +469,7 @@ query($userName: String, $status: [MediaListStatus]) {
           relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
           recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
           tags { name isGeneralSpoiler isMediaSpoiler description }
-          studios(isMain: true) { nodes { name } }
+          studios(isMain: true) { nodes { name isAnimationStudio } }
           nextAiringEpisode { airingAt, episode }
         }
       }
@@ -518,8 +520,8 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
                                                             completed_at: serde_json::from_value(entry["completed_at"].clone()).unwrap() };
 
             anime_user_data.insert(user_info.media_id, user_info);
-
-            let media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
+            let mut media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
+            media.studios.nodes.retain(|node| {node.is_animation_studio == true });
 
             if anime_user_list.contains(&media.id) == false {
 
@@ -542,7 +544,7 @@ const MEDIA_INFO: &str = "query ($id: Int) {
         relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
         recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
         tags { name isGeneralSpoiler isMediaSpoiler description }
-        studios(isMain: true) { nodes { name } }
+        studios(isMain: true) { nodes { name isAnimationStudio } }
         nextAiringEpisode { airingAt, episode }
     }
 }";

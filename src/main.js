@@ -1535,6 +1535,9 @@ function add_anime_data(info, title, show_spoilers) {
         studio_name = "Unknown Studio";
     } else {
         studio_name = info.studios.nodes[0].name;
+        for(var i = 1; i < info.studios.nodes.length; i++){
+          studio_name += "<br>" + info.studios.nodes[i].name;
+        }
     }
 
     // determine the number of episodes and length of each episode
