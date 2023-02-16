@@ -8,12 +8,11 @@ Gekijou is a multiplatform user interface for browsing and watching anime on you
 - Automatically update your anilist anime list as you watch anime
   - supports: MPC-HC, VLC media player, GOM Player, Zoom Player, mpv, PotPlayer, KMPlayer
 - Browse anilist by year, season, genre, format, and search
+- Recommendations based on user recommendations from shows you have watched
+- Search Nyaa.si for episodes
 
-## Upcoming Features
-- Recommendation tab
-- Torrent tab
-- Search Nyaa for episodes
-- Support for episodes that belong to sequals (ep 15 of a 12 episode show)
+## Upcoming Plans for 0.3.0
+- Better state management between anilist and gekijou
 
 ## Screenshots
 ![Gekijou](https://raw.githubusercontent.com/rC5HUaxv9j/Gekijou/master/Gekijou.png)
