@@ -415,7 +415,7 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>) {
         let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE, "variables": { "page": 0, "ids": sub_vec}});
 
         let response = anilist_to_snake_case(post(&json, None).await);
-    
+        //println!("{}",response);
         let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
         let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
     

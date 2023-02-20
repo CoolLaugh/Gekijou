@@ -925,12 +925,16 @@ async fn get_torrents(id: i32) -> Vec<RssEntry> {
 
 
 #[tauri::command]
-async fn recommend_anime(genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<AnimeInfo> {
+async fn recommend_anime(mode: String, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<AnimeInfo> {
 
-    let ids = recommendation::tally_recommendations(genre_filter, year_min_filter, year_max_filter, format_filter).await;
+    let ids = recommendation::recommendations(mode, genre_filter, year_min_filter, year_max_filter, format_filter).await;
     let mut anime: Vec<AnimeInfo> = Vec::new();
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     for id in ids {
+        if anime_data.contains_key(&id) == false {
+            println!("missing: {}", id);
+            continue;
+        }
         anime.push(anime_data.get(&id).unwrap().clone());
     }
     anime

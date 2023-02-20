@@ -466,6 +466,7 @@ window.show_recommended_anime_list = show_recommended_anime_list;
 async function show_recommended_anime_list() {
 
   document.getElementById("loader_recommended").style.display = "inline-block";
+  var mode = document.getElementById("mode_select_recommended").value;
   var genre = document.getElementById("genre_select_recommended").value;
   var format = document.getElementById("format_select_recommended").value;
   var year_split = document.getElementById("year_select_recommended").value.split("|");
@@ -476,7 +477,7 @@ async function show_recommended_anime_list() {
     year_end = parseInt(year_split[1]);
   }
 
-  var recommended_list = await invoke("recommend_anime", { genreFilter: genre, yearMinFilter: year_start, yearMaxFilter: year_end, formatFilter: format });
+  var recommended_list = await invoke("recommend_anime", { mode: mode, genreFilter: genre, yearMinFilter: year_start, yearMaxFilter: year_end, formatFilter: format });
   var user_settings = await invoke("get_user_settings");
 
   if (current_tab == "RECOMMENDED") {

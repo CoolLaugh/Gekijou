@@ -50,6 +50,9 @@
           <span class="loader" id="loader"></span>
         </div>
         <div class="filters_recommended" id="recommended_filters">
+          <select id="mode_select_recommended" name="mode_select" onchange="show_recommended_anime_list()">
+            <option value="user_recommended">User Recommended</option><option value="SEQUEL">Sequels</option><option value="SIDE_STORY">Side Story's</option><option value="SPIN_OFF">Spin Offs</option><option value="ALTERNATIVE">Alternatives</option>
+          </select>
           <select id="genre_select_recommended" name="genre_select" onchange="show_recommended_anime_list()">
             <option value="">Genre</option> <option value="Action">Action</option> <option value="Adventure">Adventure</option> <option value="Comedy">Comedy</option> <option value="Drama">Drama</option> <option value="Ecchi">Ecchi</option> <option value="Fantasy">Fantasy</option> <option value="Horror" id="horror_option">Horror</option> <option value="Mahou Shoujo">Mahou Shoujo</option> <option value="Mecha">Mecha</option> <option value="Music">Music</option> <option value="Mystery">Mystery</option> <option value="Psychological">Psychological</option> <option value="Romance">Romance</option> <option value="Sci-Fi">Sci-Fi</option> <option value="Slice of Life">Slice of Life</option> <option value="Sports">Sports</option> <option value="Supernatural">Supernatural</option> <option value="Thriller">Thriller</option>
           </select>

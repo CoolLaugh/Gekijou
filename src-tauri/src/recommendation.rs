@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+
+
 use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN};
 
 
@@ -11,8 +13,30 @@ struct RecommendTally {
 }
 
 
+pub async fn recommendations(mode: String, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<i32> {
 
-pub async fn tally_recommendations(genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<i32> {
+    let mut recommend_tally = if mode == "user_recommended" {
+        tally_recommendations().await
+    } else {
+        related_recommendations(mode).await
+    };
+
+    // if any filter is used
+    filter_anime(&mut recommend_tally, genre_filter,year_min_filter, year_max_filter, format_filter).await;
+
+    // reduce number of shows so the ui loads faster
+    recommend_tally.truncate(100);
+    // only keep anime ids, no other information is needed
+    let mut recommend_list: Vec<i32> = Vec::new();
+    for entry in recommend_tally {
+
+        recommend_list.push(entry.id);
+    }
+    recommend_list
+}
+
+
+async fn tally_recommendations() -> Vec<RecommendTally> {
     
     // use the completed list to grab user recommendations
     let list = GLOBAL_USER_ANIME_LISTS.lock().await;
@@ -93,7 +117,13 @@ pub async fn tally_recommendations(genre_filter: String, year_min_filter: i32, y
     api_calls::anilist_api_call_multiple(unknown_ids).await;
     file_operations::write_file_anime_info_cache().await;
 
-    // if any filter is used
+    recommendations
+}
+
+
+
+async fn filter_anime(anime: &mut Vec<RecommendTally>, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) {
+
     if genre_filter.is_empty() == false || year_min_filter != 0 || year_max_filter != 0 || format_filter.is_empty() == false {
 
         let anime_data = GLOBAL_ANIME_DATA.lock().await;
@@ -101,7 +131,7 @@ pub async fn tally_recommendations(genre_filter: String, year_min_filter: i32, y
         // filter out any show which doesn't match the genre
         if genre_filter.is_empty() == false {
 
-            recommendations.retain(|rec| { 
+            anime.retain(|rec| { 
                 anime_data.get(&rec.id).unwrap().genres.contains(&genre_filter)
             })
         }
@@ -109,7 +139,7 @@ pub async fn tally_recommendations(genre_filter: String, year_min_filter: i32, y
         // filter out any show which is too old
         if year_min_filter != 0 {
 
-            recommendations.retain(|rec| { 
+            anime.retain(|rec| { 
                 anime_data.get(&rec.id).unwrap().season_year.is_some() &&
                 anime_data.get(&rec.id).unwrap().season_year.unwrap() >= year_min_filter
             })
@@ -118,7 +148,7 @@ pub async fn tally_recommendations(genre_filter: String, year_min_filter: i32, y
         // filter out any show which is too new
         if year_max_filter != 0 {
 
-            recommendations.retain(|rec| { 
+            anime.retain(|rec| { 
                 anime_data.get(&rec.id).unwrap().season_year.is_some() &&
                 anime_data.get(&rec.id).unwrap().season_year.unwrap() <= year_max_filter
             })
@@ -127,22 +157,12 @@ pub async fn tally_recommendations(genre_filter: String, year_min_filter: i32, y
         // filter out any show which doesn't match the format
         if format_filter.is_empty() == false {
 
-            recommendations.retain(|rec| { 
+            anime.retain(|rec| { 
                 anime_data.get(&rec.id).unwrap().format.is_some() &&
                 anime_data.get(&rec.id).unwrap().format.as_ref().unwrap().eq(&format_filter)
             })
         }
     }
-
-    // reduce number of shows so the ui loads faster
-    recommendations.truncate(100);
-    // only keep anime ids, no other information is needed
-    let mut recommend_list: Vec<i32> = Vec::new();
-    for entry in recommendations {
-
-        recommend_list.push(entry.id);
-    }
-    recommend_list
 }
 
 
@@ -165,4 +185,101 @@ fn score_to_rating_modifier(score: f32, score_format: &str) -> f32 {
         "POINT_3" => score - 1.0,
         _ => 1.0,
     }
+}
+
+
+
+async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
+
+    let list = GLOBAL_USER_ANIME_LISTS.lock().await;
+    if list.contains_key("COMPLETED") == false {
+        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), "COMPLETED".to_owned(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+        if error_message.is_some() {
+            
+            return Vec::new();
+        }
+        file_operations::write_file_anime_info_cache().await;
+        file_operations::write_file_user_info().await;
+    }
+    let completed_list = list.get("COMPLETED").unwrap();
+    let anime_data = GLOBAL_ANIME_DATA.lock().await; // used to find sequels
+    let user_data = GLOBAL_USER_ANIME_DATA.lock().await; // used to remove anime the user has already watched and uses the user score to modify the recommended rating
+    let score_format = GLOBAL_USER_SETTINGS.lock().await.score_format.clone(); // used to properly convert score into a modifier
+
+    let mut recommend_total: HashMap<i32, f32> = HashMap::new();
+    for id in completed_list {
+
+        let relations = &anime_data.get(id).unwrap().relations.edges;
+
+        for related in relations {
+
+            if related.relation_type == mode {
+
+                let score_modifier = if user_data.contains_key(&id) == false {
+                    println!("Missing: {}", id);
+                    1.0
+                } else {
+                    score_to_rating_modifier(user_data.get(&id).unwrap().score, score_format.as_str())
+                };
+
+                recommend_total.insert(related.node.id, score_modifier);
+            }
+        }
+    }
+    
+    // remove anime already in the users lists
+    recommend_total.retain(|id, _| { user_data.contains_key(&id) == false });
+
+    // find shows that are missing data
+    let mut unknown_ids: Vec<i32> = Vec::new();
+    for entry in recommend_total.clone() {
+        if anime_data.contains_key(&entry.0) == false {
+            unknown_ids.push(entry.0);
+        }
+    }
+    
+    // get information on any show which is missing
+    drop(anime_data);
+    api_calls::anilist_api_call_multiple(unknown_ids).await;
+    file_operations::write_file_anime_info_cache().await;
+
+    let anime_data = GLOBAL_ANIME_DATA.lock().await; // used to remove anime the user has already watched
+    // some ids lead to 404 pages, these ids won't be in anime_data, remove them
+    recommend_total.retain(|anime_id, _| { anime_data.contains_key(anime_id) == true });
+    
+    recommend_total.iter_mut().for_each(|anime| {
+
+        if anime_data.contains_key(anime.0) {
+
+            let anime_entry = anime_data.get(anime.0).unwrap();
+    
+            if anime_entry.recommendations.is_some() {
+    
+                let recommendations = anime_entry.recommendations.clone().unwrap();
+    
+                let score_modifier = anime.1.to_owned();
+        
+                *anime.1 = 0.0;
+                for recommendation in recommendations.nodes {
+                    *anime.1 += (recommendation.rating as f32) * score_modifier;
+                }
+            }
+        }
+    });
+
+    // move to a vector so the entries can be sorted
+    let mut recommendations: Vec<RecommendTally> = Vec::new();
+    for entry in recommend_total {
+        recommendations.push(RecommendTally {
+            id: entry.0,
+            rating: entry.1
+        });
+    }
+
+    // sort by most recommended
+    recommendations.sort_by(| entry_a, entry_b | {
+        entry_b.rating.partial_cmp(&entry_a.rating).unwrap()
+    });
+
+    recommendations
 }

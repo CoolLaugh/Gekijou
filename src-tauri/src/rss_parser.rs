@@ -33,6 +33,7 @@ pub struct DerivedValues {
     pub batch: bool,
 }
 
+// search nyaa.si for a anime and returns all entries in a struct format
 pub async fn get_rss(anime_id: i32) -> Vec<RssEntry> {
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
