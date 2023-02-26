@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::time::Instant;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
 
@@ -36,9 +37,11 @@ pub struct AnimePath {
 // found files are then stored in a global list for each anime and episode
 // media_id is for finding files for a specific anime instead of any anime known
 pub async fn parse_file_names(media_id: Option<i32>) -> bool {
-
+    
+    let mut timer = Instant::now();
+    
     get_prequel_data().await;
-
+    
     let mut episode_found = false;
     let folders = GLOBAL_USER_SETTINGS.lock().await.folders.clone();
     for folder in folders {
@@ -63,8 +66,9 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
                     sub_folders.push(unwrap.path().to_str().unwrap().to_string());
                 } else {
-
-                    file_names.push(AnimePathWorking::new(unwrap.path().to_str().unwrap().to_string(), unwrap.file_name().to_str().unwrap().to_string()));
+                    let file_name = unwrap.file_name().to_str().unwrap().to_string();
+                    let path = unwrap.path().to_str().unwrap().to_string();
+                    file_names.push(AnimePathWorking::new(path, file_name));
                 }
             }
         }
@@ -80,14 +84,15 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         
         irrelevant_information_removal_paths(&mut file_names);
 
-        string_similarity(&mut file_names, media_id).await;
-        
-        replace_with_sequel_batch(&mut file_names).await;
+        let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
 
-        episode_fix_batch(&mut file_names).await;
+        string_similarity(&mut file_names, media_id, &anime_data);
+        
+        replace_with_sequel_batch(&mut file_names, &anime_data);
+
+        episode_fix_batch(&mut file_names, &anime_data);
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
-        let anime_data = GLOBAL_ANIME_DATA.lock().await;
         for file in file_names {
 
             if file.similarity_score > 0.8 && file.episode <= anime_data.get(&file.media_id).unwrap().episodes.unwrap() {
@@ -171,10 +176,9 @@ fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
 
 
 // compares filename to anime titles using multiple string matching algorithms and remembers the most similar title
-async fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>) {
+fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>, anime_data: &HashMap<i32, AnimeInfo>) {
 
     let mut previous_file_name = String::new();
-    let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
 
     // let mut folders = paths.first().unwrap().path.split("\\");
     // let index = folders.clone().count();
@@ -534,9 +538,8 @@ pub fn extract_sub_group(title: &String) -> String {
 }
 
 // replace a anime with its sequel if the episode number is too high
-async fn replace_with_sequel_batch(paths: &mut Vec<AnimePathWorking>) {
+fn replace_with_sequel_batch(paths: &mut Vec<AnimePathWorking>, anime_data: &HashMap<i32, AnimeInfo>) {
 
-    let anime_data = GLOBAL_ANIME_DATA.lock().await;
     for path in paths {
 
         (path.media_id, path.episode) = replace_with_sequel(path.media_id, path.episode, &anime_data);
@@ -641,9 +644,7 @@ pub async fn get_prequel_data() {
 }
 
 
-async fn episode_fix_batch(paths: &mut Vec<AnimePathWorking>) {
-
-    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+fn episode_fix_batch(paths: &mut Vec<AnimePathWorking>, anime_data: &HashMap<i32, AnimeInfo>) {
 
     paths.iter_mut().for_each(|entry| {
 

@@ -554,6 +554,8 @@ lazy_static! {
     static ref WATCHING_TRACKING: Mutex<HashMap<i32, WatchingTracking>> = Mutex::new(HashMap::new());
 }
 
+
+
 // get the titles of all active windows
 fn get_titles() -> Vec<String> {
     let connection = Connection::new();
@@ -561,33 +563,7 @@ fn get_titles() -> Vec<String> {
     titles
 }
 
-// loops through timed tasks like recognizing playing anime and delayed updates
-#[tauri::command]
-async fn anime_update_delay_loop() {
 
-    let mut on_startup_scan_completed = false;
-    let mut timer = Instant::now();
-    let one_hour = Duration::from_secs(60 * 60);
-    let on_startup_delay = Duration::from_secs(30);
-
-    loop { 
-
-        anime_update_delay().await;
-
-        check_delayed_updates(true).await;
-
-        if timer.elapsed() > one_hour || (timer.elapsed() >= on_startup_delay && on_startup_scan_completed == false) {
-            if file_name_recognition::parse_file_names(None).await {
-
-                GLOBAL_REFRESH_UI.lock().await.canvas = true;
-            }
-            on_startup_scan_completed = true;
-            timer = Instant::now();
-        }
-
-        thread::sleep(Duration::from_secs(5)); 
-    }
-}
 
 // scans for and identifies windows playing anime and sets up a delayed update
 #[tauri::command]
@@ -774,9 +750,15 @@ async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
     });
 }
 
+
+
+lazy_static! {
+    static ref SCAN_TIMER: Mutex<Instant> = Mutex::new(Instant::now());
+    static ref STARTUP_SCAN: Mutex<bool> = Mutex::new(false);
+}
 // allows the ui to check if a anime has been updated to determine if the ui will be refreshed
 #[tauri::command]
-async fn get_refresh_ui() -> RefreshUI {
+async fn refresh_ui() -> RefreshUI {
 
     let mut refresh = GLOBAL_REFRESH_UI.lock().await;
     let mut refresh_ui = refresh.clone();
@@ -786,6 +768,31 @@ async fn get_refresh_ui() -> RefreshUI {
 
     refresh_ui
 }
+
+
+
+#[tauri::command]
+async fn scan_files() {
+    
+    let one_hour = Duration::from_secs(60 * 60);
+    let on_startup_delay = Duration::from_secs(30);
+    
+    anime_update_delay().await;
+    check_delayed_updates(true).await;
+
+    let mut on_startup_scan_completed = STARTUP_SCAN.lock().await;
+    let mut timer = SCAN_TIMER.lock().await;
+    if timer.elapsed() > one_hour || (timer.elapsed() >= on_startup_delay && *on_startup_scan_completed == false) {
+        if file_name_recognition::parse_file_names(None).await {
+
+            GLOBAL_REFRESH_UI.lock().await.canvas = true;
+        }
+        *on_startup_scan_completed = true;
+        *timer = Instant::now();
+    }
+}
+
+
 
 // returns a list of what episodes of what anime exist on disk
 #[tauri::command]
@@ -1029,9 +1036,9 @@ fn main() {
       })
         .invoke_handler(tauri::generate_handler![get_anime_info_query,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
-            play_next_episode,anime_update_delay,anime_update_delay_loop,get_refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
+            play_next_episode,anime_update_delay,refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
-            open_url,get_list_ids,run_filename_tests,get_debug,delete_data])
+            open_url,get_list_ids,run_filename_tests,get_debug,delete_data,scan_files])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

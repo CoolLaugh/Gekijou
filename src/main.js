@@ -51,8 +51,6 @@ window.addEventListener("DOMContentLoaded", async () => {
       }
     }
   }
-
-  invoke("anime_update_delay_loop");
 });
 
 
@@ -95,14 +93,15 @@ async function populate_year_dropdown() {
   }
 }
 
+
+
 // check if rust has detected a episode and increased the users progress
 var refresh_ui_interval = setInterval(refresh_ui, 1000);
-
 async function refresh_ui() {
 
   clearInterval(refresh_ui_interval);
 
-  var refresh = await invoke("get_refresh_ui");
+  var refresh = await invoke("refresh_ui");
   if (refresh.anime_list == true) {
     if (current_tab == "RECOMMENDED") {
       show_recommended_anime_list();
@@ -118,6 +117,17 @@ async function refresh_ui() {
 
   refresh_ui_interval = setInterval(refresh_ui, 1000);
 }
+
+
+
+var scan_interval = setInterval(scan_files, 10000);
+async function scan_files() {
+  clearInterval(scan_interval);
+  await invoke("scan_files");
+  scan_interval = setInterval(scan_files, 10000);
+}
+
+
 
 // confirm the user wants to delete an anime and then delete it
 window.confirm_delete_entry = confirm_delete_entry;
@@ -138,6 +148,7 @@ async function confirm_delete_entry(id, media_id) {
     }
   }
 }
+
 
 
 // show the users watching list
