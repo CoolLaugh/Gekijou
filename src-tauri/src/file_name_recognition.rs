@@ -38,8 +38,6 @@ pub struct AnimePath {
 // media_id is for finding files for a specific anime instead of any anime known
 pub async fn parse_file_names(media_id: Option<i32>) -> bool {
     
-    let mut timer = Instant::now();
-    
     get_prequel_data().await;
     
     let mut episode_found = false;

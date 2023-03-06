@@ -24,7 +24,7 @@ use serde::{Serialize, Deserialize};
 use tauri::async_runtime::Mutex;
 use tauri::Manager;
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::HashMap, path::Path, time::{Duration, Instant}, thread};
+use std::{collections::HashMap, path::Path, time::{Duration, Instant, SystemTime, UNIX_EPOCH}, thread};
 use open;
 
 use api_calls::{TokenData, UserSettings, AnilistDate};
@@ -202,6 +202,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let user_data = GLOBAL_USER_ANIME_DATA.lock().await;
 
+    // before showing the list sort the contents by the currently selected sorting category
     if page == 0 {
         match sort.as_str() {
             "Alphabetical" => {
@@ -235,7 +236,25 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
         if ascending == false {
             list.reverse();
         }
+
+        // check for next airing episode that is in the past and update it with a new time
+        let current_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i32;
+        let mut get_airing_time_ids: Vec<i32> = Vec::new();
+        for anime_id in &mut *list {
+            let anime_info = anime_data.get(anime_id).unwrap();
+            if anime_info.next_airing_episode.is_some() {
+
+                let airing_at = anime_info.next_airing_episode.as_ref().unwrap().airing_at;
+
+                if airing_at < current_time {
+                    get_airing_time_ids.push(*anime_id);
+                }
+            }
+        }
+        drop(anime_data);
+        api_calls::anilist_airing_time(get_airing_time_ids).await;
     }
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
 
     let start = page * anime_per_page;
     let finish = 
@@ -410,12 +429,14 @@ async fn on_startup() {
     if GLOBAL_USER_SETTINGS.lock().await.score_format.is_empty() {
         GLOBAL_USER_SETTINGS.lock().await.score_format = api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await;
     }
+    *GLOBAL_STARTUP_FINISHED.lock().await = true;
 }
 
 
 
 lazy_static! {
     static ref GLOBAL_SETTINGS_LOADED: Mutex<bool> = Mutex::new(false);
+    static ref GLOBAL_STARTUP_FINISHED: Mutex<bool> = Mutex::new(false);
 }
 // loads data from files and looks for episodes on disk
 #[tauri::command]
@@ -1015,6 +1036,13 @@ async fn delete_data() -> bool {
 
 
 
+#[tauri::command]
+async fn startup_finished() -> bool {
+    return *GLOBAL_STARTUP_FINISHED.lock().await;
+}
+
+
+
 fn main() {
     tauri::Builder::default()
     .setup(|app| {
@@ -1038,10 +1066,11 @@ fn main() {
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
-            open_url,get_list_ids,run_filename_tests,get_debug,delete_data,scan_files])
+            open_url,get_list_ids,run_filename_tests,get_debug,delete_data,scan_files,startup_finished])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
 
 
 async fn get_user_data() {

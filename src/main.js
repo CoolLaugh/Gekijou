@@ -28,6 +28,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   } else {
     
+    var startup_finished = false;
+    while(startup_finished == false) {
+      startup_finished = await invoke("startup_finished");
+    }
+
     if (user_settings.current_tab != "") {
       switch(user_settings.current_tab) {
         case "CURRENT":

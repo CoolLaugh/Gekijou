@@ -7,7 +7,7 @@ use reqwest::Client;
 use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
-use crate::{secrets, GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS};
+use crate::{secrets, GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, file_operations};
 
 
 // the structs below replicate the structure of data being returned by anilist api calls
@@ -605,6 +605,46 @@ pub async fn anilist_get_access_token(code: String) -> TokenData {
     }
     
     return serde_json::from_str(&response_string).unwrap();
+}
+
+
+
+// query for a airing time for specific ids
+const AIRING_INFO: &str = "query($page: Int $ids: [Int]) {
+    Page(page: $page, perPage: 50) {
+        pageInfo { total perPage currentPage lastPage hasNextPage }
+        media(type: ANIME, id_in: $ids) {
+          id nextAiringEpisode { airingAt, episode }
+        }
+    }
+}";
+// get data for the next airing episode for given ids
+pub async fn anilist_airing_time(anime_ids: Vec<i32>) {
+    
+    // create query json
+    let json = json!({"query": AIRING_INFO, "variables": {"ids": anime_ids}});
+    // get airing data from anilist
+    let response = anilist_to_snake_case(post(&json, None).await);
+    // lock anime data to change airing time
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+    // get list of media
+    let airing_times: serde_json::Value = serde_json::from_str(&response).unwrap();
+    let media = airing_times["data"]["Page"]["media"].as_array().unwrap();
+    // change each anime's airing info
+    for anime in media {
+
+        let id = anime["id"].as_i64().unwrap() as i32;
+        let airing_at = anime["next_airing_episode"]["airing_at"].as_i64().unwrap() as i32;
+        let episode = anime["next_airing_episode"]["episode"].as_i64().unwrap() as i32;
+
+        if let Some(anime) = anime_data.get_mut(&id) {
+            anime.next_airing_episode = Some(NextAiringEpisode { airing_at: airing_at, episode: episode});
+        }
+    }
+
+    // anime data has been changed so save changes to disk
+    drop(anime_data);
+    file_operations::write_file_anime_info_cache().await;
 }
 
 
