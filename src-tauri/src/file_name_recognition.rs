@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-use std::fs;
+use std::thread;
 use std::path::Path;
-use std::time::Instant;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
+use walkdir::WalkDir;
 
 
 use crate::api_calls::{AnimeInfo, self};
@@ -39,7 +39,7 @@ pub struct AnimePath {
 pub async fn parse_file_names(media_id: Option<i32>) -> bool {
     
     get_prequel_data().await;
-    
+
     let mut episode_found = false;
     let folders = GLOBAL_USER_SETTINGS.lock().await.folders.clone();
     for folder in folders {
@@ -49,49 +49,66 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
             continue;
         }
 
-        let mut sub_folders: Vec<String> = Vec::new();
-        sub_folders.push(folder.clone());
-        let mut file_names: Vec<AnimePathWorking> = Vec::new();
+        let file_names: Vec<AnimePathWorking> = {
+            let mut file_names_temp = Vec::new();
+            let valid_extensions = ["mkv", "mp4", "avi"];
 
-        while sub_folders.is_empty() == false {
-            
-            let sub_folder = sub_folders.remove(0);
-            
-            for file in fs::read_dir(sub_folder).unwrap() {
+            for entry in WalkDir::new(path).into_iter().filter_map(Result::ok) {
 
-                let unwrap = file.unwrap();
-                if unwrap.file_type().unwrap().is_dir() {
+                if entry.file_type().is_file() == false { 
+                    continue; 
+                }
 
-                    sub_folders.push(unwrap.path().to_str().unwrap().to_string());
-                } else {
-                    let file_name = unwrap.file_name().to_str().unwrap().to_string();
-                    let path = unwrap.path().to_str().unwrap().to_string();
-                    file_names.push(AnimePathWorking::new(path, file_name));
+                if let Some(ext) = entry.path().extension() {
+                    if valid_extensions.contains(&ext.to_str().unwrap_or_default()) == false {
+                        continue;
+                    }
+
+                    let path = entry.path().to_path_buf().to_str().unwrap().to_string();
+                    let file_name = path.split('\\').last().unwrap().to_string();
+                    file_names_temp.push(AnimePathWorking::new(path, file_name));
                 }
             }
+
+            file_names_temp
+        };
+
+        let file_names_chunks = file_names.chunks(500).map(|chunk| chunk.to_vec()).collect::<Vec<_>>();
+
+        let mut children = vec![];
+        for mut file_name_chunk in file_names_chunks {
+
+            let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
+
+            children.push(thread::spawn(move || -> Vec<AnimePathWorking> {
+                
+                remove_invalid_files(&mut file_name_chunk);
+        
+                // remove brackets and their contents, the name and episode are unlikely to be here
+                file_name_chunk.iter_mut().for_each(|name| {
+                    name.filename = remove_brackets(&name.filename);
+                });
+                
+                identify_episode_number(&mut file_name_chunk);
+                
+                irrelevant_information_removal_paths(&mut file_name_chunk);
+
+                string_similarity(&mut file_name_chunk, media_id, &anime_data);
+        
+                replace_with_sequel_batch(&mut file_name_chunk, &anime_data);
+        
+                episode_fix_batch(&mut file_name_chunk, &anime_data);
+
+                file_name_chunk
+            }));
         }
-        
-        remove_invalid_files(&mut file_names);
-        
-        // remove brackets and their contents, the name and episode are unlikely to be here
-        file_names.iter_mut().for_each(|name| {
-            name.filename = remove_brackets(&name.filename);
-        });
-        
-        identify_episode_number(&mut file_names);
-        
-        irrelevant_information_removal_paths(&mut file_names);
+
+        let file_names_collected = children.into_iter().map(|c| c.join().unwrap()).flatten().collect::<Vec<_>>();
 
         let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
-
-        string_similarity(&mut file_names, media_id, &anime_data);
-        
-        replace_with_sequel_batch(&mut file_names, &anime_data);
-
-        episode_fix_batch(&mut file_names, &anime_data);
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
-        for file in file_names {
+        for file in file_names_collected {
 
             if file.similarity_score > 0.8 && file.episode <= anime_data.get(&file.media_id).unwrap().episodes.unwrap() {
 
@@ -144,31 +161,18 @@ pub fn remove_brackets(filename: &String) -> String {
 // removes any files that are the wrong file type or extra (openings, endings, etc)
 fn remove_invalid_files(paths: &mut Vec<AnimePathWorking>) {
 
-    // remove files that are not video files
-    let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
     // remove openings, endings, PV, and other non episode videos
     // spell-checker:disable
     let extra_videos = Regex::new(r"[ _\.][oO][pP]\d*([vV]\d)?[ _\.]|[ _\.]NCOP\d*([vV]\d)?[ _\.]|[ _\.]NCED\d*([vV]\d)?[ _\.]|[ _\.][eE][dD]\d*([vV]\d)?[ _\.]|[ _\.][sS]kit[ _\.]|[eE]nding|[oO]pening|[ _][pP][vV][ _]|[bB][dD] [mM][eE][nN][uU]").unwrap();
     // spell-checker:enable
 
     // check if they are valid
-    let mut to_remove: Vec<usize> = Vec::new();
-    for i in 0..paths.len() {
-        if valid_file_extensions.is_match(&paths[i].filename) == false || extra_videos.is_match(&paths[i].filename) == true {
-            to_remove.push(i);
-        }
-    }
-    
-    // remove in reverse order because values before index won't move but values after index will move
-    to_remove.sort();
-    to_remove.reverse();
-    for r in to_remove {
-        paths.remove(r);
-    }
+    paths.retain(|path| { extra_videos.is_match(&path.filename) == false });
 
+    // remove file extension
     paths.iter_mut().for_each(|path| {
-        path.filename = valid_file_extensions.replace_all(&path.filename, "").to_string();
-    })
+        path.filename = path.filename.rsplit_once('.').unwrap().0.to_string();
+    });
 }
 
 
@@ -196,9 +200,17 @@ fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>, a
     //     Ok(file) => file,
     // };
 
+    //let total = paths.len();
+    //let mut count = 0;
+
     paths.iter_mut().for_each(|path| {
-        // skip files that have the same title
-        if path.filename == previous_file_name {
+        //count += 1;
+
+        // skip files that have the same title or have the same first 6 characters
+        let number_of_characters = 6;
+        if path.filename == previous_file_name || 
+        (previous_file_name.len() >= number_of_characters && 
+        path.filename.chars().take(number_of_characters).eq(previous_file_name.chars().take(number_of_characters))) {
             return;
         }
         else {
@@ -215,6 +227,7 @@ fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>, a
             path.media_id = id;
             path.similarity_score = similarity_score;
         }
+        //println!("{} | {} / {}", path.filename, count, total);
     });
 
     // fill in data for files that were skipped

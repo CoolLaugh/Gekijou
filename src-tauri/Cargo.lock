@@ -878,6 +878,7 @@ dependencies = [
  "strsim",
  "tauri",
  "tauri-build",
+ "walkdir",
  "window_titles",
  "xml-rs",
 ]
