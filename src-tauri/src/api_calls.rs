@@ -634,11 +634,18 @@ pub async fn anilist_airing_time(anime_ids: Vec<i32>) {
     for anime in media {
 
         let id = anime["id"].as_i64().unwrap() as i32;
-        let airing_at = anime["next_airing_episode"]["airing_at"].as_i64().unwrap() as i32;
-        let episode = anime["next_airing_episode"]["episode"].as_i64().unwrap() as i32;
+        if anime["next_airing_episode"].is_null() == false {
 
-        if let Some(anime) = anime_data.get_mut(&id) {
-            anime.next_airing_episode = Some(NextAiringEpisode { airing_at: airing_at, episode: episode});
+            let airing_at = anime["next_airing_episode"]["airing_at"].as_i64().unwrap() as i32;
+            let episode = anime["next_airing_episode"]["episode"].as_i64().unwrap() as i32;
+
+            if let Some(anime) = anime_data.get_mut(&id) {
+                anime.next_airing_episode = Some(NextAiringEpisode { airing_at, episode});
+            }
+        } else {
+            if let Some(anime) = anime_data.get_mut(&id) {
+                anime.next_airing_episode = None;
+            }
         }
     }
 
