@@ -107,6 +107,8 @@ async fn write_file_data<T: Serialize>(global: &Mutex<T>, filename: &str) {
     }
 }
 
+
+
 // reads all stored data from a file into the global collection
 async fn read_file_data<T: DeserializeOwned>(global: &Mutex<T>, filename: &str) {
 
@@ -144,15 +146,17 @@ async fn read_file_data<T: DeserializeOwned>(global: &Mutex<T>, filename: &str) 
     }
 }
 
+
+
 // checks if gekijou folder exists, if it does not exist it will try to create it
+// returns true if the folder exists
 fn gekijou_folder_exists_or_created() -> bool {
 
-    let folder = format!("{}/{}", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER);
-    let gekijou_path = Path::new(&folder);
-    if gekijou_path.exists() {
+    let folder = dirs::config_dir().unwrap().join(GEKIJOU_FOLDER);
+    if folder.exists() {
         true
     } else {
-        match create_dir(gekijou_path) {
+        match create_dir(folder) {
             Err(why) => panic!("ERROR: {}", why),
             Ok(_e) => true,
         }

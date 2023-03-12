@@ -60,25 +60,28 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
     let mut recommend_total: HashMap<i32, f32> = HashMap::new();
     for id in completed_list {
 
-        let recommendations = anime_data.get(id).unwrap().recommendations.clone().unwrap().nodes;
-        for rec in recommendations {
+        if let Some(anime_entry) = anime_data.get(id) {
 
-            // media is null, it may have been removed after the recommendation was made
-            if rec.media_recommendation.is_none() {
-                continue;
+            if let Some(recommendations) = &anime_entry.recommendations {
+
+                for rec in &recommendations.nodes {
+        
+                    // media is null, it may have been removed after the recommendation was made
+                    if let Some(recommendation) = &rec.media_recommendation {
+
+                        let score_modifier = if user_data.contains_key(&id) == false {
+                            // anime is in completed list but has no user data, this is a bug
+                            println!("Missing: {}", id);
+                            1.0
+                        } else {
+                            score_to_rating_modifier(user_data.get(&id).unwrap().score, score_format.as_str())
+                        };
+            
+                        // add the recommendation to the list or add the rating to the existing recommendation
+                        recommend_total.entry(recommendation.id).and_modify(|r| { *r += (rec.rating as f32) * score_modifier }).or_insert((rec.rating as f32) * score_modifier);
+                    }
+                }
             }
-
-            let recommendation_id = rec.media_recommendation.unwrap().id;
-            let score_modifier = if user_data.contains_key(&id) == false {
-                // anime is in completed list but has no user data, this is a bug
-                println!("Missing: {}", id);
-                1.0
-            } else {
-                score_to_rating_modifier(user_data.get(&id).unwrap().score, score_format.as_str())
-            };
-
-            // add the recommendation to the list or add the rating to the existing recommendation
-            recommend_total.entry(recommendation_id).and_modify(|r| { *r += (rec.rating as f32) * score_modifier }).or_insert((rec.rating as f32) * score_modifier);
         }
     }
     drop(list);
@@ -188,9 +191,10 @@ fn score_to_rating_modifier(score: f32, score_format: &str) -> f32 {
 }
 
 
-
+// create a list of recommended anime based on relations to anime in the completed list
 async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
 
+    // retrieve completed list, if it does not exist, retrieve it from anilist
     let list = GLOBAL_USER_ANIME_LISTS.lock().await;
     if list.contains_key("COMPLETED") == false {
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), "COMPLETED".to_owned(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
@@ -202,27 +206,38 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
         file_operations::write_file_user_info().await;
     }
     let completed_list = list.get("COMPLETED").unwrap();
+
     let anime_data = GLOBAL_ANIME_DATA.lock().await; // used to find sequels
     let user_data = GLOBAL_USER_ANIME_DATA.lock().await; // used to remove anime the user has already watched and uses the user score to modify the recommended rating
     let score_format = GLOBAL_USER_SETTINGS.lock().await.score_format.clone(); // used to properly convert score into a modifier
+    let score_format_str = score_format.as_str();
 
+    // create a list of all recommended anime from anime on the completed list, include score modifier so higher rated shows get recommended more highly
     let mut recommend_total: HashMap<i32, f32> = HashMap::new();
     for id in completed_list {
 
         let relations = &anime_data.get(id).unwrap().relations.edges;
 
+        let score_modifier = if let Some(anime) = user_data.get(&id) {
+            score_to_rating_modifier(anime.score, score_format_str)
+        } else {
+            1.0 // should never happen, anime in completed list should also be in user data
+        };
+
         for related in relations {
 
-            if related.relation_type == mode {
+            // filter by relation type
+            if related.relation_type != mode {
+                continue;
+            }
 
-                let score_modifier = if user_data.contains_key(&id) == false {
-                    println!("Missing: {}", id);
-                    1.0
-                } else {
-                    score_to_rating_modifier(user_data.get(&id).unwrap().score, score_format.as_str())
-                };
+            // add anime id and score modifier or replace score modifier if the new modifier is higher
+            if recommend_total.contains_key(&related.node.id) == false {
 
                 recommend_total.insert(related.node.id, score_modifier);
+            } else if score_modifier > *recommend_total.get(&related.node.id).unwrap() {
+                
+                recommend_total.entry(related.node.id).and_modify(|entry| *entry = score_modifier);
             }
         }
     }
@@ -231,12 +246,10 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
     recommend_total.retain(|id, _| { user_data.contains_key(&id) == false });
 
     // find shows that are missing data
-    let mut unknown_ids: Vec<i32> = Vec::new();
-    for entry in recommend_total.clone() {
-        if anime_data.contains_key(&entry.0) == false {
-            unknown_ids.push(entry.0);
-        }
-    }
+    let unknown_ids: Vec<i32> = recommend_total.iter()
+        .map(|(id,_)| *id)
+        .filter(|id| anime_data.contains_key(id) == false)
+        .collect();
     
     // get information on any show which is missing
     drop(anime_data);
@@ -247,34 +260,20 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
     // some ids lead to 404 pages, these ids won't be in anime_data, remove them
     recommend_total.retain(|anime_id, _| { anime_data.contains_key(anime_id) == true });
     
-    recommend_total.iter_mut().for_each(|anime| {
-
-        if anime_data.contains_key(anime.0) {
-
-            let anime_entry = anime_data.get(anime.0).unwrap();
-    
-            if anime_entry.recommendations.is_some() {
-    
-                let recommendations = anime_entry.recommendations.clone().unwrap();
-    
-                let score_modifier = anime.1.to_owned();
+    // sum up the number of recommendations for the anime and apply score modifier
+    let mut recommendations: Vec<RecommendTally> = Vec::new();
+    for (anime_id, score_modifier) in recommend_total {
         
-                *anime.1 = 0.0;
-                for recommendation in recommendations.nodes {
-                    *anime.1 += (recommendation.rating as f32) * score_modifier;
-                }
+        if let Some(anime_entry) = anime_data.get(&anime_id) {
+    
+            if let Some(anime_recommendations) = &anime_entry.recommendations {
+    
+                let score: i32 = anime_recommendations.nodes.iter().map(|r| r.rating).sum();
+
+                recommendations.push(RecommendTally { id: anime_id, rating: score as f32 * score_modifier });
             }
         }
-    });
-
-    // move to a vector so the entries can be sorted
-    let mut recommendations: Vec<RecommendTally> = Vec::new();
-    for entry in recommend_total {
-        recommendations.push(RecommendTally {
-            id: entry.0,
-            rating: entry.1
-        });
-    }
+    };
 
     // sort by most recommended
     recommendations.sort_by(| entry_a, entry_b | {

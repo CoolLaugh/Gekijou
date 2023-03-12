@@ -5,6 +5,7 @@
 
 
 
+pub mod constants;
 pub mod secrets;
 pub mod api_calls;
 pub mod file_operations;
@@ -26,10 +27,10 @@ use tauri::Manager;
 use window_titles::{Connection, ConnectionTrait};
 use std::{collections::HashMap, path::Path, time::{Duration, Instant, SystemTime, UNIX_EPOCH}, thread};
 use open;
-
 use api_calls::{TokenData, UserSettings, AnilistDate};
-
 use crate::{api_calls::{AnimeInfo, UserAnimeInfo}, file_name_recognition::AnimePath};
+
+
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct RefreshUI {
@@ -46,6 +47,7 @@ impl RefreshUI {
         self.canvas = false;
     }
 }
+
 
 lazy_static! {
     static ref GLOBAL_TOKEN: Mutex<TokenData> = Mutex::new(TokenData { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() });
@@ -186,7 +188,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
         return (Vec::new(), None);
     }
 
-    let anime_per_page: usize = 50;
+    // get list from anilist if it does not exist
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
         if error_message.is_some() {
@@ -256,12 +258,12 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
     }
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
 
-    let start = page * anime_per_page;
+    let start = page * constants::ANIME_PER_PAGE;
     let finish = 
-    if (page + 1) * anime_per_page > list.len() {
+    if (page + 1) * constants::ANIME_PER_PAGE > list.len() {
         list.len()
     } else {
-        (page + 1) * anime_per_page
+        (page + 1) * constants::ANIME_PER_PAGE
     };
 
     let mut list_info: Vec<(AnimeInfo, UserAnimeInfo)> = Vec::new();
@@ -309,11 +311,11 @@ async fn get_delay_info() -> (f64, i32, String, i64) {
     
     if found_anime.len() > 0 {
 
-        let delay = (GLOBAL_USER_SETTINGS.lock().await.update_delay * 60) as f64;
+        let delay = (GLOBAL_USER_SETTINGS.lock().await.update_delay * constants::SECONDS_IN_MINUTES) as f64;
         
-        let anime = found_anime.iter().next().unwrap();
+        let (_, anime) = found_anime.iter().next().unwrap();
         
-        return (anime.1.timer.elapsed().as_secs_f64() / delay, anime.1.episode + (anime.1.length - 1), anime.1.title.clone(), (delay as i64) - (anime.1.timer.elapsed().as_secs() as i64));
+        return (anime.timer.elapsed().as_secs_f64() / delay, anime.episode + (anime.length - 1), anime.title.clone(), (delay as i64) - (anime.timer.elapsed().as_secs() as i64));
     }
 
     return (0.0, 0, String::new(), 0)
@@ -449,7 +451,7 @@ async fn load_user_settings() {
     }
     let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
     if user_settings.highlight_color.is_empty() {
-        user_settings.highlight_color = String::from("rgb(96, 217, 236)");
+        user_settings.highlight_color = String::from(constants::DEFAULT_HIGHLIGHT_COLOR);
     }
     if user_settings.show_airing_time.is_none() {
         user_settings.show_airing_time = Some(true);
@@ -470,16 +472,15 @@ async fn on_shutdown() {
 // this delay is to prevent spamming or locking when the user increases or decreases the episode count multiple times
 async fn check_delayed_updates(wait: bool) {
     
-    let delay = 5;
     let delayed_update = GLOBAL_UPDATE_ANIME_DELAYED.lock().await.clone();
-    for entry in delayed_update.iter() {
+    for (id, time) in delayed_update.iter() {
         
-        if entry.1.elapsed() >= Duration::from_secs(delay) || wait == false {
+        if time.elapsed() >= Duration::from_secs(constants::ANIME_UPDATE_DELAY) || wait == false {
 
-            api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), GLOBAL_USER_ANIME_DATA.lock().await.get(&entry.0).unwrap().clone()).await;
+            api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), GLOBAL_USER_ANIME_DATA.lock().await.get(id).unwrap().clone()).await;
         }
     }
-    GLOBAL_UPDATE_ANIME_DELAYED.lock().await.retain(|_, v| v.elapsed() < Duration::from_secs(delay));
+    GLOBAL_UPDATE_ANIME_DELAYED.lock().await.retain(|_, v| v.elapsed() < Duration::from_secs(constants::ANIME_UPDATE_DELAY));
 }
 
 // opens the file for the next episode in the default program
@@ -598,19 +599,19 @@ async fn anime_update_delay() {
     let mpv_remove = Regex::new(r" - mpv").unwrap();
     let pot_remove = Regex::new(r" - PotPlayer").unwrap();
 
-    let delay = (GLOBAL_USER_SETTINGS.lock().await.update_delay * 60)  as u64;
+    let delay = (GLOBAL_USER_SETTINGS.lock().await.update_delay * constants::SECONDS_IN_MINUTES)  as u64;
     let language = GLOBAL_USER_SETTINGS.lock().await.title_language.clone();
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut watching_data = WATCHING_TRACKING.lock().await;
     let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
 
     // reset monitoring
-    watching_data.iter_mut().for_each(|entry| {
-        entry.1.monitoring = false;
+    watching_data.iter_mut().for_each(|(_, entry)| {
+        entry.monitoring = false;
     });
 
     let mut titles: Vec<String> = get_titles(); // for some reason mutex locking has to happen before this function
-    titles.retain(|v| regex.is_match(v));
+    titles.retain(|title| regex.is_match(title));
 
     for title in titles {
 
@@ -632,7 +633,7 @@ async fn anime_update_delay() {
         title_edit = file_name_recognition::irrelevant_information_removal(title_edit);
 
         let (mut media_id, _, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data, None);
-        if media_score < 0.8 { 
+        if media_score < constants::SIMILARITY_SCORE_THRESHOLD { 
             continue;
         }
         (media_id, episode) = file_name_recognition::replace_with_sequel(media_id, episode, &anime_data);
@@ -652,13 +653,17 @@ async fn anime_update_delay() {
             next_episode && 
             episode > 0 && episode <= anime_data.get(&media_id).unwrap().episodes.unwrap() { // only add if it is in the users list, it is the next episode, and the episode is within range
 
-            if language == "romaji" {
-                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: anime_data.get(&media_id).unwrap().title.romaji.clone().unwrap()});
-            } else if language == "english" {
-                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: anime_data.get(&media_id).unwrap().title.english.clone().unwrap()});
-            } else if language == "native" {
-                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: anime_data.get(&media_id).unwrap().title.native.clone().unwrap()});
-            }
+                let title = if language == "romaji" {
+                    anime_data.get(&media_id).unwrap().title.romaji.clone().unwrap()
+                } else if language == "english" {
+                    anime_data.get(&media_id).unwrap().title.english.clone().unwrap()
+                } else if language == "native" {
+                    anime_data.get(&media_id).unwrap().title.native.clone().unwrap()
+                } else {
+                    String::from("language selection error")
+                };
+
+                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: title});
         }
     }
 
@@ -795,8 +800,8 @@ async fn refresh_ui() -> RefreshUI {
 #[tauri::command]
 async fn scan_files() {
     
-    let one_hour = Duration::from_secs(60 * 60);
-    let on_startup_delay = Duration::from_secs(30);
+    let one_hour = Duration::from_secs(constants::ONE_HOUR);
+    let on_startup_delay = Duration::from_secs(constants::STARTUP_SCAN_DELAY);
     
     anime_update_delay().await;
     check_delayed_updates(true).await;
@@ -873,7 +878,7 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
             anime_data.insert(id, anime_entry);
         }
         
-        if page >= 2 {
+        if page >= constants::BROWSE_PAGE_LIMIT {
             break;
         }
         has_next_page = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
@@ -911,12 +916,7 @@ async fn remove_anime(id: i32, media_id: i32) -> bool {
             status
         };
 
-        GLOBAL_USER_ANIME_LISTS.lock().await.entry(list).and_modify(|list| {
-
-            let position = list.iter().position(|v| *v == media_id).unwrap();
-            list.remove(position);
-        });
-
+        GLOBAL_USER_ANIME_LISTS.lock().await.entry(list).and_modify(|list| { list.retain(|id| *id != media_id)});
         GLOBAL_USER_ANIME_DATA.lock().await.remove(&media_id);
     }
     file_operations::write_file_user_info().await;
@@ -995,30 +995,27 @@ async fn get_list_ids(list: String) -> Option<Vec<i32>> {
 }
 
 
-#[cfg(debug_assertions)]
-const DEBUG: bool = true;
-#[cfg(not(debug_assertions))]
-const DEBUG: bool = false;
-
+// runs tests on recognizing filenames and returns the results
+// returns nothing if the program is not compiled as debug
 #[tauri::command]
 async fn run_filename_tests() -> Vec<FilenameTest> {
 
-    if DEBUG {
+    if constants::DEBUG {
         return file_name_recognition_tests::filename_tests().await;
     }
     Vec::new()
 }
 
 
-
+// returns true if the program was compiled as debug
 #[tauri::command]
 async fn get_debug() -> bool {
 
-    return DEBUG;
+    return constants::DEBUG;
 }
 
 
-
+// clears all user data from memory and disk
 #[tauri::command]
 async fn delete_data() -> bool {
 
@@ -1035,7 +1032,7 @@ async fn delete_data() -> bool {
 }
 
 
-
+// returns if startup tasks are finished.  Data will be missing if startup is not completed
 #[tauri::command]
 async fn startup_finished() -> bool {
     return *GLOBAL_STARTUP_FINISHED.lock().await;
@@ -1072,7 +1069,7 @@ fn main() {
 }
 
 
-
+// gets user data for every anime and list in a users account and stores it in global data
 async fn get_user_data() {
 
     let username = GLOBAL_USER_SETTINGS.lock().await.username.clone();

@@ -1,14 +1,15 @@
 use std::collections::HashMap;
 use std::thread;
 use std::path::Path;
+use std::time::Instant;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
 use walkdir::WalkDir;
-
-
 use crate::api_calls::{AnimeInfo, self};
 use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_USER_SETTINGS, file_operations, GLOBAL_REFRESH_UI};
 use strsim;
+
+
 
 // working struct to store data while determining what anime a file belongs to
 #[derive(Debug, Clone, Default)]
@@ -37,7 +38,7 @@ pub struct AnimePath {
 // found files are then stored in a global list for each anime and episode
 // media_id is for finding files for a specific anime instead of any anime known
 pub async fn parse_file_names(media_id: Option<i32>) -> bool {
-    
+
     get_prequel_data().await;
 
     let mut episode_found = false;
@@ -102,9 +103,9 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
                 file_name_chunk
             }));
         }
-
+        
         let file_names_collected = children.into_iter().map(|c| c.join().unwrap()).flatten().collect::<Vec<_>>();
-
+        
         let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
         
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
@@ -218,10 +219,8 @@ fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>, a
         }
 
         let (id, _title, similarity_score) = identify_media_id(&path.filename, &anime_data, media_id);
-        // match file.write_all(format!("{} | {} | {}\n", similarity_score, path.filename, title).as_bytes()) {
-        //     Err(why) => panic!("ERROR: {}", why),
-        //     Ok(file) => file,
-        // };
+
+
         
         if similarity_score > 0.8 && similarity_score > path.similarity_score {
             path.media_id = id;
@@ -248,51 +247,60 @@ pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>,
     let mut score = 0.0;
     let mut media_id = 0;
     let mut title = String::new();
-    
+    let pre_dash = Regex::new(r"([^-]*).*").unwrap();
+
     if only_compare.is_none() {
 
         anime_data.iter().for_each(|data| {
             
-            title_compare(data.1, filename, &mut score, &mut media_id, &mut title);
+            title_compare(data.1, filename, &mut score, &mut media_id, &mut title, true);
         });
 
-        if score < 0.7 {
+        if score < 0.8 {
 
-            let pre_dash = Regex::new(r"([^-]*).*").unwrap();
+            anime_data.iter().for_each(|data| {
+            
+                title_compare(data.1, filename, &mut score, &mut media_id, &mut title, false);
+            });
+        }
+
+        if score < 0.8 {
+
             let captures = pre_dash.captures(filename);
             if captures.is_some() {
 
                 let modified_filename = captures.unwrap().get(1).unwrap().as_str().to_string();
                 anime_data.iter().for_each(|data| {
                     
-                    title_compare(data.1, &modified_filename, &mut score, &mut media_id, &mut title);
+                    title_compare(data.1, &modified_filename, &mut score, &mut media_id, &mut title, false);
                 });
             }
         }
 
-/*         let season_shortened = Regex::new(r"[sS](\d+)").unwrap();
-        if season_shortened.is_match(filename) {
-
-            let mut season_number = season_shortened.captures(&filename).unwrap().get(1).unwrap().as_str().to_string();
-            season_number.insert_str(0, "season ");
-            let modified_filename = season_shortened.replace(&filename, season_number).to_string();
-
-            anime_data.iter().for_each(|data| {
-                
-                title_compare(data.1, &modified_filename, &mut score, &mut media_id, &mut title);
-            });
-        } */
-
     } else if anime_data.contains_key(&only_compare.unwrap()) {
         
         let anime = anime_data.get(&only_compare.unwrap()).unwrap();
-        title_compare(anime, filename, &mut score, &mut media_id, &mut title);
+        title_compare(anime, filename, &mut score, &mut media_id, &mut title, true);
+
+        if score < 0.8 {
+            title_compare(anime, filename, &mut score, &mut media_id, &mut title, false);
+        }
+
+        if score < 0.8 {
+
+            if let Some(captures) = pre_dash.captures(filename) {
+
+                let modified_filename = captures.get(1).unwrap().as_str().to_string();
+                
+                title_compare(anime, &modified_filename, &mut score, &mut media_id, &mut title, false);
+            }
+        }
     }
     (media_id, title, score)
 }
 
 
-fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id: &mut i32, return_title: &mut String) {
+fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id: &mut i32, return_title: &mut String, character_skip: bool) {
     
     if filename.len() == 0 {
         return;
@@ -305,7 +313,9 @@ fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id
 
     for title in titles {
 
-        //if title.chars().next().unwrap() != filename.chars().next().unwrap() { continue } // skip comparison if first character does not match
+        if character_skip == true && title.chars().next().unwrap() != filename.chars().next().unwrap() { 
+            continue;  // skip comparison if first character does not match
+        }
         let no_special_vowels_filename = replace_special_vowels(filename.to_ascii_lowercase());
         let normalized_levenshtein_score = strsim::normalized_levenshtein(&no_special_vowels_filename, &title);
         if normalized_levenshtein_score > *score { 
