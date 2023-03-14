@@ -1,7 +1,7 @@
 
 
 
-use std::cmp::{Ordering, max};
+use std::{cmp::{Ordering, max}, collections::HashMap};
 
 use reqwest::Client;
 use serde::{Serialize, Deserialize};
@@ -396,11 +396,11 @@ query($page: Int $ids: [Int]) {
 }";
 
 // get anime data from anilist for all ids
-pub async fn anilist_api_call_multiple(ids: Vec<i32>) {
+pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) {
 
     let pages = ceiling_div(ids.len(), 50);
     println!("ids {} pages {}", ids.len(), pages);
-    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+    
     for i in 0..pages {
 
         println!("page {}", i);
@@ -423,7 +423,6 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>) {
             anime_data.insert(anime.id, anime);
         }
     }
-    drop(anime_data);
 }
 
 fn anilist_to_snake_case(anilist_json: String) -> String {
@@ -619,14 +618,16 @@ const AIRING_INFO: &str = "query($page: Int $ids: [Int]) {
     }
 }";
 // get data for the next airing episode for given ids
-pub async fn anilist_airing_time(anime_ids: Vec<i32>) {
+pub async fn anilist_airing_time(anime_ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) {
     
+    if anime_ids.is_empty() {
+        return;
+    }
+
     // create query json
     let json = json!({"query": AIRING_INFO, "variables": {"ids": anime_ids}});
     // get airing data from anilist
     let response = anilist_to_snake_case(post(&json, None).await);
-    // lock anime data to change airing time
-    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
     // get list of media
     let airing_times: serde_json::Value = serde_json::from_str(&response).unwrap();
     let media = airing_times["data"]["Page"]["media"].as_array().unwrap();
@@ -650,8 +651,7 @@ pub async fn anilist_airing_time(anime_ids: Vec<i32>) {
     }
 
     // anime data has been changed so save changes to disk
-    drop(anime_data);
-    file_operations::write_file_anime_info_cache().await;
+    file_operations::write_file_anime_info_cache(&anime_data);
 }
 
 

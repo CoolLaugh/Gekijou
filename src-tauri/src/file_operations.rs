@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::{self, create_dir};
 use std::fs::File;
 use std::io::{Write, Read};
@@ -6,6 +7,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tauri::async_runtime::Mutex;
 
+use crate::api_calls::AnimeInfo;
 use crate::{GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN, GLOBAL_ANIME_PATH};
 
 extern crate dirs;
@@ -18,7 +20,7 @@ const GEKIJOU_FOLDER: &str = "Gekijou";
 
 // writes access token data to a file
 pub async fn write_file_token_data() {
-    write_file_data(&GLOBAL_TOKEN, "token").await;
+    write_file_data_mutex(&GLOBAL_TOKEN, "token").await;
 }
 
 // read access token data from the file
@@ -28,7 +30,7 @@ pub async fn read_file_token_data() {
 
 // writes user settings to a file
 pub async fn write_file_user_settings() {
-    write_file_data(&GLOBAL_USER_SETTINGS, "user_settings").await;
+    write_file_data_mutex(&GLOBAL_USER_SETTINGS, "user_settings").await;
 }
 
 // reads user settings out of a file
@@ -37,8 +39,8 @@ pub async fn read_file_user_settings() {
 }
 
 // writes all held data on anime to a file
-pub async fn write_file_anime_info_cache() {
-    write_file_data(&GLOBAL_ANIME_DATA, "anime_cache").await;
+pub fn write_file_anime_info_cache(anime_data: &HashMap<i32, AnimeInfo>) {
+    write_file_data(anime_data, "anime_cache");
 }
 
 // reads all stored data on anime from a file
@@ -47,8 +49,8 @@ pub async fn read_file_anime_info_cache() {
 }
 
 pub async fn write_file_user_info() {
-    write_file_data(&GLOBAL_USER_ANIME_DATA, "user_data").await;
-    write_file_data(&GLOBAL_USER_ANIME_LISTS, "user_Lists").await;
+    write_file_data_mutex(&GLOBAL_USER_ANIME_DATA, "user_data").await;
+    write_file_data_mutex(&GLOBAL_USER_ANIME_LISTS, "user_Lists").await;
 }
 
 pub async fn read_file_user_info() {
@@ -57,7 +59,7 @@ pub async fn read_file_user_info() {
 }
 
 pub async fn write_file_episode_path() {
-    write_file_data(&GLOBAL_ANIME_PATH, "episode_path").await;
+    write_file_data_mutex(&GLOBAL_ANIME_PATH, "episode_path").await;
 }
 
 pub async fn read_file_episode_path() {
@@ -65,8 +67,8 @@ pub async fn read_file_episode_path() {
 }
 
 // writes all held data on anime to a file
-async fn write_file_data<T: Serialize>(global: &Mutex<T>, filename: &str) {
-
+fn write_file_data<T: Serialize>(global: &T, filename: &str) {
+    
     let file_location = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
     let file_backup_location = format!("{}/{}/{}_backup.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
     let file_path = Path::new(&file_location);
@@ -100,11 +102,15 @@ async fn write_file_data<T: Serialize>(global: &Mutex<T>, filename: &str) {
         };
 
         // write contents into file
-        match file.write_all(serde_json::to_string(&*global.lock().await).unwrap().as_bytes()) {
+        match file.write_all(serde_json::to_string(global).unwrap().as_bytes()) {
             Err(why) => panic!("ERROR: {}", why),
             Ok(file) => file,
         };
     }
+}
+
+async fn write_file_data_mutex<T: Serialize>(global: &Mutex<T>, filename: &str) {
+    write_file_data(&*global.lock().await, filename);
 }
 
 

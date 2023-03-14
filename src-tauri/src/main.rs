@@ -25,7 +25,7 @@ use serde::{Serialize, Deserialize};
 use tauri::async_runtime::Mutex;
 use tauri::Manager;
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::HashMap, path::Path, time::{Duration, Instant, SystemTime, UNIX_EPOCH}, thread};
+use std::{collections::HashMap, path::Path, time::{Duration, Instant, SystemTime, UNIX_EPOCH}};
 use open;
 use api_calls::{TokenData, UserSettings, AnilistDate};
 use crate::{api_calls::{AnimeInfo, UserAnimeInfo}, file_name_recognition::AnimePath};
@@ -163,7 +163,7 @@ async fn get_list(list_name: String) -> (Vec<AnimeInfo>, Option<String>) {
         if error_message.is_some() {
             return (Vec::new(), error_message)
         }
-        file_operations::write_file_anime_info_cache().await;
+        file_operations::write_file_anime_info_cache(&*GLOBAL_ANIME_DATA.lock().await);
         file_operations::write_file_user_info().await;
     }
     
@@ -195,17 +195,25 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
             //println!("{}", error_message.unwrap());
             return (Vec::new(), Some(error_message.unwrap()));
         }
-        file_operations::write_file_anime_info_cache().await;
+        file_operations::write_file_anime_info_cache(&*GLOBAL_ANIME_DATA.lock().await);
         file_operations::write_file_user_info().await;
     }
 
     let mut anime_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
     let list = anime_lists.get_mut(&list_name).unwrap();
-    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
     let user_data = GLOBAL_USER_ANIME_DATA.lock().await;
 
-    // before showing the list sort the contents by the currently selected sorting category
+    // before showing the list for the first time check for missing information, sort by selected category, and check for airing times
     if page == 0 {
+
+        let unknown_ids: Vec<i32> = list.iter().map(|id| *id).filter(|&id| anime_data.contains_key(&id) == false).collect();
+        if unknown_ids.is_empty() == false {
+            
+            api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await;
+            file_operations::write_file_anime_info_cache(&anime_data);
+        }
+        
         match sort.as_str() {
             "Alphabetical" => {
                 let user_settings = GLOBAL_USER_SETTINGS.lock().await;
@@ -226,37 +234,39 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
                     &_ => (),
                 }
             },
-            "Score" => list.sort_by(|i, j| { anime_data.get(i).unwrap().average_score.partial_cmp(&anime_data.get(j).unwrap().average_score).unwrap() }),
-            "MyScore" => list.sort_by(|i, j| { user_data.get(i).unwrap().score.partial_cmp(&user_data.get(j).unwrap().score).unwrap() }),
-            "Date" => list.sort_by(|i, j| { anime_data.get(i).unwrap().start_date.partial_cmp(&anime_data.get(j).unwrap().start_date).unwrap() }),
+            "Score" =>      list.sort_by(|i, j| { anime_data.get(i).unwrap().average_score.partial_cmp(&anime_data.get(j).unwrap().average_score).unwrap() }),
+            "MyScore" =>    list.sort_by(|i, j| { user_data.get(i).unwrap().score.partial_cmp(&user_data.get(j).unwrap().score).unwrap() }),
+            "Date" =>       list.sort_by(|i, j| { anime_data.get(i).unwrap().start_date.partial_cmp(&anime_data.get(j).unwrap().start_date).unwrap() }),
             "Popularity" => list.sort_by(|i, j| { anime_data.get(i).unwrap().popularity.partial_cmp(&anime_data.get(j).unwrap().popularity).unwrap() }),
-            "Trending" => list.sort_by(|i, j| { anime_data.get(i).unwrap().trending.partial_cmp(&anime_data.get(j).unwrap().trending).unwrap() }),
-            "Started" => list.sort_by(|i, j| { user_data.get(i).unwrap().started_at.partial_cmp(&user_data.get(j).unwrap().started_at).unwrap() }),
-            "Completed" => list.sort_by(|i, j| { user_data.get(i).unwrap().completed_at.partial_cmp(&user_data.get(j).unwrap().completed_at).unwrap() }),
+            "Trending" =>   list.sort_by(|i, j| { anime_data.get(i).unwrap().trending.partial_cmp(&anime_data.get(j).unwrap().trending).unwrap() }),
+            "Started" =>    list.sort_by(|i, j| { user_data.get(i).unwrap().started_at.partial_cmp(&user_data.get(j).unwrap().started_at).unwrap() }),
+            "Completed" =>  list.sort_by(|i, j| { user_data.get(i).unwrap().completed_at.partial_cmp(&user_data.get(j).unwrap().completed_at).unwrap() }),
             &_ => (),
         }
+
         if ascending == false {
             list.reverse();
         }
 
         // check for next airing episode that is in the past and update it with a new time
         let current_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i32;
-        let mut get_airing_time_ids: Vec<i32> = Vec::new();
-        for anime_id in &mut *list {
-            let anime_info = anime_data.get(anime_id).unwrap();
-            if anime_info.next_airing_episode.is_some() {
 
-                let airing_at = anime_info.next_airing_episode.as_ref().unwrap().airing_at;
-
-                if airing_at < current_time {
-                    get_airing_time_ids.push(*anime_id);
+        // get airing times for anime if they are outdated
+        let get_airing_time_ids = list.iter()
+            .map(|id| *id)
+            .filter(|id| 
+                if let Some(anime) = anime_data.get(id) {
+                    if let Some(airing) = &anime.next_airing_episode {
+                        airing.airing_at < current_time
+                    } else {
+                        false
+                    }
+                } else {
+                    false
                 }
-            }
-        }
-        drop(anime_data);
-        api_calls::anilist_airing_time(get_airing_time_ids).await;
+            ).collect();
+        api_calls::anilist_airing_time(get_airing_time_ids, &mut anime_data).await;
     }
-    let anime_data = GLOBAL_ANIME_DATA.lock().await;
 
     let start = page * constants::ANIME_PER_PAGE;
     let finish = 
@@ -274,6 +284,8 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
 
     (list_info, None)
 }
+
+
 
 // get all user data for all anime in a specific list
 #[tauri::command]
@@ -884,9 +896,7 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
         has_next_page = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
     }
 
-
-    drop(anime_data); // anime data is used by write function
-    file_operations::write_file_anime_info_cache().await;
+    file_operations::write_file_anime_info_cache(&anime_data);
     
     list
 }

@@ -66,15 +66,14 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
     });
 
     {
-        let anime_data = GLOBAL_ANIME_DATA.lock().await;
+        let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
         let mut missing_ids: Vec<i32> = Vec::new();
         filenames.iter().for_each(|entry| {
             if anime_data.contains_key(&entry.expected_anime_id) == false {
                 missing_ids.push(entry.expected_anime_id);
             }
         });
-        drop(anime_data);
-        api_calls::anilist_api_call_multiple(missing_ids).await;
+        api_calls::anilist_api_call_multiple(missing_ids, &mut anime_data).await;
     }
 
     file_name_recognition::get_prequel_data().await;

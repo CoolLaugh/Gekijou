@@ -1,11 +1,9 @@
 use std::collections::HashMap;
-
-
-
 use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN};
 
 
 
+// used to tally up the number of times a anime has been recommended
 #[derive(Debug, Clone, Default)]
 struct RecommendTally {
     pub id: i32,
@@ -13,6 +11,8 @@ struct RecommendTally {
 }
 
 
+
+// returns a list of anime ids of recommended shows generated from the users completed list, recommendation mode, and filters
 pub async fn recommendations(mode: String, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<i32> {
 
     let mut recommend_tally = if mode == "user_recommended" {
@@ -24,35 +24,32 @@ pub async fn recommendations(mode: String, genre_filter: String, year_min_filter
     // if any filter is used
     filter_anime(&mut recommend_tally, genre_filter,year_min_filter, year_max_filter, format_filter).await;
 
-    // reduce number of shows so the ui loads faster
+    // reduce number of shows so the ui isn't overloaded with a large number of shows
     recommend_tally.truncate(100);
     // only keep anime ids, no other information is needed
-    let mut recommend_list: Vec<i32> = Vec::new();
-    for entry in recommend_tally {
-
-        recommend_list.push(entry.id);
-    }
+    let recommend_list: Vec<_> = recommend_tally.iter().map(|anime| anime.id).collect();
     recommend_list
 }
 
 
+
+// return a list of anime recommended by users based on the users completed list
 async fn tally_recommendations() -> Vec<RecommendTally> {
     
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await; // used to remove anime the user has already watched
     // use the completed list to grab user recommendations
     let list = GLOBAL_USER_ANIME_LISTS.lock().await;
     if list.contains_key("COMPLETED") == false {
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), "COMPLETED".to_owned(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
         if error_message.is_some() {
-            
+            println!("api_calls::anilist_get_list for completed list returned a error: {}", error_message.unwrap());
             return Vec::new();
         }
-        file_operations::write_file_anime_info_cache().await;
+        file_operations::write_file_anime_info_cache(&anime_data);
         file_operations::write_file_user_info().await;
     }
     let completed_list = list.get("COMPLETED").unwrap();
 
-
-    let anime_data = GLOBAL_ANIME_DATA.lock().await; // used to remove anime the user has already watched
     let user_data = GLOBAL_USER_ANIME_DATA.lock().await; // uses the user score to modify the recommended rating
     let score_format = GLOBAL_USER_SETTINGS.lock().await.score_format.clone(); // used to properly convert score into a modifier
 
@@ -66,7 +63,7 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
 
                 for rec in &recommendations.nodes {
         
-                    // media is null, it may have been removed after the recommendation was made
+                    // media might be null, it may have been removed after the recommendation was made
                     if let Some(recommendation) = &rec.media_recommendation {
 
                         let score_modifier = if user_data.contains_key(&id) == false {
@@ -82,6 +79,8 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
                     }
                 }
             }
+        } else {
+            println!("Anime({}) in completed list is missing from anime_data", id);
         }
     }
     drop(list);
@@ -116,16 +115,15 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
     }
 
     // get information on any show which is missing
-    drop(anime_data);
-    api_calls::anilist_api_call_multiple(unknown_ids).await;
-    file_operations::write_file_anime_info_cache().await;
+    api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await;
+    file_operations::write_file_anime_info_cache(&anime_data);
 
     recommendations
 }
 
 
-
-async fn filter_anime(anime: &mut Vec<RecommendTally>, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) {
+// remove anime from anime_list if it does not match the filters
+async fn filter_anime(anime_list: &mut Vec<RecommendTally>, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) {
 
     if genre_filter.is_empty() == false || year_min_filter != 0 || year_max_filter != 0 || format_filter.is_empty() == false {
 
@@ -134,7 +132,7 @@ async fn filter_anime(anime: &mut Vec<RecommendTally>, genre_filter: String, yea
         // filter out any show which doesn't match the genre
         if genre_filter.is_empty() == false {
 
-            anime.retain(|rec| { 
+            anime_list.retain(|rec| { 
                 anime_data.get(&rec.id).unwrap().genres.contains(&genre_filter)
             })
         }
@@ -142,7 +140,7 @@ async fn filter_anime(anime: &mut Vec<RecommendTally>, genre_filter: String, yea
         // filter out any show which is too old
         if year_min_filter != 0 {
 
-            anime.retain(|rec| { 
+            anime_list.retain(|rec| { 
                 anime_data.get(&rec.id).unwrap().season_year.is_some() &&
                 anime_data.get(&rec.id).unwrap().season_year.unwrap() >= year_min_filter
             })
@@ -151,7 +149,7 @@ async fn filter_anime(anime: &mut Vec<RecommendTally>, genre_filter: String, yea
         // filter out any show which is too new
         if year_max_filter != 0 {
 
-            anime.retain(|rec| { 
+            anime_list.retain(|rec| { 
                 anime_data.get(&rec.id).unwrap().season_year.is_some() &&
                 anime_data.get(&rec.id).unwrap().season_year.unwrap() <= year_max_filter
             })
@@ -160,7 +158,7 @@ async fn filter_anime(anime: &mut Vec<RecommendTally>, genre_filter: String, yea
         // filter out any show which doesn't match the format
         if format_filter.is_empty() == false {
 
-            anime.retain(|rec| { 
+            anime_list.retain(|rec| { 
                 anime_data.get(&rec.id).unwrap().format.is_some() &&
                 anime_data.get(&rec.id).unwrap().format.as_ref().unwrap().eq(&format_filter)
             })
@@ -194,20 +192,20 @@ fn score_to_rating_modifier(score: f32, score_format: &str) -> f32 {
 // create a list of recommended anime based on relations to anime in the completed list
 async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
 
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await; // used to find sequels
     // retrieve completed list, if it does not exist, retrieve it from anilist
     let list = GLOBAL_USER_ANIME_LISTS.lock().await;
     if list.contains_key("COMPLETED") == false {
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), "COMPLETED".to_owned(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
         if error_message.is_some() {
-            
+            println!("api_calls::anilist_get_list for completed list returned a error: {}", error_message.unwrap());
             return Vec::new();
         }
-        file_operations::write_file_anime_info_cache().await;
+        file_operations::write_file_anime_info_cache(&anime_data);
         file_operations::write_file_user_info().await;
     }
     let completed_list = list.get("COMPLETED").unwrap();
 
-    let anime_data = GLOBAL_ANIME_DATA.lock().await; // used to find sequels
     let user_data = GLOBAL_USER_ANIME_DATA.lock().await; // used to remove anime the user has already watched and uses the user score to modify the recommended rating
     let score_format = GLOBAL_USER_SETTINGS.lock().await.score_format.clone(); // used to properly convert score into a modifier
     let score_format_str = score_format.as_str();
@@ -216,29 +214,33 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
     let mut recommend_total: HashMap<i32, f32> = HashMap::new();
     for id in completed_list {
 
-        let relations = &anime_data.get(id).unwrap().relations.edges;
+        if let Some(anime_entry) = &anime_data.get(id) {
 
-        let score_modifier = if let Some(anime) = user_data.get(&id) {
-            score_to_rating_modifier(anime.score, score_format_str)
+            let score_modifier = if let Some(anime) = user_data.get(&id) {
+                score_to_rating_modifier(anime.score, score_format_str)
+            } else {
+                println!("Anime({}) in completed list is missing from user_data", id);
+                1.0 // should never happen, anime in completed list should also be in user data
+            };
+
+            for related in &anime_entry.relations.edges {
+
+                // filter by relation type
+                if related.relation_type != mode {
+                    continue;
+                }
+
+                // add anime id and score modifier or replace score modifier if the new modifier is higher
+                if recommend_total.contains_key(&related.node.id) == false {
+
+                    recommend_total.insert(related.node.id, score_modifier);
+                } else if score_modifier > *recommend_total.get(&related.node.id).unwrap() {
+                    
+                    recommend_total.entry(related.node.id).and_modify(|entry| *entry = score_modifier);
+                }
+            }
         } else {
-            1.0 // should never happen, anime in completed list should also be in user data
-        };
-
-        for related in relations {
-
-            // filter by relation type
-            if related.relation_type != mode {
-                continue;
-            }
-
-            // add anime id and score modifier or replace score modifier if the new modifier is higher
-            if recommend_total.contains_key(&related.node.id) == false {
-
-                recommend_total.insert(related.node.id, score_modifier);
-            } else if score_modifier > *recommend_total.get(&related.node.id).unwrap() {
-                
-                recommend_total.entry(related.node.id).and_modify(|entry| *entry = score_modifier);
-            }
+            println!("Anime({}) in completed list is missing from anime_data", id);
         }
     }
     
@@ -252,9 +254,8 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
         .collect();
     
     // get information on any show which is missing
-    drop(anime_data);
-    api_calls::anilist_api_call_multiple(unknown_ids).await;
-    file_operations::write_file_anime_info_cache().await;
+    api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await;
+    file_operations::write_file_anime_info_cache(&anime_data);
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await; // used to remove anime the user has already watched
     // some ids lead to 404 pages, these ids won't be in anime_data, remove them
