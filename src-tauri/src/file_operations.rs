@@ -171,6 +171,7 @@ fn gekijou_folder_exists_or_created() -> bool {
 
 
 
+// delete all files that store information between sessions
 pub fn delete_data() -> bool {
 
     let files = vec!["token","token_backup","user_settings","user_settings_backup",

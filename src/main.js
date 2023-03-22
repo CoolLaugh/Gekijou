@@ -311,23 +311,24 @@ function populate_sort_dropdown(browse) {
 window.draw_delay_progress = draw_delay_progress;
 async function draw_delay_progress() {
 
-  var percent = await invoke("get_delay_info");
+  var delay_update_info = await invoke("get_delay_info");
   var ctx = document.getElementById("recognition_delay").getContext("2d");
 
-  if (percent[0] == 0.0 || percent[0] >= 0.995) {
+  if (delay_update_info.percent == 0.0 || delay_update_info.percent >= 0.995) {
     // no anime being tracked or anime is about to update anyway so don't track it
     ctx.clearRect(0,0,52,52);
     document.getElementById("recognition_delay").title = "";
   } else {
     // format seconds remaining as minutes and seconds
     var time_remaining = "";
-    if (percent[3] >= 60) {
-      time_remaining = Math.floor(percent[3] / 60) + "m " + (percent[3] % 60) + "s";
+    if (delay_update_info.time_remaining >= 60) {
+      time_remaining = Math.floor(delay_update_info.time_remaining / 60) + "m " + (delay_update_info.time_remaining % 60) + "s";
     } else {
-      time_remaining = percent[3] + "s";
+      time_remaining = delay_update_info.time_remaining + "s";
     }
+    
     // full description tooltip text
-    document.getElementById("recognition_delay").title = "Updating " + percent[2] + " to episode " + percent[1] + " in " + time_remaining;
+    document.getElementById("recognition_delay").title = "Updating " + delay_update_info.title + " to episode " + delay_update_info.episode + " in " + time_remaining;
 
     ctx.clearRect(0,0,52,52);
     
@@ -339,7 +340,7 @@ async function draw_delay_progress() {
 
     // progress bar
     ctx.beginPath();
-    ctx.arc(26,26,25, 1.5 * Math.PI, (1.5 + (2 * percent[0])) * Math.PI, false);
+    ctx.arc(26,26,25, 1.5 * Math.PI, (1.5 + (2 * delay_update_info.percent)) * Math.PI, false);
     ctx.lineTo(26, 26);
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
     ctx.fill();
@@ -352,18 +353,19 @@ async function draw_delay_progress() {
   
     // center text
     var left = 14;
-    if (percent[1] >= 10) {
+    if (delay_update_info.episode >= 10) {
       left -= 3;
     }
     var left2 = 19;
-    if (percent[0] > 0.095) {
+    if (delay_update_info.percent > 0.095) {
       left2 -= 4;
     }
+
     // timer text
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--highlight');
     ctx.font = "12px Arial";
-    ctx.fillText("EP " + percent[1], left, 25);
-    ctx.fillText(Math.round(percent[0] * 100) + "%", left2, 37);
+    ctx.fillText("EP " + delay_update_info.episode, left, 25);
+    ctx.fillText(Math.round(delay_update_info.percent * 100) + "%", left2, 37);
   }
 }
 
