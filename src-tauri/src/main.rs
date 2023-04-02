@@ -393,7 +393,7 @@ async fn sort_list(list: &mut Vec<i32>, anime_data: &HashMap<i32, AnimeInfo>, us
         "MyScore" => list.sort_by(|i, j| { 
             if let Some(left_anime) = user_data.get(i) {
                 if let Some(right_anime) = user_data.get(j) {
-                    left_anime.score.partial_cmp(&right_anime.score).unwrap() 
+                    left_anime.score.partial_cmp(&right_anime.score).unwrap()
                 } else {
                     println!("anime: {} has no data", j);
                     std::cmp::Ordering::Equal // should never happen
@@ -655,7 +655,7 @@ async fn on_startup() {
     file_operations::read_file_anime_info_cache().await;
     file_operations::read_file_user_info().await;
     file_operations::read_file_episode_path().await;
-    if GLOBAL_USER_SETTINGS.lock().await.score_format.is_empty() {
+    if GLOBAL_USER_SETTINGS.lock().await.score_format.is_empty() && GLOBAL_USER_SETTINGS.lock().await.username.is_empty() == false {
         GLOBAL_USER_SETTINGS.lock().await.score_format = api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await;
     }
     *GLOBAL_STARTUP_FINISHED.lock().await = true;
@@ -670,21 +670,23 @@ lazy_static! {
 // loads data from files and looks for episodes on disk
 #[tauri::command]
 async fn load_user_settings() {
-
+    
     let mut loaded = GLOBAL_SETTINGS_LOADED.lock().await;
     if *loaded == false {
         file_operations::read_file_user_settings().await;
         *loaded = true;
     }
-
+    
     // settings not in older versions of gekijou must be filled in
     let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
     if user_settings.highlight_color.is_empty() {
         user_settings.highlight_color = String::from(constants::DEFAULT_HIGHLIGHT_COLOR);
     }
+    
     if user_settings.show_airing_time.is_none() {
         user_settings.show_airing_time = Some(true);
     }
+    
     if user_settings.theme.is_none() {
         user_settings.theme = Some(0);
     }
@@ -886,49 +888,65 @@ async fn anime_update_delay() {
         title_edit = mpv_remove.replace(&title_edit, "").to_string();
         title_edit = pot_remove.replace(&title_edit, "").to_string();
         
+        // remove extra information from the filename like episode, codec, etc
         title_edit = file_name_recognition::remove_brackets(&title_edit);
-
-        // get the episode number from the filename
         let (episode_str, mut episode, length) = file_name_recognition::identify_number(&title_edit);
-
-        // remove episode number from filename
         title_edit = title_edit.replace(episode_str.as_str(), "");
-        
-        // remove irrelevant information like source, final, episode prefix, etc
         title_edit = file_name_recognition::irrelevant_information_removal(title_edit);
 
+        // identify what anime it belongs to, if it doesn't belong to any then skip this title
         let (mut media_id, _, media_score) = file_name_recognition::identify_media_id(&title_edit, &anime_data, None);
         if media_score < constants::SIMILARITY_SCORE_THRESHOLD { 
             continue;
         }
-        (media_id, episode) = file_name_recognition::replace_with_sequel(media_id, episode, &anime_data);
 
+        // check for high episode numbers
+        file_name_recognition::replace_with_sequel(&mut media_id, &mut episode, &anime_data);
+
+        // marks movies, etc as episode 1 because movies don't have a episode number
         file_name_recognition::episode_fix(media_id, &mut episode, &anime_data);
 
         let next_episode: bool = episode > user_data.get(&media_id).unwrap().progress && episode <= user_data.get(&media_id).unwrap().progress + length;
 
         // if the file is being monitored and the episode is the next episode
-        if watching_data.contains_key(&media_id) && next_episode {
-            watching_data.entry(media_id).and_modify(|entry| {
-                if entry.episode == episode { 
-                    entry.monitoring = true;
-                }
-            });
+        if let Some(entry) = watching_data.get_mut(&media_id) {
+            if next_episode && entry.episode == episode {
+                entry.monitoring = true;
+            }
+        // only add if it is in the users list, it is the next episode, and the episode is within range
         } else if user_data.contains_key(&media_id) && 
             next_episode && 
-            episode > 0 && episode <= anime_data.get(&media_id).unwrap().episodes.unwrap() { // only add if it is in the users list, it is the next episode, and the episode is within range
+            episode > 0 {
 
-                let title = if language == "romaji" {
-                    anime_data.get(&media_id).unwrap().title.romaji.clone().unwrap()
-                } else if language == "english" {
-                    anime_data.get(&media_id).unwrap().title.english.clone().unwrap()
-                } else if language == "native" {
-                    anime_data.get(&media_id).unwrap().title.native.clone().unwrap()
-                } else {
-                    String::from("language selection error")
-                };
-
-                watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: title});
+            if let Some(anime_entry) = anime_data.get(&media_id) {
+                if anime_entry.episodes.is_none() || episode <= anime_entry.episodes.unwrap() {
+                    
+                    let title = if language == "romaji" {
+                        if let Some(romaji_title) = anime_entry.title.romaji.clone() {
+                            romaji_title
+                        } else {
+                            String::from("romaji missing")
+                        }
+                    } else if language == "english" {
+                        if let Some(english_title) = anime_entry.title.english.clone() {
+                            english_title
+                        } else {
+                            anime_entry.title.romaji.clone().unwrap()
+                        }
+                    } else if language == "native" {
+                        if let Some(native_title) = anime_entry.title.native.clone() {
+                            native_title
+                        } else {
+                            String::from("native missing")
+                        }
+                    } else {
+                        String::from("language selection error")
+                    };
+                    watching_data.insert(media_id, WatchingTracking { timer: std::time::Instant::now(), monitoring: true, episode: episode, length: length, title: title});
+                }
+            } else {
+                println!("anime_data is missing {}", media_id);
+            }
         }
     }
 
@@ -942,14 +960,24 @@ async fn anime_update_delay() {
             tracking_info.monitoring = false;
             
             // update anime
-            let anime = user_data.get_mut(&media_id).unwrap();
-            change_episode(anime, tracking_info.episode + tracking_info.length - 1, anime_data.get(media_id).unwrap().episodes).await;
-            save_file = true;
+            if let Some(user_entry) = user_data.get_mut(&media_id) {
+                if let Some(anime_entry) = anime_data.get(media_id) {
+                    change_episode(user_entry, tracking_info.episode + tracking_info.length - 1, anime_entry.episodes).await;
 
-            // store entry for later after mutexes are dropped
-            update_entries.push(user_data.get(media_id).unwrap().clone());
-            // update ui with episode progress
-            GLOBAL_REFRESH_UI.lock().await.canvas = true;
+                    // save changes to file
+                    save_file = true;
+        
+                    // store entry for later after mutexes are dropped
+                    update_entries.push(user_entry.clone());
+                    
+                    // update ui with episode progress
+                    GLOBAL_REFRESH_UI.lock().await.canvas = true;
+                } else {
+                    println!("anime_data is missing {}", media_id);
+                }
+            } else {
+                println!("user_data is missing {}", media_id);
+            }
         }
     }
 
@@ -999,12 +1027,17 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: O
 
     // add anime to completed if the last episode was watched and set complete date
     if max_episodes.is_some() && episode == max_episodes.unwrap() {
-        let now: DateTime<Local> = Local::now();
-        anime.completed_at = Some(AnilistDate {
-            year: Some(now.year()),
-            month: Some(now.month() as i32),
-            day: Some(now.day() as i32),
-        });
+        // don't change completed date if the user is rewatching
+        if anime.status != "REPEATING" { // don't change original start and end date if rewatching
+
+            let now: DateTime<Local> = Local::now();
+            anime.completed_at = Some(AnilistDate {
+                year: Some(now.year()),
+                month: Some(now.month() as i32),
+                day: Some(now.day() as i32),
+            });
+        }
+    
         if anime.status != "COMPLETED" {
 
             change_list(anime, String::from("COMPLETED")).await;
@@ -1013,15 +1046,21 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: O
     }
 }
 
+
+
+// change what list a anime belongs to
+// new_list can be any status including REPEATING, REPEATING shows will be placed into the CURRENT list
+// CURRENT and REPEATING shows are treated differently even though they are in the same list
 async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
 
     let mut lists = GLOBAL_USER_ANIME_LISTS.lock().await;
     let old_list = if anime.status == "REPEATING" {
-        String::from("CURRENT")
+        String::from("CURRENT") // repeating and current are combined together
     } else {
         anime.status.clone()
     };
 
+    // remove from old list
     lists.entry(old_list).and_modify(|list| {
         let index = list.iter().position(|v| *v == anime.media_id).unwrap();
         list.remove(index);
@@ -1029,11 +1068,12 @@ async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
 
     anime.status = new_list;
     let new_list = if anime.status == "REPEATING" {
-        String::from("CURRENT")
+        String::from("CURRENT") // repeating and current are combined together
     } else {
         anime.status.clone()
     };
 
+    // insert into new list
     lists.entry(new_list).and_modify(|list| {
         
         if list.contains(&anime.media_id) == false {
@@ -1045,10 +1085,6 @@ async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
 
 
 
-lazy_static! {
-    static ref SCAN_TIMER: Mutex<Instant> = Mutex::new(Instant::now());
-    static ref STARTUP_SCAN: Mutex<bool> = Mutex::new(false);
-}
 // allows the ui to check if a anime has been updated to determine if the ui will be refreshed
 #[tauri::command]
 async fn refresh_ui() -> RefreshUI {
@@ -1064,18 +1100,26 @@ async fn refresh_ui() -> RefreshUI {
 
 
 
+lazy_static! {
+    static ref SCAN_TIMER: Mutex<Instant> = Mutex::new(Instant::now());
+    static ref STARTUP_SCAN: Mutex<bool> = Mutex::new(false);
+}
+// performs periodic tasks like checking for anime in media players, delayed updates that must be sent, scanning folders for files
+// it's expected that this function will be called periodically from the UI, it won't loop on its own
 #[tauri::command]
-async fn scan_files() {
+async fn background_tasks() {
     
-    let one_hour = Duration::from_secs(constants::ONE_HOUR);
-    let on_startup_delay = Duration::from_secs(constants::STARTUP_SCAN_DELAY);
-    
+    // check for anime in media players
     anime_update_delay().await;
+    // update anilist with delayed updates
     check_delayed_updates(true).await;
 
+    // scan files for new episodes of anime every hour and a short time after startup
     let mut on_startup_scan_completed = STARTUP_SCAN.lock().await;
     let mut timer = SCAN_TIMER.lock().await;
-    if timer.elapsed() > one_hour || (timer.elapsed() >= on_startup_delay && *on_startup_scan_completed == false) {
+    if timer.elapsed() > Duration::from_secs(constants::ONE_HOUR) || 
+        (timer.elapsed() >= Duration::from_secs(constants::STARTUP_SCAN_DELAY) && *on_startup_scan_completed == false) {
+
         if file_name_recognition::parse_file_names(None).await {
 
             GLOBAL_REFRESH_UI.lock().await.canvas = true;
@@ -1096,15 +1140,19 @@ async fn episodes_exist() -> HashMap<i32, Vec<i32>> {
 
     for (anime_id, episodes) in paths.iter() {
 
-        episodes_exist.insert(*anime_id, Vec::new());
+        let mut episode_list: Vec<i32> = Vec::new();
 
         for (episode, _) in episodes {
 
-            episodes_exist.get_mut(anime_id).unwrap().push(*episode);
+            episode_list.push(*episode);
         }
+
+        episodes_exist.insert(*anime_id, episode_list);
     }
     episodes_exist
 }
+
+
 
 // returns a list of all episodes on disk for a anime
 #[tauri::command]
@@ -1123,6 +1171,9 @@ async fn episodes_exist_single(id: i32) -> Vec<i32> {
 }
 
 
+
+// returns a list of anime based on filters and sorting order
+// anime in user's list does not matter and user login is not used
 #[tauri::command]
 async fn browse(year: String, season: String, genre: String, format: String, search: String, order: String) -> Vec<AnimeInfo> {
 
@@ -1131,12 +1182,14 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
     let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut has_next_page = true;
 
+    // each page has 50 entries, loop until all entries are retrieved or the limit is reached
     let mut page = 0;
     while has_next_page {
         
-        page += 1;
         let response = api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone(), search.clone(), order.clone()).await;
+        page += 1;
 
+        // add anime to return list and global data for further uses
         for anime in response["data"]["Page"]["media"].as_array().unwrap() {
 
             let id = anime["id"].as_i64().unwrap() as i32;
@@ -1144,11 +1197,18 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
             list.push(anime_entry.clone());
             anime_data.insert(id, anime_entry);
         }
-        
+
+        // limit number of pages for a timely response
         if page >= constants::BROWSE_PAGE_LIMIT {
             break;
         }
-        has_next_page = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
+
+        // check if a next page exists
+        if let Some(response_next_page) = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
+            has_next_page = response_next_page;
+        } else {
+            has_next_page = false;
+        }
     }
 
     file_operations::write_file_anime_info_cache(&anime_data);
@@ -1156,6 +1216,9 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
     list
 }
 
+
+
+// add anime to the users list (not for moving anime)
 #[tauri::command]
 async fn add_to_list(id: i32, list: String) {
 
@@ -1168,9 +1231,12 @@ async fn add_to_list(id: i32, list: String) {
 }
 
 
+
+// removes anime from the users list
 #[tauri::command]
 async fn remove_anime(id: i32, media_id: i32) -> bool {
 
+    // remove from users anilist
     let removed = api_calls::anilist_remove_entry(id, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
     if removed == true {
 
@@ -1180,36 +1246,61 @@ async fn remove_anime(id: i32, media_id: i32) -> bool {
         } else {
             status
         };
-
+        // remove anime id from users list in gekijou
         GLOBAL_USER_ANIME_LISTS.lock().await.entry(list).and_modify(|list| { list.retain(|id| *id != media_id)});
-        GLOBAL_USER_ANIME_DATA.lock().await.remove(&media_id);
+        //GLOBAL_USER_ANIME_DATA.lock().await.remove(&media_id);
     }
     file_operations::write_file_user_info().await;
     removed
 }
 
+
+
+// sets the highlight color
 #[tauri::command]
 async fn set_highlight(color: String) {
     GLOBAL_USER_SETTINGS.lock().await.highlight_color = color;
 }
 
+
+
+// returns highlight color from user settings
 #[tauri::command]
 async fn get_highlight() -> String {
     GLOBAL_USER_SETTINGS.lock().await.highlight_color.clone()
 }
 
 
+
+// close the splashscreen and show main window
 #[tauri::command]
 async fn close_splashscreen(window: tauri::Window) {
+
   // Close splashscreen
   if let Some(splashscreen) = window.get_window("splashscreen") {
-    splashscreen.close().unwrap();
+    match splashscreen.close() {
+        Ok(v) => v,
+        Err(e) => println!("Can't close splashscreen window, {e:?}"),
+    }
+  } else {
+    println!("Can't find splashscreen window")
   }
+
   // Show main window
-  window.get_window("main").unwrap().show().unwrap();
+  if let Some(splashscreen) = window.get_window("main") {
+    match splashscreen.show() {
+        Ok(v) => v,
+        Err(e) => println!("Can't show main window, {e:?}"),
+    }
+  } else {
+    println!("Can't find main window")
+  }
 }
 
 
+
+// returns a list of rss entries from nyaa.si for a given anime
+// id is the anilist id of the anime being searched for
 #[tauri::command]
 async fn get_torrents(id: i32) -> Vec<RssEntry> {
 
@@ -1217,6 +1308,10 @@ async fn get_torrents(id: i32) -> Vec<RssEntry> {
 }
 
 
+
+// generate a list of anime based on user recommendations
+// mode changes what anime is used for recommendations, user recommendations will use any anime and other modes will limit anime to types of relations to completed anime
+// filters will remove anime that do not match the filter
 #[tauri::command]
 async fn recommend_anime(mode: String, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<AnimeInfo> {
 
@@ -1234,6 +1329,8 @@ async fn recommend_anime(mode: String, genre_filter: String, year_min_filter: i3
 }
 
 
+
+// open a url using the default browser
 #[tauri::command]
 async fn open_url(url: String) {
     match open::that(url) {
@@ -1242,10 +1339,15 @@ async fn open_url(url: String) {
     }
 }
 
+
+
+// returns all ids in the users list
+// None is returned if list does not exist
 #[tauri::command]
 async fn get_list_ids(list: String) -> Option<Vec<i32>> {
 
     let user_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+
     if user_lists.contains_key(&list) {
         
         let mut ids = user_lists.get(&list).unwrap().clone();
@@ -1260,6 +1362,7 @@ async fn get_list_ids(list: String) -> Option<Vec<i32>> {
 }
 
 
+
 // runs tests on recognizing filenames and returns the results
 // returns nothing if the program is not compiled as debug
 #[tauri::command]
@@ -1272,12 +1375,14 @@ async fn run_filename_tests() -> Vec<FilenameTest> {
 }
 
 
+
 // returns true if the program was compiled as debug
 #[tauri::command]
 async fn get_debug() -> bool {
 
     return constants::DEBUG;
 }
+
 
 
 // clears all user data from memory and disk
@@ -1297,6 +1402,7 @@ async fn delete_data() -> bool {
 }
 
 
+
 // returns if startup tasks are finished.  Data will be missing if startup is not completed
 #[tauri::command]
 async fn startup_finished() -> bool {
@@ -1305,6 +1411,59 @@ async fn startup_finished() -> bool {
 
 
 
+// gets user data for every anime and list in a users account and stores it in global data
+async fn get_user_data() {
+
+    let username = GLOBAL_USER_SETTINGS.lock().await.username.clone();
+    if username.is_empty() {
+        return; // no user exists
+    }
+
+    // get user data from anilist as json
+    let response = api_calls::anilist_list_query_call(username, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+    let json: serde_json::Value = serde_json::from_str(&response).unwrap();
+
+    if let Some(lists) = json["data"]["MediaListCollection"]["lists"].as_array() {
+
+        for item in lists {
+
+            let name: String = match serde_json::from_value(item["status"].clone()) {
+                Err(e) => panic!("list status does not exist {}", e),
+                Ok(e) => 
+                    if e == "REPEATING" { 
+                        String::from("CURRENT") 
+                    } else { 
+                        e 
+                    },
+            };
+    
+            let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+            
+            if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&name) == false {
+                GLOBAL_USER_ANIME_LISTS.lock().await.insert(name.clone(), Vec::new());
+            }
+    
+            GLOBAL_USER_ANIME_LISTS.lock().await.entry(name.clone()).and_modify(|list| {
+                
+                for item2 in item["entries"].as_array().unwrap() {
+    
+                    let entry: UserAnimeInfo = serde_json::from_value(item2.clone()).unwrap();
+    
+                    if list.contains(&entry.media_id) == false {
+    
+                        list.push(entry.media_id.clone());
+                    }
+                    user_data.insert(entry.media_id, entry);
+                }
+            });
+        }
+    }
+
+}
+
+
+
+// initialize and run Gekijou
 fn main() {
     tauri::Builder::default()
     .setup(|app| {
@@ -1328,49 +1487,7 @@ fn main() {
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
-            open_url,get_list_ids,run_filename_tests,get_debug,delete_data,scan_files,startup_finished])
+            open_url,get_list_ids,run_filename_tests,get_debug,delete_data,background_tasks,startup_finished])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-
-// gets user data for every anime and list in a users account and stores it in global data
-async fn get_user_data() {
-
-    let username = GLOBAL_USER_SETTINGS.lock().await.username.clone();
-    if username.is_empty() {
-        return;
-    }
-
-    let response = api_calls::anilist_list_query_call(username, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
-    
-    let json: serde_json::Value = serde_json::from_str(&response).unwrap();
-
-    for item in json["data"]["MediaListCollection"]["lists"].as_array().unwrap() {
-
-        let mut name: String = serde_json::from_value(item["status"].clone()).unwrap();
-        if name == "REPEATING" {
-            name = String::from("CURRENT");
-        }
-
-        let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-        
-        if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&name) == false {
-            GLOBAL_USER_ANIME_LISTS.lock().await.insert(name.clone(), Vec::new());
-        }
-
-        GLOBAL_USER_ANIME_LISTS.lock().await.entry(name.clone()).and_modify(|list| {
-            
-            for item2 in item["entries"].as_array().unwrap() {
-
-                let entry: UserAnimeInfo = serde_json::from_value(item2.clone()).unwrap();
-
-                if list.contains(&entry.media_id) == false {
-
-                    list.push(entry.media_id.clone());
-                }
-                user_data.insert(entry.media_id, entry);
-            }
-        });
-    }
 }

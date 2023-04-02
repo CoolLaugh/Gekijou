@@ -582,23 +582,24 @@ fn replace_with_sequel_batch(paths: &mut Vec<AnimePathWorking>, anime_data: &Has
 
     for path in paths {
 
-        (path.media_id, path.episode) = replace_with_sequel(path.media_id, path.episode, &anime_data);
+        replace_with_sequel(&mut path.media_id, &mut path.episode, &anime_data);
     }
 }
 
 
-
-pub fn replace_with_sequel(mut anime_id: i32, mut episode: i32, anime_data: &HashMap<i32, AnimeInfo>) -> (i32, i32) {
+// replaces a anime with its sequel if its episode number is higher than the number of episodes
+// for example: episode 27 of a 26 episode series is episode 1 of season 2
+pub fn replace_with_sequel(anime_id: &mut i32, episode: &mut i32, anime_data: &HashMap<i32, AnimeInfo>) {
 
     // anime is not in list or anime has unknown number of episodes which means it has no sequels
     if anime_data.contains_key(&anime_id) == false || anime_data.get(&anime_id).unwrap().episodes.is_none() {
-        return (anime_id, episode);
+        return;
     }
 
     // episode is within episode count
     let mut episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
-    if episode <= episodes {
-        return (anime_id, episode);
+    if *episode <= episodes {
+        return;
     }
 
     // start from the first season
@@ -609,7 +610,7 @@ pub fn replace_with_sequel(mut anime_id: i32, mut episode: i32, anime_data: &Has
         for edge in anime_data.get(&anime_id).unwrap().relations.edges.iter() {
 
             if edge.relation_type == "PREQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&edge.node.id).unwrap().format.as_ref().unwrap() == "TV" {
-                anime_id = edge.node.id;
+                *anime_id = edge.node.id;
                 episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
                 prequel_exists = true;
             }
@@ -618,13 +619,13 @@ pub fn replace_with_sequel(mut anime_id: i32, mut episode: i32, anime_data: &Has
 
     // traverse across sequels until episode is within episode count
     let mut sequel_exists = true;
-    while episode > episodes && sequel_exists {
+    while *episode > episodes && sequel_exists {
 
         sequel_exists = false;
         for edge in anime_data.get(&anime_id).unwrap().relations.edges.iter() {
             if edge.relation_type == "SEQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&edge.node.id).unwrap().format.as_ref().unwrap() == "TV" {
-                anime_id = edge.node.id;
-                episode -= episodes;
+                *anime_id = edge.node.id;
+                *episode -= episodes;
                 sequel_exists = true;
                 break;
             }
@@ -634,8 +635,6 @@ pub fn replace_with_sequel(mut anime_id: i32, mut episode: i32, anime_data: &Has
         }
         episodes = anime_data.get(&anime_id).unwrap().episodes.unwrap();
     }
-
-    (anime_id, episode)
 }
 
 

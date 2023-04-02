@@ -79,35 +79,25 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
     file_name_recognition::get_prequel_data().await;
 
     let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
-    filenames.iter_mut().for_each(|entry| {
-        entry.title = valid_file_extensions.replace_all(&entry.filename, "").to_string();
-    });
-
-    filenames.iter_mut().for_each(|entry| {
-        entry.resolution = file_name_recognition::extract_resolution(&entry.title);
-    });
-
-    filenames.iter_mut().for_each(|entry| {
-        entry.title = file_name_recognition::remove_brackets(&entry.title);
-    });
-
-    filenames.iter_mut().for_each(|entry| {
-
-        let episode = file_name_recognition::identify_number(&entry.title);
-        if episode.1 != 0 {
-            entry.episode = episode.1;
-            entry.length = episode.2;
-            entry.title = entry.title.replace(episode.0.as_str(), "");
-        }
-    });
-
-    filenames.iter_mut().for_each(|entry| {
-
-        entry.title = file_name_recognition::irrelevant_information_removal(entry.title.clone());
-    });
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
+
     filenames.iter_mut().for_each(|entry| {
+
+        entry.title = valid_file_extensions.replace_all(&entry.filename, "").to_string();
+
+        entry.resolution = file_name_recognition::extract_resolution(&entry.title);
+
+        entry.title = file_name_recognition::remove_brackets(&entry.title);
+
+        let (episode_string, episode, episode_length) = file_name_recognition::identify_number(&entry.title);
+        if episode != 0 {
+            entry.episode = episode;
+            entry.length = episode_length;
+            entry.title = entry.title.replace(episode_string.as_str(), "");
+        }
+
+        entry.title = file_name_recognition::irrelevant_information_removal(entry.title.clone());
 
         let (id, _title, similarity_score) = file_name_recognition::identify_media_id(&entry.title, &anime_data, None);
         
@@ -115,19 +105,10 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
             entry.anime_id = id;
             entry.similarity_score = similarity_score;
         }
-    });
 
-    filenames.iter_mut().for_each(|entry| {
-
-        (entry.anime_id, entry.episode) = file_name_recognition::replace_with_sequel(entry.anime_id, entry.episode, &anime_data);
-    });
-
-    filenames.iter_mut().for_each(|entry| {
+        file_name_recognition::replace_with_sequel(&mut entry.anime_id, &mut entry.episode, &anime_data);
 
         file_name_recognition::episode_fix(entry.anime_id, &mut entry.episode, &anime_data);
-    });
-
-    filenames.iter_mut().for_each(|entry| {
 
         entry.id_title = anime_data.get(&entry.anime_id).unwrap().title.romaji.clone().unwrap();
     });

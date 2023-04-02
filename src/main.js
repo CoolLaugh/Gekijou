@@ -125,11 +125,11 @@ async function refresh_ui() {
 
 
 
-var scan_interval = setInterval(scan_files, 10000);
-async function scan_files() {
+var scan_interval = setInterval(background_tasks, 10000);
+async function background_tasks() {
   clearInterval(scan_interval);
-  await invoke("scan_files");
-  scan_interval = setInterval(scan_files, 10000);
+  await invoke("background_tasks");
+  scan_interval = setInterval(background_tasks, 10000);
 }
 
 
@@ -1072,6 +1072,7 @@ async function browse_update() {
   removeChildren(document.getElementById("cover_panel_grid"));
   list_ids = [];
   for(var i = 0; i < list.length; i++) {
+
     if(user_settings.show_adult == false && list[i].is_adult == true) {
       continue;
     }
@@ -1296,6 +1297,11 @@ async function get_user_settings() {
   document.getElementById("show_adult").checked = user_settings.show_adult;
   document.getElementById("show_airing").checked = user_settings.show_airing_time;
   document.getElementById("update_delay").value = user_settings.update_delay;
+
+  if(user_settings.title_language == "") {
+    document.getElementById("title_language").value = "romaji";
+  }
+
   var folder_textarea = document.getElementById("folders");
   folder_textarea.value = "";
   for(var i = 0; i < user_settings.folders.length; i++){
@@ -1529,8 +1535,15 @@ async function show_anime_info_window(anime_id) {
   }
   var index_next = (index + 1) % list_ids.length;
 
+  var previous_info = await invoke("get_anime_info", {id: list_ids[index_previous]});
+  var previous_title = await determine_title(previous_info.title, user_settings);
   document.getElementById("info_window_previous").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_previous] + ")");
+  document.getElementById("info_window_previous").title = previous_title;
+
+  var next_info = await invoke("get_anime_info", {id: list_ids[index_next]});
+  var next_title = await determine_title(next_info.title, user_settings);
   document.getElementById("info_window_next").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_next] + ")");
+  document.getElementById("info_window_next").title = next_title;
 
   // make the window visible
   openTab('information', 'underline_tab_0');
@@ -1608,17 +1621,47 @@ function add_anime_data(info, title, show_spoilers) {
             tags += ", ";
         }
     }
+
+    // create string of all titles for title hover
+    var all_titles = "";
+    if (info.title.english != null) {
+      all_titles += "English: " + info.title.english;
+    }
+    if (info.title.romaji != null) {
+      if (all_titles != "") {
+        all_titles += "\t";
+      }
+      all_titles += "Romaji: " + info.title.romaji;
+    }
+    if (info.title.native != null) {
+      if (all_titles != "") {
+        all_titles += "\t";
+      }
+      all_titles += "Native: " + info.title.native;
+    }
+
+    // create string of episode and duration information for episode hover
+    var episode_title_text = "";
+    if (info.episodes <= 1) {
+      episode_title_text = episode_text;
+    } else {
+      episode_title_text = info.episodes + " Episodes, " + info.duration + " Minutes each";
+    }
   
     // populate window with the anime's information
     document.getElementById("info_title").textContent = title;
+    document.getElementById("info_title").title = all_titles;
     document.getElementById("info_cover").src = info.cover_image.large;
+    document.getElementById("info_cover").title = "https://anilist.co/anime/" + info.id;
     document.getElementById("info_cover").setAttribute("onclick", "open_window(\"https://anilist.co/anime/" + info.id + "\")");
     document.getElementById("studio").innerHTML = studio_name;
     document.getElementById("info_description").innerHTML = info.description;
     document.getElementById("info_format").textContent = anime_format;
     document.getElementById("info_rating").textContent = null_check(info.average_score, info.average_score + "%", "No Score");
     document.getElementById("info_duration").textContent = episode_text;
+    document.getElementById("info_duration").title = episode_title_text;
     document.getElementById("info_season_year").textContent = date;
+    document.getElementById("info_season_year").title = info.start_date.year + "-" + info.start_date.month + "-" + info.start_date.day;
     document.getElementById("info_genres").textContent = "Genres: " + genres_text;
     document.getElementById("info_tags").textContent = "Tags: " + tags;
 }

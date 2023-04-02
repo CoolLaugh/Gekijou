@@ -339,9 +339,9 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
     }
 
     let json = json!({"query": ANIME_BROWSE, "variables": variables});
-
+    
     let response = anilist_to_snake_case(post(&json, None).await);
-
+    
     serde_json::from_str(&response).unwrap()
 }
 
