@@ -648,6 +648,39 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
 
 
 
+// changes the custom title of anime with id of anime_id to title
+#[tauri::command]
+async fn set_custom_filename(anime_id: i32, title: String) {
+
+    let mut anime_updated = false;
+    GLOBAL_ANIME_DATA.lock().await.entry(anime_id).and_modify(|entry| {
+        entry.title.custom = Some(title);
+        anime_updated = true;
+    });
+
+    if anime_updated {
+        // only write to file if the title has changed
+        file_operations::write_file_anime_info_cache(&*GLOBAL_ANIME_DATA.lock().await);
+    }
+}
+
+
+
+// returns the custom title set by the user previously, if the custom title or anime doesn't exist a empty string is returned
+#[tauri::command]
+async fn get_custom_filename(anime_id: i32) -> String {
+    let custom_title = match GLOBAL_ANIME_DATA.lock().await.get(&anime_id) {
+        None => String::from(""),
+        Some(anime) => match &anime.title.custom {
+            None => String::from(""),
+            Some(title) => title.clone()
+        }
+    };
+    return custom_title;
+}
+
+
+
 // loads data from files and looks for episodes on disk
 #[tauri::command]
 async fn on_startup() {
@@ -1487,7 +1520,7 @@ fn main() {
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
-            open_url,get_list_ids,run_filename_tests,get_debug,delete_data,background_tasks,startup_finished])
+            open_url,get_list_ids,run_filename_tests,get_debug,delete_data,background_tasks,startup_finished,get_custom_filename,set_custom_filename])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

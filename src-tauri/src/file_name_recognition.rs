@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::thread;
 use std::path::Path;
-use std::time::Instant;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
 use walkdir::WalkDir;
@@ -306,6 +305,8 @@ pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>,
 
 
 
+// compare the title from the filename to all titles in the users anime list
+// character_skip will skip titles that don't have the same first letter as the filename title, this is a faster comparison but in rare cases may skip the matching anime title
 fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id: &mut i32, return_title: &mut String, character_skip: bool) {
     
     if filename.len() == 0 {
@@ -315,7 +316,7 @@ fn title_compare(anime: &AnimeInfo, filename: &String, score: &mut f64, media_id
     let mut titles: Vec<String> = Vec::new();
     if anime.title.english.is_some() { titles.push(replace_special_vowels(anime.title.english.clone().unwrap().to_ascii_lowercase())) }
     if anime.title.romaji.is_some() { titles.push(replace_special_vowels(anime.title.romaji.clone().unwrap().to_ascii_lowercase())) }
-    if anime.title.native.is_some() { titles.push(replace_special_vowels(anime.title.native.clone().unwrap().to_ascii_lowercase())) }
+    if anime.title.custom.is_some() { titles.push(replace_special_vowels(anime.title.custom.clone().unwrap().to_ascii_lowercase())) }
 
     for title in titles {
 

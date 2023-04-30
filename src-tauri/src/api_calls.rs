@@ -22,7 +22,8 @@ pub struct Title {
     pub english: Option<String>,
     pub native: Option<String>,
     pub romaji: Option<String>,
-    pub user_preferred: Option<String>
+    pub user_preferred: Option<String>,
+    pub custom: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -1669,16 +1669,20 @@ function add_anime_data(info, title, show_spoilers) {
 // fill in the user's data into the info window
 async function add_user_data(anime_id, user_settings) {
 
-    var user_data = await invoke("get_user_info", {id: anime_id});
+  // custom filename is a separate call because it is not part of user data
+  var custom_title = await invoke("get_custom_filename", {animeId: anime_id});
+  document.getElementById("custom_filename").value = custom_title;
 
-    document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
-    document.getElementById("status_select").value = user_data.status;
-    document.getElementById("episode_number").value = user_data.progress;
-    setup_score_dropdown(user_settings.score_format);
-    document.getElementById("score_dropdown").value = user_data.score;
-    document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
-    document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
-    document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
+  var user_data = await invoke("get_user_info", {id: anime_id});
+
+  document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
+  document.getElementById("status_select").value = user_data.status;
+  document.getElementById("episode_number").value = user_data.progress;
+  setup_score_dropdown(user_settings.score_format);
+  document.getElementById("score_dropdown").value = user_data.score;
+  document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
+  document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
+  document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
 }
 
 // add the trailer if it exists or hide the trailer tab if it doesn't
@@ -1711,6 +1715,12 @@ async function hide_anime_info_window(anime_id) {
 
 // updates the entry for the current anime with new information from the info window
 async function update_user_entry(anime_id) {
+
+  // update the custom filename separately because it is not part of user data
+  var custom_title = await invoke("get_custom_filename", {animeId: anime_id});
+  if(custom_title != document.getElementById("custom_filename").value) {
+    await invoke("set_custom_filename", {animeId: anime_id, title: document.getElementById("custom_filename").value});
+  }
 
   var user_data = await invoke("get_user_info", {id: anime_id});
 
