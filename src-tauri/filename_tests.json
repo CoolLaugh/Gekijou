@@ -358,4 +358,9 @@
     "expected_anime_id": 21507,
     "expected_episode": 1,
     "expected_resolution": 1080
+},{
+    "filename":"[Judas] Onii-chan wa Oshimai! - S01E01.mkv",
+    "expected_anime_id": 147864,
+    "expected_episode": 1,
+    "expected_resolution": 0
 }]

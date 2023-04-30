@@ -412,13 +412,13 @@ pub fn identify_number(filename: &String) -> (String, i32, i32) {
     if num2.1 != 0 {
         return (num2.0, num2.1, 1);
     }
-    let num3 = extract_number(&filename_episode_title_removed, Regex::new(r"[eE][pP] ?(\d+)").unwrap());
+    let num3 = extract_number(&filename_episode_title_removed, Regex::new(r"[eE][pP]? ?(\d+)").unwrap());
     if num3.1 != 0 {
         return (num3.0, num3.1, 1);
     }
     // wider search for numbers, use last number that is not a version or season number
     let num4 = extract_number(&filename_episode_title_removed, Regex::new(r"[^vsVS](\d+)").unwrap());
-    if num4.1 != 0 {
+    if num4.1 != 0 && num4.0 != "x264" {
         return (num4.0, num4.1, 1);
     }
 
@@ -484,6 +484,7 @@ lazy_static! {
     static ref DOTS_AS_SPACES: Regex = Regex::new(r"\w\.\w").unwrap();
     static ref EPISODE_TITLE: Regex = Regex::new(r"'.+'").unwrap();
     static ref XVID: Regex = Regex::new(r"[xX][vV][iI][dD]").unwrap();
+    static ref SEASON_NUMBER: Regex = Regex::new(r" ?[sS]0\d").unwrap();
 }
 
 
@@ -509,8 +510,16 @@ pub fn irrelevant_information_removal(filename: String) -> String {
         .replace(" EP", "")
         .replace(" E ", "")
         .replace(" END", "")
-        .replace(" FINAL", "");
-
+        .replace(" FINAL", "")
+        .replace(" 1080p", "")
+        .replace(" 720p", "")
+        .replace(" 480p", "")
+        .replace(" BluRay", "")
+        .replace(" AV1", "")
+        .replace(" x264-ZQ", "")
+        .replace(" x264", "")
+        .replace(" DTS", "");
+    
     filename_clean = VERSION.replace_all(&filename_clean, "").to_string();
     filename_clean = XVID.replace_all(&filename_clean, "").to_string();
     filename_clean = TRAILING_DASH.replace_all(&filename_clean, "").to_string();
@@ -518,6 +527,7 @@ pub fn irrelevant_information_removal(filename: String) -> String {
     filename_clean = EPISODE_TITLE.replace_all(&filename_clean, "").to_string();
     filename_clean = TRAILING_SPACES.replace_all(&filename_clean, "").to_string();
     filename_clean = TRAILING_DASH2.replace_all(&filename_clean, "").to_string();
+    filename_clean = SEASON_NUMBER.replace_all(&filename_clean, "").to_string();
 
     // convert title to lowercase so the comparison doesn't think upper/lower case letters are different
     filename_clean.to_ascii_lowercase()
