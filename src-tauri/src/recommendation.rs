@@ -71,7 +71,7 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
                             println!("Missing: {}", id);
                             1.0
                         } else {
-                            score_to_rating_modifier(user_data.get(&id).unwrap().score, score_format.as_str())
+                            score_to_rating_modifier(user_data.get(&id).unwrap().score, &score_format)
                         };
             
                         // add the recommendation to the list or add the rating to the existing recommendation
@@ -170,15 +170,19 @@ async fn filter_anime(anime_list: &mut Vec<RecommendTally>, genre_filter: String
 
 /// convert the score to a rating modifier. 
 /// higher scores will produce a higher modifier so shows that a user liked will be worth more than a show the user disliked
-fn score_to_rating_modifier(score: f32, score_format: &str) -> f32 {
+fn score_to_rating_modifier(score: f32, score_format: &Option<String>) -> f32 {
 
     // show has no score
     if score == 0.0 {
         return 1.0;
     }
 
+    if score_format.is_none() {
+        return 1.0;
+    }
+
     // convert to modifier
-    match score_format {
+    match score_format.as_ref().unwrap().as_str() {
         "POINT_100" => score / 50.0,
         "POINT_10_DECIMAL" => score / 5.0,
         "POINT_10" => score / 5.0,
@@ -208,7 +212,6 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
 
     let user_data = GLOBAL_USER_ANIME_DATA.lock().await; // used to remove anime the user has already watched and uses the user score to modify the recommended rating
     let score_format = GLOBAL_USER_SETTINGS.lock().await.score_format.clone(); // used to properly convert score into a modifier
-    let score_format_str = score_format.as_str();
 
     // create a list of all recommended anime from anime on the completed list, include score modifier so higher rated shows get recommended more highly
     let mut recommend_total: HashMap<i32, f32> = HashMap::new();
@@ -217,7 +220,7 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
         if let Some(anime_entry) = &anime_data.get(id) {
 
             let score_modifier = if let Some(anime) = user_data.get(&id) {
-                score_to_rating_modifier(anime.score, score_format_str)
+                score_to_rating_modifier(anime.score, &score_format)
             } else {
                 println!("Anime({}) in completed list is missing from user_data", id);
                 1.0 // should never happen, anime in completed list should also be in user data

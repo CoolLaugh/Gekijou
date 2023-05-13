@@ -3,7 +3,7 @@
   <meta charset="UTF-8">
   <link href="style.css" rel="stylesheet">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Tauri App</title>
+  <title>Gekijou</title>
   <script defer="" src="/main.js" type="module"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="snow.css">
@@ -21,6 +21,7 @@
       <a href="#" onclick="show_recommended_anime_list_tab()" title="User recommended anime from shows you have completed">Recommended<div class="underline" id="underline6" style="visibility: hidden;"></div></a>
       <a href="#" onclick="run_tests()" style="display: none;" id="test_button">Tests</a>
       <a class="split" href="#Settings" onclick="show_setting_window()">⚙️</a>
+      <a class="split" style="background-color: red;" title="You are not connected to the internet. Changes cannot by synced to anilist.">🌐</a>
       <canvas class="recognition_delay" id="recognition_delay" height="52" width="52" title="" onclick="draw_delay_progress()"></canvas>
     </div>
     <a id="error_text"></a>

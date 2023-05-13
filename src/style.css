@@ -82,6 +82,12 @@ body {
   color: white;
 }
 
+.top_navigation a.noInternet {
+  float: right;
+  background-color:red;
+  color: white;
+}
+
 .recognition_delay {
   float: right;
   margin-right: 5px;

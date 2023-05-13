@@ -1,11 +1,10 @@
-
-
-
 use std::{cmp::{Ordering, max}, collections::HashMap};
+
 
 use reqwest::Client;
 use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
+
 
 use crate::{secrets, GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, file_operations};
 
@@ -214,7 +213,7 @@ pub struct UserSettings {
     pub show_adult: bool,
     pub folders: Vec<String>,
     pub update_delay: i32,
-    pub score_format: String,
+    pub score_format: Option<String>,
     pub highlight_color: String,
     pub current_tab: String,
     pub first_time_setup: bool,
@@ -226,7 +225,7 @@ pub struct UserSettings {
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: false, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0), user_id: None, updated_at: None }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: false, folders: Vec::new(), update_delay: 0, score_format: None, highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0), user_id: None, updated_at: None }
     }
     
     pub fn clear(&mut self) {
@@ -236,7 +235,7 @@ impl UserSettings {
         self.show_adult = false;
         self.folders.clear();
         self.update_delay = 0;
-        self.score_format.clear();
+        self.score_format = None;
         self.highlight_color.clear();
         self.current_tab.clear();
         self.first_time_setup = true;
@@ -321,7 +320,7 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
 }";
 
 // retrieve a list of anime based on criteria like the year/season it was released, format, or genre
-pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String, search: String, order: String) -> serde_json::Value {
+pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String, search: String, order: String) -> Result<serde_json::Value, &'static str> {
 
     let mut variables = json!({"page": page, "type": "ANIME"});
     if year.is_empty() == false {
@@ -345,10 +344,15 @@ pub async fn anilist_browse_call(page: i32, year: String, season: String, genre:
 
     let json = json!({"query": ANIME_BROWSE, "variables": variables});
     
-    let response = anilist_to_snake_case(post(&json, None).await);
-    
-    serde_json::from_str(&response).unwrap()
+    match post(&json, None).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
+            return Ok(serde_json::from_str(&response).unwrap());
+        },
+        Err(error) => return Err(error),
+    }
 }
+
 
 
 const ANIME_DELETE_ENTRY: &str = "
@@ -359,29 +363,37 @@ mutation ($id: Int) {
 }";
 
 // remove a anime from the users anime list
-pub async fn anilist_remove_entry(id: i32, access_token: String) -> bool {
+pub async fn anilist_remove_entry(id: i32, access_token: String) -> Result<bool, &'static str> {
 
     let json = json!({"query": ANIME_DELETE_ENTRY, "variables": {"id": id}});
 
-    let response = post(&json, Some(&access_token)).await;
-
-    let deleted = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["DeleteMediaListEntry"]["deleted"].as_bool().unwrap();
-    
-    deleted
+    match post(&json, Some(&access_token)).await {
+        Ok(result) => {
+            let deleted = serde_json::from_str::<serde_json::Value>(&result).unwrap()["data"]["DeleteMediaListEntry"]["deleted"].as_bool().unwrap();
+            return Ok(deleted);
+        },
+        Err(error) => return Err(error),
+    }
 }
 
+
+
 // retrieve information on anime using it's anilist id
-pub async fn anilist_api_call(id: i32) -> AnimeInfo {
+pub async fn anilist_api_call(id: i32) -> Result<AnimeInfo, &'static str> {
     
     // create client and query json
     let json = json!({"query": ANIME_INFO_QUERY, "variables": {"id": id}});
 
-    let response = anilist_to_snake_case(post(&json, None).await);
-
-    // return struct with media information
-    let json: Data = serde_json::from_str(&response).unwrap();
-    json.data.media
+    match post(&json, None).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
+            let json: Data = serde_json::from_str(&response).unwrap();
+            return Ok(json.data.media);
+        },
+        Err(error) => return Err(error),
+    }
 }
+
 
 
 const ANIME_INFO_QUERY_MULTIPLE: &str = "
@@ -401,7 +413,7 @@ query($page: Int $ids: [Int]) {
 }";
 
 // get anime data from anilist for all ids
-pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) {
+pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str>  {
 
     let pages = ceiling_div(ids.len(), 50);
     println!("ids {} pages {}", ids.len(), pages);
@@ -419,16 +431,24 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i
         let sub_vec = &ids[start..end];
         let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE, "variables": { "page": 0, "ids": sub_vec}});
 
-        let response = anilist_to_snake_case(post(&json, None).await);
-        //println!("{}",response);
-        let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
-        let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
+        match post(&json, None).await {
+            Ok(result) => {
+                let response = anilist_to_snake_case(result);
+                let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
+                let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
     
-        for anime in anime_vec {
-            anime_data.insert(anime.id, anime);
+                for anime in anime_vec {
+                    anime_data.insert(anime.id, anime);
+                }
+            },
+            Err(error) => return Err(error),
         }
     }
+
+    return Ok(());
 }
+
+
 
 fn anilist_to_snake_case(anilist_json: String) -> String {
 
@@ -495,44 +515,49 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
 
     let json = json!({"query": USER_LIST_WITH_MEDIA, "variables": {"userName": username, "status": status_array}});
 
-    let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
-    
-    let response_json: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap();
+    match post(&json, Some(&access_token)).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
 
-    if response_json.is_object() && response_json.get("errors").is_some() {
-        let message = response_json["errors"][0]["message"].as_str().unwrap().to_string();
-        return Some(message)
-    }
-    let lists: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["MediaListCollection"]["lists"].take();
+            let response_json: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap();
 
-    let mut anime_user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
-    let mut anime_user_list_lock = GLOBAL_USER_ANIME_LISTS.lock().await;
-    let anime_user_list = anime_user_list_lock.entry(status).or_default();
-
-    anime_user_list.clear();
-    for list in lists.as_array().unwrap() {
-        
-        for entry in list["entries"].as_array().unwrap() {
-            
-            let user_info: UserAnimeInfo = UserAnimeInfo { id: entry["id"].as_i64().unwrap() as i32, 
-                                                            media_id: entry["media_id"].as_i64().unwrap() as i32, 
-                                                            status: entry["status"].as_str().unwrap().to_string(), 
-                                                            score: entry["score"].as_f64().unwrap() as f32, 
-                                                            progress: entry["progress"].as_i64().unwrap() as i32, 
-                                                            started_at: serde_json::from_value(entry["started_at"].clone()).unwrap(), 
-                                                            completed_at: serde_json::from_value(entry["completed_at"].clone()).unwrap() };
-
-            anime_user_data.insert(user_info.media_id, user_info);
-            let mut media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
-            media.studios.nodes.retain(|node| {node.is_animation_studio == true });
-
-            if anime_user_list.contains(&media.id) == false {
-
-                anime_user_list.push(media.id);
-                anime_data.insert(media.id, media);
+            if response_json.is_object() && response_json.get("errors").is_some() {
+                let message = response_json["errors"][0]["message"].as_str().unwrap().to_string();
+                return Some(message)
             }
-        }
+            let lists: serde_json::Value = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["MediaListCollection"]["lists"].take();
+        
+            let mut anime_user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+            let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+            let mut anime_user_list_lock = GLOBAL_USER_ANIME_LISTS.lock().await;
+            let anime_user_list = anime_user_list_lock.entry(status).or_default();
+        
+            anime_user_list.clear();
+            for list in lists.as_array().unwrap() {
+                
+                for entry in list["entries"].as_array().unwrap() {
+                    
+                    let user_info: UserAnimeInfo = UserAnimeInfo { id: entry["id"].as_i64().unwrap() as i32, 
+                                                                    media_id: entry["media_id"].as_i64().unwrap() as i32, 
+                                                                    status: entry["status"].as_str().unwrap().to_string(), 
+                                                                    score: entry["score"].as_f64().unwrap() as f32, 
+                                                                    progress: entry["progress"].as_i64().unwrap() as i32, 
+                                                                    started_at: serde_json::from_value(entry["started_at"].clone()).unwrap(), 
+                                                                    completed_at: serde_json::from_value(entry["completed_at"].clone()).unwrap() };
+        
+                    anime_user_data.insert(user_info.media_id, user_info);
+                    let mut media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
+                    media.studios.nodes.retain(|node| {node.is_animation_studio == true });
+        
+                    if anime_user_list.contains(&media.id) == false {
+        
+                        anime_user_list.push(media.id);
+                        anime_data.insert(media.id, media);
+                    }
+                }
+            }
+        },
+        Err(error) => return Some(String::from(error)),
     }
     
     None
@@ -553,30 +578,43 @@ const MEDIA_INFO: &str = "query ($id: Int) {
     }
 }";
 
-pub async fn anilist_get_anime_info_single(anime_id: i32) {
+pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<(), &'static str> {
 
     // create client and query json
     let json = json!({"query": MEDIA_INFO, "variables": {"id": anime_id}});
 
     // get media information from anilist api
-    let response = anilist_to_snake_case(post(&json, None).await);
+    match post(&json, None).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
 
-    let mut anime_value: serde_json::Value = serde_json::from_str(&response).unwrap();
-    let anime_data: AnimeInfo = serde_json::from_value(anime_value["data"]["media"].take()).unwrap();
-    GLOBAL_ANIME_DATA.lock().await.insert(anime_data.id, anime_data);
+            let mut anime_value: serde_json::Value = serde_json::from_str(&response).unwrap();
+            let anime_data: AnimeInfo = serde_json::from_value(anime_value["data"]["media"].take()).unwrap();
+            GLOBAL_ANIME_DATA.lock().await.insert(anime_data.id, anime_data);
+            return Ok(())
+        },
+        Err(error) => return Err(error),
+    }
 }
 
+
+
 // gets the users anime lists with all user data on each anime
-pub async fn anilist_list_query_call(username: String, access_token: String) -> String {
+pub async fn anilist_list_query_call(username: String, access_token: String) -> Result<String, &'static str> {
 
     // create client and query json
     let json = json!({"query": ANIME_LIST_QUERY, "variables": {"username": username}});
 
     // get media information from anilist api
-    let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
-
-    response
+    match post(&json, Some(&access_token)).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
+            return Ok(response)
+        },
+        Err(error) => return Err(error),
+    }
 }
+
 
 
 // exchanges a code the user pastes in for a access token that is used to authorize access
@@ -623,40 +661,46 @@ const AIRING_INFO: &str = "query($page: Int $ids: [Int]) {
     }
 }";
 // get data for the next airing episode for given ids
-pub async fn anilist_airing_time(anime_ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) {
+pub async fn anilist_airing_time(anime_ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str> {
     
     if anime_ids.is_empty() {
-        return;
+        return Ok(());
     }
 
     // create query json
     let json = json!({"query": AIRING_INFO, "variables": {"ids": anime_ids}});
     // get airing data from anilist
-    let response = anilist_to_snake_case(post(&json, None).await);
-    // get list of media
-    let airing_times: serde_json::Value = serde_json::from_str(&response).unwrap();
-    let media = airing_times["data"]["Page"]["media"].as_array().unwrap();
-    // change each anime's airing info
-    for anime in media {
-
-        let id = anime["id"].as_i64().unwrap() as i32;
-        if anime["next_airing_episode"].is_null() == false {
-
-            let airing_at = anime["next_airing_episode"]["airing_at"].as_i64().unwrap() as i32;
-            let episode = anime["next_airing_episode"]["episode"].as_i64().unwrap() as i32;
-
-            if let Some(anime) = anime_data.get_mut(&id) {
-                anime.next_airing_episode = Some(NextAiringEpisode { airing_at, episode});
+    match post(&json, None).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
+            // get list of media
+            let airing_times: serde_json::Value = serde_json::from_str(&response).unwrap();
+            let media = airing_times["data"]["Page"]["media"].as_array().unwrap();
+            // change each anime's airing info
+            for anime in media {
+        
+                let id = anime["id"].as_i64().unwrap() as i32;
+                if anime["next_airing_episode"].is_null() == false {
+        
+                    let airing_at = anime["next_airing_episode"]["airing_at"].as_i64().unwrap() as i32;
+                    let episode = anime["next_airing_episode"]["episode"].as_i64().unwrap() as i32;
+        
+                    if let Some(anime) = anime_data.get_mut(&id) {
+                        anime.next_airing_episode = Some(NextAiringEpisode { airing_at, episode});
+                    }
+                } else {
+                    if let Some(anime) = anime_data.get_mut(&id) {
+                        anime.next_airing_episode = None;
+                    }
+                }
             }
-        } else {
-            if let Some(anime) = anime_data.get_mut(&id) {
-                anime.next_airing_episode = None;
-            }
-        }
+
+            // anime data has been changed so save changes to disk
+            file_operations::write_file_anime_info_cache(&anime_data);
+            Ok(())
+        },
+        Err(error) => return Err(error),
     }
-
-    // anime data has been changed so save changes to disk
-    file_operations::write_file_anime_info_cache(&anime_data);
 }
 
 
@@ -670,7 +714,7 @@ mutation ($id: Int, $media_id: Int, $status: MediaListStatus, $score: Float, $pr
 }";
 
 // change the users entry data on anilist with the current data
-pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> String {
+pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> Result<String, &'static str> {
 
     let mut mutation: String = ANIME_UPDATE_ENTRY.to_string();
     let mut variables = json!({"media_id": anime.media_id, "status": anime.status, "score": anime.score, "progress": anime.progress});
@@ -703,63 +747,76 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
 
     let json = json!({"query": mutation, "variables": variables});
     
-    let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
-
-    response
+    match post(&json, Some(&access_token)).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
+            Ok(response)
+        },
+        Err(error) => return Err(error),
+    }
 }
 
 
 
 const USER_SCORE_FORMAT: &str = " query($username: String) { User(name: $username) { mediaListOptions { scoreFormat } } }";
 // get the number the users score is out of (1/3, 1/5, 1/10, 1/100, etc)
-pub async fn get_user_score_format(username: String) -> String {
+pub async fn get_user_score_format(username: String) -> Result<String, &'static str> {
 
     let json = json!({"query": USER_SCORE_FORMAT, "variables": {"username": username}});
 
-    let response = post(&json, None).await;
-
-    let format = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["User"]["mediaListOptions"]["scoreFormat"].to_string().replace("\"", "");
-    
-    format
+    match post(&json, None).await {
+        Ok(result) => {
+            let format = serde_json::from_str::<serde_json::Value>(&result).unwrap()["data"]["User"]["mediaListOptions"]["scoreFormat"].to_string().replace("\"", "");
+            Ok(format)
+        },
+        Err(error) => return Err(error),
+    }
 }
 
 
 
 const USER_MEDIA_DATA: &str = "query($ids: [Int]) { Page(page: 0, perPage: 50) { media(id_in: $ids) { mediaListEntry { id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day } } } } }";
 // get user data for the requested ids
-pub async fn get_media_user_data(ids: Vec<i32>, access_token: String) -> Vec<UserAnimeInfo> {
+pub async fn get_media_user_data(ids: Vec<i32>, access_token: String) -> Result<Vec<UserAnimeInfo>, &'static str> {
     
     let json = json!({"query": USER_MEDIA_DATA, "variables": {"ids": ids}});
 
-    let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
-    println!("{}", response);
-    let response_json = serde_json::from_str::<serde_json::Value>(&response).unwrap();
+    match post(&json, Some(&access_token)).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
 
-    let mut user_anime_data: Vec<UserAnimeInfo> = Vec::new();
-    if let Some(media) = response_json["data"]["Page"]["media"].as_array(){
+            let response_json = serde_json::from_str::<serde_json::Value>(&response).unwrap();
 
-        for entry in media {
-            let updated_anime: UserAnimeInfo = serde_json::from_value(entry["mediaListEntry"].clone()).unwrap();
-            user_anime_data.push(updated_anime);
-        }
+            let mut user_anime_data: Vec<UserAnimeInfo> = Vec::new();
+            if let Some(media) = response_json["data"]["Page"]["media"].as_array(){
+        
+                for entry in media {
+                    let updated_anime: UserAnimeInfo = serde_json::from_value(entry["mediaListEntry"].clone()).unwrap();
+                    user_anime_data.push(updated_anime);
+                }
+            }
+            Ok(user_anime_data)
+        },
+        Err(error) => return Err(error),
     }
-    user_anime_data
 }
+
 
 
 const USER_ID_QUERY: &str = "query($userName: String) { User(name: $userName) { id } }";
 // get the user id for the requested username
-pub async fn get_user_id(username: String) -> i32 {
+pub async fn get_user_id(username: String) -> Option<i32> {
     
     let json = json!({"query": USER_ID_QUERY, "variables": {"userName": username}});
     println!("{}", json.to_string());
 
-    let response = post(&json, None).await;
-    println!("{}", response);
-
-    let user_id = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["User"]["id"].as_i64().unwrap() as i32;
-    println!("user id: {}", user_id);
-    user_id
+    match post(&json, None).await {
+        Ok(result) => {
+            let user_id = serde_json::from_str::<serde_json::Value>(&result).unwrap()["data"]["User"]["id"].as_i64().unwrap() as i32;
+            return Some(user_id);
+        },
+        Err(_error) => return None,
+    }
 }
 
 
@@ -770,18 +827,20 @@ pub async fn get_user_updated_at(username: String) -> Option<u64> {
     
     let json = json!({"query": USER_UPDATED_AT, "variables": {"username": username}});
 
-    let response = post(&json, None).await;
-
-    let updated_at = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["User"]["updatedAt"].as_u64();
-    
-    updated_at
+    match post(&json, None).await {
+        Ok(result) => {
+            let updated_at = serde_json::from_str::<serde_json::Value>(&result).unwrap()["data"]["User"]["updatedAt"].as_u64();
+            return updated_at;
+        },
+        Err(_error) => return None,
+    }
 }
 
 
 
 // returns a list of media that has been updated after the supplied time
 const USER_MEDIA_UPDATED: &str = "query($userId: Int, $page: Int, $time: Int) { Page(page: $page, perPage: 50) { pageInfo { hasNextPage } activities(userId: $userId, type: ANIME_LIST, createdAt_greater: $time) { ... on ListActivity { media { id } } } } }";
-pub async fn get_updated_media_id(user_id: i32, time: u64) -> Vec<i32> {
+pub async fn get_updated_media_id(user_id: i32, time: u64) -> Result<Vec<i32>, &'static str> {
 
     let mut has_next_page = true;
     let mut page_number = 0;
@@ -791,47 +850,66 @@ pub async fn get_updated_media_id(user_id: i32, time: u64) -> Vec<i32> {
 
         let json = json!({"query": USER_MEDIA_UPDATED, "variables": {"userId": user_id,"page": page_number,"time": time}});
     
-        let response = post(&json, None).await;
-    
-        let response_value = serde_json::from_str::<serde_json::Value>(&response).unwrap();
+        match post(&json, None).await {
+            Ok(result) => {
+                let response_value = serde_json::from_str::<serde_json::Value>(&result).unwrap();
         
-        if let Some(activities_list) = response_value["data"]["Page"]["activities"].as_array() {
-            for activity in activities_list {
-                if let Some(media_id) = activity["media"]["id"].as_i64() {
-                    if media_ids.contains(&(media_id as i32)) == false {
-                        media_ids.push(media_id as i32);
+                if let Some(activities_list) = response_value["data"]["Page"]["activities"].as_array() {
+                    for activity in activities_list {
+                        if let Some(media_id) = activity["media"]["id"].as_i64() {
+                            if media_ids.contains(&(media_id as i32)) == false {
+                                media_ids.push(media_id as i32);
+                            }
+                        }
                     }
                 }
-            }
-        }
     
-        has_next_page = response_value["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
-        page_number += 1;
+                has_next_page = response_value["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
+                page_number += 1;
+            },
+            Err(error) => return Err(error),
+        }
     }
-    println!("{:?}", media_ids);
-    media_ids
+    
+    Ok(media_ids)
 }
 
 
 
 // send post json to https://graphql.anilist.co/ and return its response as a string
 // access token in necessary for creating, updating, deleting, and reading private data
-pub async fn post(json: &Value, access_token: Option<&String>) -> String {
+pub async fn post(json: &Value, access_token: Option<&String>) -> Result<String, &'static str> {
 
     let client = Client::new();
     let mut request_builder = client.post("https://graphql.anilist.co/");
     if access_token.is_some() {
         request_builder = request_builder.header("Authorization", String::from("Bearer ") + access_token.unwrap());
     }
-    let response = request_builder.header("Content-Type", "application/json")
+
+    let response: Result<reqwest::Response, reqwest::Error> = request_builder.header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .body(json.to_string())
         .send()
-        .await
-        .unwrap()
-        .text()
         .await;
 
-    let response_string = response.unwrap();
-    response_string
+    if response.is_err() {
+        let error = response.err().unwrap();
+        if error.is_connect() { // no internet
+            println!("connect error");
+            return Err("no connection")
+        }
+        else if error.is_request() { // no internet
+            println!("request error");
+            return Err("bad request")
+        }
+        else {
+            println!("{:?}", error);
+            return Err("error")
+        }
+    }
+    else {
+        let response_string = response.unwrap().text().await.unwrap();
+        println!("{}", response_string);
+        return Ok(response_string)
+    }
 }

@@ -674,7 +674,7 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
 
   var sort_value = await determine_sort_value(anime, user_data, score_format);
   var display_sort_value = "none";
-  if (sort_value.length > 0) {
+  if (sort_value != null && sort_value.length > 0) {
     display_sort_value = "block";
   }
   
@@ -788,6 +788,8 @@ async function determine_sort_value(anime, user_data, score_format) {
             case 3:
               return "🙂";
           }
+        default:
+          return null;
       }
       return "";
     case "Date":
@@ -1392,7 +1394,7 @@ async function hide_setting_window() {
     show_airing_time: document.getElementById("show_airing").checked,
     folders: document.getElementById("folders").value.split('\n'),
     update_delay: parseInt(document.getElementById("update_delay").value),
-    score_format: "",
+    score_format: null,
     highlight_color: highlight_color,
     current_tab: "",
     first_time_setup: false,
@@ -1839,6 +1841,8 @@ function setup_score_dropdown(format) {
     case "POINT_3":
       document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">🙁</option><option value=\"2\">😐</option><option value=\"3\">🙂</option></select>";
       break;
+    default:
+      document.getElementById("score_cell").innerHTML = "<p>Error getting format</p>";
   }
 }
 

@@ -38,6 +38,7 @@ pub struct RefreshUI {
     pub anime_list: bool,
     pub tracking_progress: bool,
     pub canvas: bool,
+    pub no_internet: bool,
 }
 
 impl RefreshUI {
@@ -46,6 +47,7 @@ impl RefreshUI {
         self.anime_list = false;
         self.tracking_progress = false;
         self.canvas = false;
+        self.no_internet = false;
     }
 }
 
@@ -60,6 +62,7 @@ lazy_static! {
     static ref GLOBAL_ANIME_PATH: Mutex<HashMap<i32,HashMap<i32,AnimePath>>> = Mutex::new(HashMap::new());
     static ref GLOBAL_REFRESH_UI: Mutex<RefreshUI> = Mutex::new(RefreshUI::default());
     static ref GLOBAL_UPDATE_ANIME_DELAYED: Mutex<HashMap<i32, Instant>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_ANIME_UPDATE_QUEUE: Mutex<Vec<UserAnimeInfo>> = Mutex::new(Vec::new());
 }
 
 
@@ -89,17 +92,6 @@ async fn anilist_oauth_token(code: String) -> (bool, String) {
 #[tauri::command]
 async fn write_token_data() {
     file_operations::write_file_token_data().await;
-}
-
-
-
-// get all data for a specific anime
-#[tauri::command]
-async fn get_anime_info_query(id: i32) -> api_calls::AnimeInfo {
-    
-    let response = api_calls::anilist_api_call(id).await;    
-    print!("{}", response.id);
-    response
 }
 
 
@@ -137,7 +129,12 @@ async fn set_user_settings(settings: UserSettings) {
         GLOBAL_USER_ANIME_LISTS.lock().await.clear();
         GLOBAL_USER_ANIME_DATA.lock().await.clear();
 
-        user_settings.score_format = api_calls::get_user_score_format(user_settings.username.clone()).await;
+        match api_calls::get_user_score_format(user_settings.username.clone()).await {
+            Ok(result) => {
+                user_settings.score_format = Some(result);
+            },
+            Err(_error) => user_settings.score_format = None,
+        }
     }
 
     drop(user_settings);
@@ -637,17 +634,22 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
     }
 
     // update anilist
-    let response = api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime).await;
+    match api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime.clone()).await {
+        Ok(result) => {
+            
+            // update user date to match anilist
+            let json: serde_json::Value = serde_json::from_str(&result).unwrap();
+            let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
+            GLOBAL_USER_ANIME_DATA.lock().await.insert(new_info.media_id.clone(), new_info);
+            file_operations::write_file_user_info().await;
 
-    // update user date to match anilist
-    let json: serde_json::Value = serde_json::from_str(&response).unwrap();
-    let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
-    GLOBAL_USER_ANIME_DATA.lock().await.insert(new_info.media_id.clone(), new_info);
-    file_operations::write_file_user_info().await;
-    
-    // update time to now so this update isn't downloaded later
-    GLOBAL_USER_SETTINGS.lock().await.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    file_operations::write_file_user_settings().await;
+            // update time to now so this update isn't downloaded later
+            GLOBAL_USER_SETTINGS.lock().await.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+            file_operations::write_file_user_settings().await;
+        },
+        Err(_error) => GLOBAL_ANIME_UPDATE_QUEUE.lock().await.push(anime), // store the information for later when the internet is connected again
+    }
+
 }
 
 
@@ -692,8 +694,13 @@ async fn on_startup() {
     file_operations::read_file_anime_info_cache().await;
     file_operations::read_file_user_info().await;
     file_operations::read_file_episode_path().await;
-    if GLOBAL_USER_SETTINGS.lock().await.score_format.is_empty() && GLOBAL_USER_SETTINGS.lock().await.username.is_empty() == false {
-        GLOBAL_USER_SETTINGS.lock().await.score_format = api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await;
+    if GLOBAL_USER_SETTINGS.lock().await.score_format.is_none() && GLOBAL_USER_SETTINGS.lock().await.username.is_empty() == false {
+        match api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await {
+            Ok(result) => {
+                GLOBAL_USER_SETTINGS.lock().await.score_format = Some(result);
+            },
+            Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
+        }
     }
     pull_updates_from_anilist().await;
     *GLOBAL_STARTUP_FINISHED.lock().await = true;
@@ -706,29 +713,41 @@ async fn pull_updates_from_anilist() {
     let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
 
     if user_settings.user_id.is_none() {
-        user_settings.user_id = Some(api_calls::get_user_id(user_settings.username.clone()).await);
+        user_settings.user_id = api_calls::get_user_id(user_settings.username.clone()).await;
+        if user_settings.user_id.is_none() {
+            GLOBAL_REFRESH_UI.lock().await.no_internet = true
+        }
     }
 
     if let Some(user_id) = user_settings.user_id {
         if let Some(updated_at) = user_settings.updated_at {
     
             // get modified user media data
-            let list = api_calls::get_updated_media_id(user_id, updated_at).await;
-            if list.is_empty() == false {
-
-                // for modified anime; download new info
-                let new_user_data = api_calls::get_media_user_data(list, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
-                let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-            
-                for entry in new_user_data {
-                    user_data.insert(entry.media_id, entry);
-                }
+            match api_calls::get_updated_media_id(user_id, updated_at).await {
+                Ok(list) => {
+                    if list.is_empty() == false {
+        
+                        // for modified anime; download new info
+                        match api_calls::get_media_user_data(list, GLOBAL_TOKEN.lock().await.access_token.clone()).await {
+                            Ok(new_user_data) => {
+                                let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+                            
+                                for entry in new_user_data {
+                                    user_data.insert(entry.media_id, entry);
+                                }
+                            },
+                            Err(error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
+                        }
+                    }
+                    
+                    // update time to now so old updates aren't processed
+                    user_settings.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+                },
+                Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
             }
         }
     }
 
-    // update time to now so old updates aren't processed
-    user_settings.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
     drop(user_settings);
     file_operations::write_file_user_settings().await;
 }
@@ -1246,7 +1265,7 @@ async fn episodes_exist_single(id: i32) -> Vec<i32> {
 // returns a list of anime based on filters and sorting order
 // anime in user's list does not matter and user login is not used
 #[tauri::command]
-async fn browse(year: String, season: String, genre: String, format: String, search: String, order: String) -> Vec<AnimeInfo> {
+async fn browse(year: String, season: String, genre: String, format: String, search: String, order: String) -> Result<Vec<AnimeInfo>, &'static str> {
 
     let mut list: Vec<AnimeInfo> = Vec::new();
 
@@ -1257,34 +1276,39 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
     let mut page = 0;
     while has_next_page {
         
-        let response = api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone(), search.clone(), order.clone()).await;
-        page += 1;
+        match api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone(), search.clone(), order.clone()).await {
+            Ok(response) =>  {
 
-        // add anime to return list and global data for further uses
-        for anime in response["data"]["Page"]["media"].as_array().unwrap() {
+                page += 1;
+        
+                // add anime to return list and global data for further uses
+                for anime in response["data"]["Page"]["media"].as_array().unwrap() {
+        
+                    let id = anime["id"].as_i64().unwrap() as i32;
+                    let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
+                    list.push(anime_entry.clone());
+                    anime_data.insert(id, anime_entry);
+                }
+        
+                // limit number of pages for a timely response
+                if page >= constants::BROWSE_PAGE_LIMIT {
+                    break;
+                }
 
-            let id = anime["id"].as_i64().unwrap() as i32;
-            let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
-            list.push(anime_entry.clone());
-            anime_data.insert(id, anime_entry);
-        }
-
-        // limit number of pages for a timely response
-        if page >= constants::BROWSE_PAGE_LIMIT {
-            break;
-        }
-
-        // check if a next page exists
-        if let Some(response_next_page) = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
-            has_next_page = response_next_page;
-        } else {
-            has_next_page = false;
+                // check if a next page exists
+                if let Some(response_next_page) = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
+                    has_next_page = response_next_page;
+                } else {
+                    has_next_page = false;
+                }
+            },
+            Err(error) => return Err(error),
         }
     }
 
     file_operations::write_file_anime_info_cache(&anime_data);
     
-    list
+    Ok(list)
 }
 
 
@@ -1305,24 +1329,28 @@ async fn add_to_list(id: i32, list: String) {
 
 // removes anime from the users list
 #[tauri::command]
-async fn remove_anime(id: i32, media_id: i32) -> bool {
+async fn remove_anime(id: i32, media_id: i32) -> Result<bool, &'static str> {
 
     // remove from users anilist
-    let removed = api_calls::anilist_remove_entry(id, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
-    if removed == true {
-
-        let status = GLOBAL_USER_ANIME_DATA.lock().await.get(&media_id).unwrap().status.clone();
-        let list = if status == "REPEATING" {
-            String::from("CURRENT")
-        } else {
-            status
-        };
-        // remove anime id from users list in gekijou
-        GLOBAL_USER_ANIME_LISTS.lock().await.entry(list).and_modify(|list| { list.retain(|id| *id != media_id)});
-        //GLOBAL_USER_ANIME_DATA.lock().await.remove(&media_id);
+    match api_calls::anilist_remove_entry(id, GLOBAL_TOKEN.lock().await.access_token.clone()).await {
+        Ok(removed) => {
+            if removed == true {
+        
+                let status = GLOBAL_USER_ANIME_DATA.lock().await.get(&media_id).unwrap().status.clone();
+                let list = if status == "REPEATING" {
+                    String::from("CURRENT")
+                } else {
+                    status
+                };
+                // remove anime id from users list in gekijou
+                GLOBAL_USER_ANIME_LISTS.lock().await.entry(list).and_modify(|list| { list.retain(|id| *id != media_id)});
+                //GLOBAL_USER_ANIME_DATA.lock().await.remove(&media_id);
+                file_operations::write_file_user_info().await;
+            }
+            return Ok(removed)
+        },
+        Err(error) => return Err(error),
     }
-    file_operations::write_file_user_info().await;
-    removed
 }
 
 
@@ -1483,51 +1511,57 @@ async fn startup_finished() -> bool {
 
 
 // gets user data for every anime and list in a users account and stores it in global data
-async fn get_user_data() {
+async fn get_user_data() -> Result<(), &'static str> {
 
     let username = GLOBAL_USER_SETTINGS.lock().await.username.clone();
     if username.is_empty() {
-        return; // no user exists
+        return Err("User does not exist"); // no user exists
     }
 
     // get user data from anilist as json
-    let response = api_calls::anilist_list_query_call(username, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
-    let json: serde_json::Value = serde_json::from_str(&response).unwrap();
+    match api_calls::anilist_list_query_call(username, GLOBAL_TOKEN.lock().await.access_token.clone()).await {
+        Ok(response) => {
 
-    if let Some(lists) = json["data"]["MediaListCollection"]["lists"].as_array() {
-
-        for item in lists {
-
-            let name: String = match serde_json::from_value(item["status"].clone()) {
-                Err(e) => panic!("list status does not exist {}", e),
-                Ok(e) => 
-                    if e == "REPEATING" { 
-                        String::from("CURRENT") 
-                    } else { 
-                        e 
-                    },
-            };
-    
-            let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+            let json: serde_json::Value = serde_json::from_str(&response).unwrap();
+        
+            if let Some(lists) = json["data"]["MediaListCollection"]["lists"].as_array() {
+        
+                for item in lists {
+        
+                    let name: String = match serde_json::from_value(item["status"].clone()) {
+                        Err(e) => panic!("list status does not exist {}", e),
+                        Ok(e) => 
+                            if e == "REPEATING" { 
+                                String::from("CURRENT") 
+                            } else { 
+                                e 
+                            },
+                    };
             
-            if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&name) == false {
-                GLOBAL_USER_ANIME_LISTS.lock().await.insert(name.clone(), Vec::new());
-            }
-    
-            GLOBAL_USER_ANIME_LISTS.lock().await.entry(name.clone()).and_modify(|list| {
-                
-                for item2 in item["entries"].as_array().unwrap() {
-    
-                    let entry: UserAnimeInfo = serde_json::from_value(item2.clone()).unwrap();
-    
-                    if list.contains(&entry.media_id) == false {
-    
-                        list.push(entry.media_id.clone());
+                    let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+                    
+                    if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&name) == false {
+                        GLOBAL_USER_ANIME_LISTS.lock().await.insert(name.clone(), Vec::new());
                     }
-                    user_data.insert(entry.media_id, entry);
+            
+                    GLOBAL_USER_ANIME_LISTS.lock().await.entry(name.clone()).and_modify(|list| {
+                        
+                        for item2 in item["entries"].as_array().unwrap() {
+            
+                            let entry: UserAnimeInfo = serde_json::from_value(item2.clone()).unwrap();
+            
+                            if list.contains(&entry.media_id) == false {
+            
+                                list.push(entry.media_id.clone());
+                            }
+                            user_data.insert(entry.media_id, entry);
+                        }
+                    });
                 }
-            });
-        }
+            }
+            Ok(())
+        },
+        Err(error) => return Err(error),
     }
 
 }
@@ -1554,7 +1588,7 @@ fn main() {
         });
         Ok(())
       })
-        .invoke_handler(tauri::generate_handler![get_anime_info_query,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
+        .invoke_handler(tauri::generate_handler![set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
