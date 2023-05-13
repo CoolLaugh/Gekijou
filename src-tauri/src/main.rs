@@ -644,6 +644,10 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
     let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
     GLOBAL_USER_ANIME_DATA.lock().await.insert(new_info.media_id.clone(), new_info);
     file_operations::write_file_user_info().await;
+    
+    // update time to now so this update isn't downloaded later
+    GLOBAL_USER_SETTINGS.lock().await.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    file_operations::write_file_user_settings().await;
 }
 
 
@@ -691,7 +695,42 @@ async fn on_startup() {
     if GLOBAL_USER_SETTINGS.lock().await.score_format.is_empty() && GLOBAL_USER_SETTINGS.lock().await.username.is_empty() == false {
         GLOBAL_USER_SETTINGS.lock().await.score_format = api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await;
     }
+    pull_updates_from_anilist().await;
     *GLOBAL_STARTUP_FINISHED.lock().await = true;
+}
+
+
+// check anilist for any updates to a users anime and download new data for modified user data
+async fn pull_updates_from_anilist() {
+
+    let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
+
+    if user_settings.user_id.is_none() {
+        user_settings.user_id = Some(api_calls::get_user_id(user_settings.username.clone()).await);
+    }
+
+    if let Some(user_id) = user_settings.user_id {
+        if let Some(updated_at) = user_settings.updated_at {
+    
+            // get modified user media data
+            let list = api_calls::get_updated_media_id(user_id, updated_at).await;
+            if list.is_empty() == false {
+
+                // for modified anime; download new info
+                let new_user_data = api_calls::get_media_user_data(list, GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+                let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+            
+                for entry in new_user_data {
+                    user_data.insert(entry.media_id, entry);
+                }
+            }
+        }
+    }
+
+    // update time to now so old updates aren't processed
+    user_settings.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    drop(user_settings);
+    file_operations::write_file_user_settings().await;
 }
 
 
@@ -876,8 +915,7 @@ lazy_static! {
 // get the titles of all active windows
 fn get_titles() -> Vec<String> {
     let connection = Connection::new();
-    let titles: Vec<String> = connection.unwrap().window_titles().unwrap();
-    titles
+    connection.unwrap().window_titles().unwrap()
 }
 
 

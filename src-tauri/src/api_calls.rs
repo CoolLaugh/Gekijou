@@ -219,12 +219,14 @@ pub struct UserSettings {
     pub current_tab: String,
     pub first_time_setup: bool,
     pub show_airing_time: Option<bool>,
-    pub theme: Option<i32>
+    pub theme: Option<i32>,
+    pub user_id: Option<i32>,
+    pub updated_at: Option<u64>,
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: false, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0) }
+        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: false, folders: Vec::new(), update_delay: 0, score_format: String::new(), highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0), user_id: None, updated_at: None }
     }
     
     pub fn clear(&mut self) {
@@ -240,6 +242,8 @@ impl UserSettings {
         self.first_time_setup = true;
         self.show_airing_time = Some(true);
         self.theme = Some(0);
+        self.user_id = None;
+        self.updated_at = None;
     }
 }
 
@@ -705,7 +709,9 @@ pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> St
 }
 
 
+
 const USER_SCORE_FORMAT: &str = " query($username: String) { User(name: $username) { mediaListOptions { scoreFormat } } }";
+// get the number the users score is out of (1/3, 1/5, 1/10, 1/100, etc)
 pub async fn get_user_score_format(username: String) -> String {
 
     let json = json!({"query": USER_SCORE_FORMAT, "variables": {"username": username}});
@@ -716,6 +722,97 @@ pub async fn get_user_score_format(username: String) -> String {
     
     format
 }
+
+
+
+const USER_MEDIA_DATA: &str = "query($ids: [Int]) { Page(page: 0, perPage: 50) { media(id_in: $ids) { mediaListEntry { id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day } } } } }";
+// get user data for the requested ids
+pub async fn get_media_user_data(ids: Vec<i32>, access_token: String) -> Vec<UserAnimeInfo> {
+    
+    let json = json!({"query": USER_MEDIA_DATA, "variables": {"ids": ids}});
+
+    let response = anilist_to_snake_case(post(&json, Some(&access_token)).await);
+    println!("{}", response);
+    let response_json = serde_json::from_str::<serde_json::Value>(&response).unwrap();
+
+    let mut user_anime_data: Vec<UserAnimeInfo> = Vec::new();
+    if let Some(media) = response_json["data"]["Page"]["media"].as_array(){
+
+        for entry in media {
+            let updated_anime: UserAnimeInfo = serde_json::from_value(entry["mediaListEntry"].clone()).unwrap();
+            user_anime_data.push(updated_anime);
+        }
+    }
+    user_anime_data
+}
+
+
+const USER_ID_QUERY: &str = "query($userName: String) { User(name: $userName) { id } }";
+// get the user id for the requested username
+pub async fn get_user_id(username: String) -> i32 {
+    
+    let json = json!({"query": USER_ID_QUERY, "variables": {"userName": username}});
+    println!("{}", json.to_string());
+
+    let response = post(&json, None).await;
+    println!("{}", response);
+
+    let user_id = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["User"]["id"].as_i64().unwrap() as i32;
+    println!("user id: {}", user_id);
+    user_id
+}
+
+
+
+const USER_UPDATED_AT: &str = "query($userName: String) { User(name: $userName) { updatedAt } }";
+// get the last time the user's data was changed
+pub async fn get_user_updated_at(username: String) -> Option<u64> {
+    
+    let json = json!({"query": USER_UPDATED_AT, "variables": {"username": username}});
+
+    let response = post(&json, None).await;
+
+    let updated_at = serde_json::from_str::<serde_json::Value>(&response).unwrap()["data"]["User"]["updatedAt"].as_u64();
+    
+    updated_at
+}
+
+
+
+// returns a list of media that has been updated after the supplied time
+const USER_MEDIA_UPDATED: &str = "query($userId: Int, $page: Int, $time: Int) { Page(page: $page, perPage: 50) { pageInfo { hasNextPage } activities(userId: $userId, type: ANIME_LIST, createdAt_greater: $time) { ... on ListActivity { media { id } } } } }";
+pub async fn get_updated_media_id(user_id: i32, time: u64) -> Vec<i32> {
+
+    let mut has_next_page = true;
+    let mut page_number = 0;
+    let mut media_ids: Vec<i32> = Vec::new();
+    
+    while has_next_page {
+
+        let json = json!({"query": USER_MEDIA_UPDATED, "variables": {"userId": user_id,"page": page_number,"time": time}});
+    
+        let response = post(&json, None).await;
+    
+        let response_value = serde_json::from_str::<serde_json::Value>(&response).unwrap();
+        
+        if let Some(activities_list) = response_value["data"]["Page"]["activities"].as_array() {
+            for activity in activities_list {
+                if let Some(media_id) = activity["media"]["id"].as_i64() {
+                    if media_ids.contains(&(media_id as i32)) == false {
+                        media_ids.push(media_id as i32);
+                    }
+                }
+            }
+        }
+    
+        has_next_page = response_value["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
+        page_number += 1;
+    }
+    println!("{:?}", media_ids);
+    media_ids
+}
+
+
 
 // send post json to https://graphql.anilist.co/ and return its response as a string
 // access token in necessary for creating, updating, deleting, and reading private data
