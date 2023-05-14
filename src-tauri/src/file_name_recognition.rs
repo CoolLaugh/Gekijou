@@ -672,22 +672,32 @@ pub async fn get_prequel_data() {
 
     while get_info.is_empty() == false {
         println!("get_info size {}", get_info.len());
-        api_calls::anilist_api_call_multiple(get_info.clone(), &mut anime_data).await;
-        let anime_ids = get_info.clone();
-        get_info.clear();
-        for id in anime_ids {
-
-            if anime_data.contains_key(&id) == false {
-
-                continue;
-            }
-            for edge in anime_data.get(&id).unwrap().relations.edges.iter() {
-
-                if edge.relation_type == "PREQUEL" && anime_data.contains_key(&edge.node.id) == false {
-    
-                    get_info.push(edge.node.id);
+        match api_calls::anilist_api_call_multiple(get_info.clone(), &mut anime_data).await {
+            Ok(_result) => {
+                let anime_ids = get_info.clone();
+                get_info.clear();
+                for id in anime_ids {
+        
+                    if anime_data.contains_key(&id) == false {
+        
+                        continue;
+                    }
+                    for edge in anime_data.get(&id).unwrap().relations.edges.iter() {
+        
+                        if edge.relation_type == "PREQUEL" && anime_data.contains_key(&edge.node.id) == false {
+            
+                            get_info.push(edge.node.id);
+                        }
+                    }
                 }
-            }
+            },
+            Err(error) => {
+                if error == "no connection" {
+                    GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                } else {
+                    println!("error getting prequel data: {}", error);
+                }
+            },
         }
     }
     file_operations::write_file_anime_info_cache(&anime_data);

@@ -227,9 +227,12 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
         // check for missing information
         let unknown_ids: Vec<i32> = list.iter().map(|id| *id).filter(|&id| anime_data.contains_key(&id) == false).collect();
         if unknown_ids.is_empty() == false {
-            
-            api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await;
-            file_operations::write_file_anime_info_cache(&anime_data);
+            match api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await {
+                Ok(_result) => {
+                    file_operations::write_file_anime_info_cache(&anime_data);
+                },
+                Err(error) => return (Vec::new(), Some(String::from(error))),
+            }
         }
         
         sort_list(list, &anime_data, &user_data, sort).await;
@@ -255,7 +258,12 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
                     false
                 }
             ).collect();
-        api_calls::anilist_airing_time(get_airing_time_ids, &mut anime_data).await;
+        match api_calls::anilist_airing_time(get_airing_time_ids, &mut anime_data).await {
+            Ok(_result) => {
+                // do nothing
+            },
+            Err(error) => return (Vec::new(), Some(String::from(error))),
+        }
     }
 
     let start = page * constants::ANIME_PER_PAGE;
@@ -476,7 +484,15 @@ async fn sort_list(list: &mut Vec<i32>, anime_data: &HashMap<i32, AnimeInfo>, us
 async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
 
     if GLOBAL_USER_ANIME_DATA.lock().await.is_empty() {
-        get_user_data().await;
+        match get_user_data().await {
+            Ok(_result) => {
+                // do nothing
+            },
+            Err(_error) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = true; 
+                return Vec::new();
+            },
+        }
     }
 
     let mut list: Vec<UserAnimeInfo> = Vec::new();
@@ -493,13 +509,18 @@ async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
 
 // get user info for a specific anime
 #[tauri::command]
-async fn get_user_info(id: i32) -> UserAnimeInfo {
+async fn get_user_info(id: i32) -> Option<UserAnimeInfo> {
 
     if GLOBAL_USER_ANIME_DATA.lock().await.is_empty() {
-        get_user_data().await;
+        match get_user_data().await {
+            Ok(_result) => {
+                // do nothing
+            },
+            Err(_error) => return None,
+        }
     }
 
-    GLOBAL_USER_ANIME_DATA.lock().await.entry(id).or_insert(UserAnimeInfo::new()).clone()
+    Some(GLOBAL_USER_ANIME_DATA.lock().await.entry(id).or_insert(UserAnimeInfo::new()).clone())
 }
 
 
@@ -538,18 +559,22 @@ async fn get_delay_info() -> UpdateDelayInfo {
 
 // get data for a specific anime
 #[tauri::command]
-async fn get_anime_info(id: i32) -> AnimeInfo {
+async fn get_anime_info(id: i32) -> Option<AnimeInfo> {
 
     if GLOBAL_ANIME_DATA.lock().await.is_empty() {
         file_operations::read_file_anime_info_cache().await;
     }
 
     if GLOBAL_ANIME_DATA.lock().await.contains_key(&id) == false {
-        api_calls::anilist_get_anime_info_single(id).await;
+        match api_calls::anilist_get_anime_info_single(id).await {
+            Ok(_result) => {
+                // do nothing
+            },
+            Err(_error) => return None,
+        }
     }
 
-    let anime_data = GLOBAL_ANIME_DATA.lock().await.get(&id).unwrap().clone();
-    anime_data
+    return Some(GLOBAL_ANIME_DATA.lock().await.get(&id).unwrap().clone());
 }
 
 
@@ -647,7 +672,11 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
             GLOBAL_USER_SETTINGS.lock().await.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
             file_operations::write_file_user_settings().await;
         },
-        Err(_error) => GLOBAL_ANIME_UPDATE_QUEUE.lock().await.push(anime), // store the information for later when the internet is connected again
+        Err(_error) => { 
+            GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+            // store the information for later when the internet is connected again
+            GLOBAL_ANIME_UPDATE_QUEUE.lock().await.push(anime);
+        }, 
     }
 
 }
@@ -736,7 +765,7 @@ async fn pull_updates_from_anilist() {
                                     user_data.insert(entry.media_id, entry);
                                 }
                             },
-                            Err(error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
+                            Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
                         }
                     }
                     
@@ -807,7 +836,16 @@ async fn check_delayed_updates(wait: bool) {
 
                 let access_token = GLOBAL_TOKEN.lock().await.access_token.clone();
                 if access_token.is_empty() == false {
-                    api_calls::update_user_entry(access_token, anime.clone()).await;
+                    match api_calls::update_user_entry(access_token, anime.clone()).await {
+                        Ok(_result) => {
+                            // do nothing
+                        },
+                        Err(_error) => { 
+                            GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                            // store the information for later when the internet is connected again
+                            GLOBAL_ANIME_UPDATE_QUEUE.lock().await.push(anime.clone());
+                        },
+                    }
                 } else {
                     println!("can't update anime, access token is empty");
                 }
@@ -1082,7 +1120,16 @@ async fn anime_update_delay() {
     let access_token = GLOBAL_TOKEN.lock().await.access_token.clone();
     for anime in update_entries {
         // update anilist with new episode/status
-        api_calls::update_user_entry(access_token.clone(), anime).await;
+        match api_calls::update_user_entry(access_token.clone(), anime.clone()).await {
+            Ok(_result) => {
+                // do nothing
+            },
+            Err(_error) => { 
+                GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                // store the information for later when the internet is connected again
+                GLOBAL_ANIME_UPDATE_QUEUE.lock().await.push(anime);
+            },
+        }
     }
     // update the file with the new episode/status
     if save_file {

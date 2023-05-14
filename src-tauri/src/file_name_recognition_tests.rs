@@ -2,7 +2,7 @@ use std::{path::Path, fs::File, io::Read};
 use serde::{Serialize, Deserialize};
 use regex::Regex;
 
-use crate::{file_name_recognition, GLOBAL_ANIME_DATA, api_calls};
+use crate::{file_name_recognition, GLOBAL_ANIME_DATA, api_calls, GLOBAL_REFRESH_UI};
 
 
 
@@ -73,7 +73,18 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
                 missing_ids.push(entry.expected_anime_id);
             }
         });
-        api_calls::anilist_api_call_multiple(missing_ids, &mut anime_data).await;
+        match api_calls::anilist_api_call_multiple(missing_ids, &mut anime_data).await {
+            Ok(_result) => {
+                // do nothing
+            },
+            Err(error) => {
+                if error == "no connection" {
+                    GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                } else {
+                    println!("error getting missing ids: {}", error);
+                }
+            },
+        }
     }
 
     file_name_recognition::get_prequel_data().await;

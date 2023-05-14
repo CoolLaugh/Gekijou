@@ -114,8 +114,15 @@ async function refresh_ui() {
       show_anime_list(current_tab);
     }
   }
+
   if (refresh.canvas == true && current_tab != "BROWSE") {
     redraw_episode_canvas();
+  }
+
+  if (refresh.noInternet == true) {
+    document.getElementById("internet_icon").style.visibility = "visible";
+  } else {
+    document.getElementById("internet_icon").style.visibility = "hidden";
   }
   
   draw_delay_progress();

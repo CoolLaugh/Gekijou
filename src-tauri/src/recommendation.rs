@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN};
+use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN, GLOBAL_REFRESH_UI};
 
 
 
@@ -115,8 +115,12 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
     }
 
     // get information on any show which is missing
-    api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await;
-    file_operations::write_file_anime_info_cache(&anime_data);
+    match api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await {
+        Ok(_result) => {
+            file_operations::write_file_anime_info_cache(&anime_data);
+        },
+        Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
+    }
 
     recommendations
 }
@@ -257,8 +261,12 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
         .collect();
     
     // get information on any show which is missing
-    api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await;
-    file_operations::write_file_anime_info_cache(&anime_data);
+    match api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await {
+        Ok(_result) => {
+            file_operations::write_file_anime_info_cache(&anime_data);
+        },
+        Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
+    }
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await; // used to remove anime the user has already watched
     // some ids lead to 404 pages, these ids won't be in anime_data, remove them
