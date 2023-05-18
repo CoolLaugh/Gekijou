@@ -1283,6 +1283,20 @@ async function delete_data() {
 
 
 
+window.manual_scan = manual_scan;
+async function manual_scan() {
+
+  var button = document.getElementById("manual_scan_button");
+  console.log(button);
+  button.disabled = true;
+  console.log(button);
+  await invoke("manual_scan");
+  button.disabled = false;
+  console.log(button);
+}
+
+
+
 //// settings window
 
 
@@ -1691,6 +1705,7 @@ async function add_user_data(anime_id, user_settings) {
   document.getElementById("score_dropdown").value = user_data.score;
   document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
   document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
+  document.getElementById("user_notes").value = null_check(user_data.notes, user_data.notes, "");
   document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
 }
 
@@ -1739,8 +1754,15 @@ async function update_user_entry(anime_id) {
     'media_id': anime_id,
     'status': document.getElementById("status_select").value,
     'score': parseFloat(document.getElementById("score_dropdown").value),
-    'progress': parseInt(document.getElementById("episode_number").value)
+    'progress': parseInt(document.getElementById("episode_number").value),
+    'notes' : document.getElementById("user_notes").value
   };
+
+  // keep notes null/None if it is empty
+  console.log(user_entry.notes);
+  if (user_entry.notes.size == 0) {
+    user_entry.notes = null;
+  }
 
   switch(document.getElementById("score_dropdown").getAttribute("format")) {
     case "POINT_100":
@@ -1782,7 +1804,8 @@ async function update_user_entry(anime_id) {
     user_entry.started_at.day != user_data.started_at.day ||
     user_entry.completed_at.year != user_data.completed_at.year ||
     user_entry.completed_at.month != user_data.completed_at.month ||
-    user_entry.completed_at.day != user_data.completed_at.day) {
+    user_entry.completed_at.day != user_data.completed_at.day ||
+    user_entry.notes != user_data.notes) {
 
       await invoke("update_user_entry", {anime: user_entry});
   }

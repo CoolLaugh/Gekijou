@@ -126,8 +126,12 @@ async fn set_user_settings(settings: UserSettings) {
 
     // user is different, their list and score format will be different
     if old_username != user_settings.username {
-        GLOBAL_USER_ANIME_LISTS.lock().await.clear();
-        GLOBAL_USER_ANIME_DATA.lock().await.clear();
+
+        let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+        let mut user_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
+
+        user_data.clear();
+        user_lists.clear();
 
         match api_calls::get_user_score_format(user_settings.username.clone()).await {
             Ok(result) => {
@@ -135,6 +139,14 @@ async fn set_user_settings(settings: UserSettings) {
             },
             Err(_error) => user_settings.score_format = None,
         }
+        
+        let access_token = GLOBAL_TOKEN.lock().await.access_token.clone();
+
+        api_calls::anilist_get_list(user_settings.username.clone(), String::from("CURRENT"), access_token.clone(), &mut user_data, &mut user_lists).await;
+        api_calls::anilist_get_list(user_settings.username.clone(), String::from("COMPLETED"), access_token.clone(), &mut user_data, &mut user_lists).await;
+        api_calls::anilist_get_list(user_settings.username.clone(), String::from("PAUSED"), access_token.clone(), &mut user_data, &mut user_lists).await;
+        api_calls::anilist_get_list(user_settings.username.clone(), String::from("DROPPED"), access_token.clone(), &mut user_data, &mut user_lists).await;
+        api_calls::anilist_get_list(user_settings.username.clone(), String::from("PLANNING"), access_token, &mut user_data, &mut user_lists).await;
     }
 
     drop(user_settings);
@@ -171,7 +183,7 @@ async fn get_list(list_name: String) -> (Vec<AnimeInfo>, Option<String>) {
 
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
         
-        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone(), &mut *GLOBAL_USER_ANIME_DATA.lock().await, &mut *GLOBAL_USER_ANIME_LISTS.lock().await).await;
         if error_message.is_some() {
             return (Vec::new(), error_message)
         }
@@ -207,7 +219,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
 
     // get list from anilist if it does not exist
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
-        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone(), &mut *GLOBAL_USER_ANIME_DATA.lock().await, &mut *GLOBAL_USER_ANIME_LISTS.lock().await).await;
         if let Some(error_message_string) = error_message {
             //println!("{}", error_message_string);
             return (Vec::new(), Some(error_message_string));
@@ -582,13 +594,13 @@ async fn get_anime_info(id: i32) -> Option<AnimeInfo> {
 // updates a entry on anilist with new information
 #[tauri::command]
 async fn update_user_entry(mut anime: UserAnimeInfo) {
-
+    
     let old_status: String = if GLOBAL_USER_ANIME_DATA.lock().await.contains_key(&anime.media_id) {
         GLOBAL_USER_ANIME_DATA.lock().await.entry(anime.media_id).or_default().status.clone()
     } else {
         String::new()
     };
-
+    
     // repeating and current are combined into the watching list
     let old_list: String = if old_status == "REPEATING" {
         String::from("CURRENT")
@@ -602,7 +614,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
     } else {
         anime.status.clone()
     };
-
+    
     // we need to change what list the anime is in
     if old_list != new_list {
         
@@ -620,7 +632,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
             }
         }).or_insert(vec![anime.media_id]);
     }
-
+    
     // update completed and started date if show is completed
     if new_list == "COMPLETED" {
 
@@ -657,7 +669,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
             }
         }
     }
-
+    
     // update anilist
     match api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime.clone()).await {
         Ok(result) => {
@@ -665,6 +677,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
             // update user date to match anilist
             let json: serde_json::Value = serde_json::from_str(&result).unwrap();
             let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
+
             GLOBAL_USER_ANIME_DATA.lock().await.insert(new_info.media_id.clone(), new_info);
             file_operations::write_file_user_info().await;
 
@@ -736,10 +749,14 @@ async fn on_startup() {
 }
 
 
+
 // check anilist for any updates to a users anime and download new data for modified user data
 async fn pull_updates_from_anilist() {
 
     let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
+    if user_settings.username.is_empty() {
+        return;
+    }
 
     if user_settings.user_id.is_none() {
         user_settings.user_id = api_calls::get_user_id(user_settings.username.clone()).await;
@@ -1615,6 +1632,13 @@ async fn get_user_data() -> Result<(), &'static str> {
 
 
 
+#[tauri::command]
+async fn manual_scan() {
+    file_name_recognition::parse_file_names(None).await;
+}
+
+
+
 // initialize and run Gekijou
 fn main() {
     tauri::Builder::default()
@@ -1635,7 +1659,7 @@ fn main() {
         });
         Ok(())
       })
-        .invoke_handler(tauri::generate_handler![set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
+        .invoke_handler(tauri::generate_handler![manual_scan,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,

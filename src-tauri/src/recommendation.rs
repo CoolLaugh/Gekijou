@@ -37,20 +37,29 @@ pub async fn recommendations(mode: String, genre_filter: String, year_min_filter
 async fn tally_recommendations() -> Vec<RecommendTally> {
     
     let mut anime_data = GLOBAL_ANIME_DATA.lock().await; // used to remove anime the user has already watched
+
     // use the completed list to grab user recommendations
-    let list = GLOBAL_USER_ANIME_LISTS.lock().await;
+    let mut list = GLOBAL_USER_ANIME_LISTS.lock().await;
+    let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await; // uses the user score to modify the recommended rating
+
     if list.contains_key("COMPLETED") == false {
-        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), "COMPLETED".to_owned(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+
+        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), 
+        "COMPLETED".to_owned(), 
+        GLOBAL_TOKEN.lock().await.access_token.clone(),
+        &mut user_data,
+        &mut list).await;
+
         if error_message.is_some() {
             println!("api_calls::anilist_get_list for completed list returned a error: {}", error_message.unwrap());
             return Vec::new();
         }
+
         file_operations::write_file_anime_info_cache(&anime_data);
         file_operations::write_file_user_info().await;
     }
     let completed_list = list.get("COMPLETED").unwrap();
 
-    let user_data = GLOBAL_USER_ANIME_DATA.lock().await; // uses the user score to modify the recommended rating
     let score_format = GLOBAL_USER_SETTINGS.lock().await.score_format.clone(); // used to properly convert score into a modifier
 
     // tally up all recommendations and combine the ratings for the same show
@@ -202,9 +211,10 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
 
     let mut anime_data = GLOBAL_ANIME_DATA.lock().await; // used to find sequels
     // retrieve completed list, if it does not exist, retrieve it from anilist
-    let list = GLOBAL_USER_ANIME_LISTS.lock().await;
+    let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await; // used to remove anime the user has already watched and uses the user score to modify the recommended rating
+    let mut list = GLOBAL_USER_ANIME_LISTS.lock().await;
     if list.contains_key("COMPLETED") == false {
-        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), "COMPLETED".to_owned(), GLOBAL_TOKEN.lock().await.access_token.clone()).await;
+        let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), "COMPLETED".to_owned(), GLOBAL_TOKEN.lock().await.access_token.clone(), &mut user_data, &mut list).await;
         if error_message.is_some() {
             println!("api_calls::anilist_get_list for completed list returned a error: {}", error_message.unwrap());
             return Vec::new();
@@ -214,7 +224,6 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
     }
     let completed_list = list.get("COMPLETED").unwrap();
 
-    let user_data = GLOBAL_USER_ANIME_DATA.lock().await; // used to remove anime the user has already watched and uses the user score to modify the recommended rating
     let score_format = GLOBAL_USER_SETTINGS.lock().await.score_format.clone(); // used to properly convert score into a modifier
 
     // create a list of all recommended anime from anime on the completed list, include score modifier so higher rated shows get recommended more highly

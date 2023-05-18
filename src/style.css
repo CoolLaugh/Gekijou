@@ -349,6 +349,11 @@ body {
   width: 210px;
 }
 
+.anilist_login_panel button:disabled {
+  border: 0px solid transparent;
+  cursor: default;
+}
+
 .anilist_login_panel input {
   width: 160px;
 }

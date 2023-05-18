@@ -109,6 +109,8 @@
             <div class="tab_content" id="user_entry">
               <table style="text-align: left;">
                 <thead>
+                </thead>
+                <tbody>
                   <tr>
                     <th style="text-align: right; padding-right: 10px;"><p>Status:</p></th>
                     <th>
@@ -145,8 +147,11 @@
                     <th style="text-align: right; padding-right: 10px;"><p title="title of the anime used in the filename. Use this if Gekijou can't find the files for this anime">Custom Filename: </p></th>
                     <th><input id="custom_filename" type="text"></th>
                   </tr>
-                </thead>
-                <tbody></tbody>
+                  <tr>
+                    <th style="text-align: right; padding-right: 10px;"><p title="">Notes: </p></th>
+                    <th><textarea id="user_notes" cols="45", rows="4" style="resize:vertical; max-height: 200px; min-height: 34px;"></textarea></th>
+                  </tr>
+                </tbody>
               </table>
             </div>
             <div class="tab_content" id="trailer">
@@ -263,6 +268,14 @@
               </th>
               <th>
                 <textarea wrap="hard" id="folders"></textarea>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                Manual Scan:
+              </th>
+              <th>
+                <button onclick="manual_scan()" type="button" id="manual_scan_button">Scan</button>
               </th>
             </tr>
             <tr>
