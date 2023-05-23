@@ -127,6 +127,16 @@ async function refresh_ui() {
   
   draw_delay_progress();
 
+  if (refresh.scan_data.current_folder > 0) {
+    document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 94px)";
+    document.getElementById("bottom_info_bar").textContent = "Scanning folder " + refresh.scan_data.current_folder + " of " + refresh.scan_data.total_folders + " " + ((refresh.scan_data.completed_chunks / refresh.scan_data.total_chunks) * 100).toFixed(0) + "%";
+  } else {
+    document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 69px)";
+    document.getElementById("bottom_info_bar").textContent = "";
+  }
+
+  
+
   refresh_ui_interval = setInterval(refresh_ui, 1000);
 }
 
@@ -151,7 +161,9 @@ async function confirm_delete_entry(id, media_id) {
     var removed = await invoke("remove_anime", { id: id, mediaId: media_id});
     if (removed == true) {
 
-      show_anime_list(current_tab);
+      if (current_tab == "CURRENT" || current_tab == "COMPLETED" || current_tab == "PAUSED" || current_tab == "DROPPED" || current_tab == "PLANNING") {
+        show_anime_list(current_tab);
+      }
       document.getElementById("status_select").value = "";
       document.getElementById("episode_number").value = 0;
       document.getElementById("score_dropdown").value = "0";

@@ -404,6 +404,15 @@ body {
   margin-bottom: 0;
 }
 
+.info_bar {
+  display: block;
+  background: var(--background-color2);
+}
+
+.info_bar p {
+  margin: 0px;
+}
+
 .cover_container {
   position: relative;
   width: 100%;

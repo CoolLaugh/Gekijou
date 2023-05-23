@@ -39,6 +39,7 @@ pub struct RefreshUI {
     pub tracking_progress: bool,
     pub canvas: bool,
     pub no_internet: bool,
+    pub scan_data: ScanData,
 }
 
 impl RefreshUI {
@@ -48,6 +49,25 @@ impl RefreshUI {
         self.tracking_progress = false;
         self.canvas = false;
         self.no_internet = false;
+        self.scan_data.clear();
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct ScanData {
+    pub current_folder: i32,
+    pub total_folders: i32,
+    pub completed_chunks: i32,
+    pub total_chunks: i32,
+}
+
+impl ScanData {
+    
+    pub fn clear(&mut self) {
+        self.current_folder = 0;
+        self.total_folders = 0;
+        self.completed_chunks = 0;
+        self.total_chunks = 0;
     }
 }
 
@@ -594,6 +614,10 @@ async fn get_anime_info(id: i32) -> Option<AnimeInfo> {
 // updates a entry on anilist with new information
 #[tauri::command]
 async fn update_user_entry(mut anime: UserAnimeInfo) {
+
+    if anime.status == "BROWSE" {
+        println!("{:?}", anime);
+    }
     
     let old_status: String = if GLOBAL_USER_ANIME_DATA.lock().await.contains_key(&anime.media_id) {
         GLOBAL_USER_ANIME_DATA.lock().await.entry(anime.media_id).or_default().status.clone()
@@ -622,7 +646,9 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
         if old_status.is_empty() == false {
 
             GLOBAL_USER_ANIME_LISTS.lock().await.entry(old_list.clone()).and_modify(|data|{ 
-                data.remove(data.iter().position(|&id| id == anime.media_id).unwrap());
+                if let Some(position) = data.iter().position(|&id| id == anime.media_id){
+                    data.remove(position);
+                }
             });
         }
         
@@ -633,40 +659,38 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
         }).or_insert(vec![anime.media_id]);
     }
     
-    // update completed and started date if show is completed
-    if new_list == "COMPLETED" {
+    // update completed and started date if show is completed and don't change original start and end date if rewatching
+    if new_list == "COMPLETED" && anime.status != "REPEATING" {
 
-        if anime.status != "REPEATING" { // don't change original start and end date if rewatching
-
-            // set completed date to today
-            if anime.completed_at.is_none() { // user didn't input a date
-                let now: DateTime<Local> = Local::now();
-                anime.completed_at = Some(AnilistDate {
-                    year: Some(now.year()),
-                    month: Some(now.month() as i32),
-                    day: Some(now.day() as i32),
-                });
-            }
-            if let Some(started_at) = &anime.started_at {
-                if started_at.day.is_none() && started_at.month.is_none() && started_at.year.is_none() { // user didn't input a date
-                    // set if anime is a movie or special so the user will watch it in one sitting
-                    if let Some(anime_data_entry) = GLOBAL_ANIME_DATA.lock().await.get(&anime.media_id) {
-                        if let Some(episodes) = anime_data_entry.episodes {
-                            if episodes <= 1 { // anime is a movie or special
-                                anime.started_at = anime.completed_at.clone();
-                            }
-                        }
-                    }
-                    // set if user watched the whole series at once
-                    if let Some(user_entry) = GLOBAL_USER_ANIME_DATA.lock().await.get(&anime.media_id) {
-                        if user_entry.progress == 0 {
+        // set completed date to today
+        if anime.completed_at.is_none() { // user didn't input a date
+            let now: DateTime<Local> = Local::now();
+            anime.completed_at = Some(AnilistDate {
+                year: Some(now.year()),
+                month: Some(now.month() as i32),
+                day: Some(now.day() as i32),
+            });
+        }
+        
+        if let Some(started_at) = &anime.started_at {
+            if started_at.day.is_none() && started_at.month.is_none() && started_at.year.is_none() { // user didn't input a date
+                // set if anime is a movie or special so the user will watch it in one sitting
+                if let Some(anime_data_entry) = GLOBAL_ANIME_DATA.lock().await.get(&anime.media_id) {
+                    if let Some(episodes) = anime_data_entry.episodes {
+                        if episodes <= 1 { // anime is a movie or special
                             anime.started_at = anime.completed_at.clone();
                         }
                     }
                 }
-            } else {
-                println!("ERROR: started_at is None"); // javascript should always call this function with started_at existing
+                // set if user watched the whole series at once
+                if let Some(user_entry) = GLOBAL_USER_ANIME_DATA.lock().await.get(&anime.media_id) {
+                    if user_entry.progress == 0 {
+                        anime.started_at = anime.completed_at.clone();
+                    }
+                }
             }
+        } else {
+            println!("ERROR: started_at is None"); // javascript should always call this function with started_at existing
         }
     }
     

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::mpsc;
 use std::thread;
 use std::path::Path;
 use regex::Regex;
@@ -47,8 +48,11 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
     let mut episode_found = false;
     let folders = GLOBAL_USER_SETTINGS.lock().await.folders.clone();
+    GLOBAL_REFRESH_UI.lock().await.scan_data.clear();
+    GLOBAL_REFRESH_UI.lock().await.scan_data.total_folders = folders.len() as i32;
     for folder in folders {
 
+        GLOBAL_REFRESH_UI.lock().await.scan_data.current_folder += 1;
         let path = Path::new(&folder);
         if path.exists() == false {
             continue;
@@ -78,13 +82,22 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
             file_names_temp
         };
 
-        let file_names_chunks = file_names.chunks(500).map(|chunk| chunk.to_vec()).collect::<Vec<_>>();
+        let file_names_chunks = file_names.chunks(crate::constants::FILENAME_CHUNKS).map(|chunk| chunk.to_vec()).collect::<Vec<_>>();
+        println!("Number of files: {}", file_names.len());
+        println!("Number of chunks: {}", file_names_chunks.len());
 
+        GLOBAL_REFRESH_UI.lock().await.scan_data.total_chunks = file_names_chunks.len() as i32;
+        GLOBAL_REFRESH_UI.lock().await.scan_data.completed_chunks = 0;
+
+        let (sender, receiver) = mpsc::channel::<bool>();
+
+        let mut count = 0;
         let mut children = vec![];
         for mut file_name_chunk in file_names_chunks {
 
             let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
 
+            let sender_copy = sender.clone();
             children.push(thread::spawn(move || -> Vec<AnimePathWorking> {
                 
                 remove_invalid_files(&mut file_name_chunk);
@@ -104,8 +117,21 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         
                 episode_fix_batch(&mut file_name_chunk, &anime_data);
 
+                println!("chunk {} done", count);
+                sender_copy.send(true).unwrap();
+
                 file_name_chunk
             }));
+            count += 1;
+        }
+
+        for _received in receiver {
+            let mut refresh_ui = GLOBAL_REFRESH_UI.lock().await;
+            refresh_ui.scan_data.completed_chunks += 1;
+            println!("completed {} chunks", refresh_ui.scan_data.completed_chunks);
+            if refresh_ui.scan_data.completed_chunks >= refresh_ui.scan_data.total_chunks {
+                break;
+            }
         }
         
         let file_names_collected = children.into_iter().map(|c| c.join().unwrap()).flatten().collect::<Vec<_>>();
@@ -134,6 +160,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         }
     }
 
+    GLOBAL_REFRESH_UI.lock().await.scan_data.clear();
     remove_missing_files().await;
     GLOBAL_REFRESH_UI.lock().await.canvas = true;
     file_operations::write_file_episode_path().await;

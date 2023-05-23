@@ -6,6 +6,7 @@ pub const SIMILARITY_SCORE_THRESHOLD: f64 = 0.8;
 pub const STARTUP_SCAN_DELAY: u64 = 30;
 pub const ONE_HOUR: u64 = 60 * 60;
 pub const BROWSE_PAGE_LIMIT: i32 = 4;
+pub const FILENAME_CHUNKS: usize = 200;
 
 
 #[cfg(debug_assertions)]
