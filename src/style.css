@@ -306,6 +306,18 @@ body {
   visibility: hidden;
 }
 
+.error_panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background-color: var(--background-color2);
+  border-radius: 10px;
+  padding: 10px;
+  border: 2px solid var(--highlight);
+  visibility: hidden;
+}
+
 .color_box {
   width: 20px;
   height: 20px;

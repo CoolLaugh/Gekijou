@@ -124,6 +124,22 @@ async function refresh_ui() {
   } else {
     document.getElementById("internet_icon").style.visibility = "hidden";
   }
+
+  if(refresh.errors.length != 0) {
+
+    var table = document.getElementById("error_table");
+    /*for(var i = 0; i < table.rows.length; i++) {
+      table.deleteRow(0);
+    }*/
+
+    for(var i = 0; i < refresh.errors.length; i++) {
+      var row = table.insertRow(i);
+      row.innerHTML = refresh.errors[i];
+    }
+
+    document.getElementById("error_panel").style.visibility = "visible";
+    await invoke("clear_errors");
+  }
   
   draw_delay_progress();
 
@@ -147,6 +163,17 @@ async function background_tasks() {
   clearInterval(scan_interval);
   await invoke("background_tasks");
   scan_interval = setInterval(background_tasks, 10000);
+}
+
+
+
+window.close_error_window = close_error_window;
+async function close_error_window() {
+  document.getElementById("error_panel").style.visibility = "hidden";
+  var table = document.getElementById("error_table");
+  for(var i = 0; i < table.rows.length; i++) {
+    table.deleteRow(0);
+  }
 }
 
 

@@ -40,6 +40,7 @@ pub struct RefreshUI {
     pub canvas: bool,
     pub no_internet: bool,
     pub scan_data: ScanData,
+    pub errors: Vec<String>,
 }
 
 impl RefreshUI {
@@ -50,6 +51,7 @@ impl RefreshUI {
         self.canvas = false;
         self.no_internet = false;
         self.scan_data.clear();
+        self.errors.clear();
     }
 }
 
@@ -594,7 +596,10 @@ async fn get_delay_info() -> UpdateDelayInfo {
 async fn get_anime_info(id: i32) -> Option<AnimeInfo> {
 
     if GLOBAL_ANIME_DATA.lock().await.is_empty() {
-        file_operations::read_file_anime_info_cache().await;
+        match file_operations::read_file_anime_info_cache().await {
+            Ok(_result) => { /* do nothing */ },
+            Err(error) => GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Anime cache error: ") + error),
+        }
     }
 
     if GLOBAL_ANIME_DATA.lock().await.contains_key(&id) == false {
@@ -671,7 +676,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
                 day: Some(now.day() as i32),
             });
         }
-        
+
         if let Some(started_at) = &anime.started_at {
             if started_at.day.is_none() && started_at.month.is_none() && started_at.year.is_none() { // user didn't input a date
                 // set if anime is a movie or special so the user will watch it in one sitting
@@ -756,18 +761,35 @@ async fn get_custom_filename(anime_id: i32) -> String {
 // loads data from files and looks for episodes on disk
 #[tauri::command]
 async fn on_startup() {
-    file_operations::read_file_token_data().await;
-    file_operations::read_file_anime_info_cache().await;
-    file_operations::read_file_user_info().await;
-    file_operations::read_file_episode_path().await;
-    if GLOBAL_USER_SETTINGS.lock().await.score_format.is_none() && GLOBAL_USER_SETTINGS.lock().await.username.is_empty() == false {
-        match api_calls::get_user_score_format(GLOBAL_USER_SETTINGS.lock().await.username.clone()).await {
+
+    match file_operations::read_file_token_data().await {
+        Ok(_result) => { /* do nothing */ },
+        Err(error) => GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Oauth token error: ") + error),
+    }
+    match file_operations::read_file_anime_info_cache().await {
+        Ok(_result) => { /* do nothing */ },
+        Err(error) => GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Anime cache error: ") + error),
+    }
+    match file_operations::read_file_user_info().await {
+        Ok(_result) => { /* do nothing */ },
+        Err(error) => { GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("User Info error: ") + error)},
+    }
+    match file_operations::read_file_episode_path().await {
+        Ok(_result) => { /* do nothing */ },
+        Err(error) => GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("File Path error: ") + error),
+    }
+
+    let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
+    if user_settings.score_format.is_none() && user_settings.username.is_empty() == false {
+        match api_calls::get_user_score_format(user_settings.username.clone()).await {
             Ok(result) => {
-                GLOBAL_USER_SETTINGS.lock().await.score_format = Some(result);
+                user_settings.score_format = Some(result);
             },
             Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
         }
     }
+    drop(user_settings);
+
     pull_updates_from_anilist().await;
     *GLOBAL_STARTUP_FINISHED.lock().await = true;
 }
@@ -834,22 +856,27 @@ async fn load_user_settings() {
     
     let mut loaded = GLOBAL_SETTINGS_LOADED.lock().await;
     if *loaded == false {
-        file_operations::read_file_user_settings().await;
-        *loaded = true;
-    }
-    
-    // settings not in older versions of gekijou must be filled in
-    let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
-    if user_settings.highlight_color.is_empty() {
-        user_settings.highlight_color = String::from(constants::DEFAULT_HIGHLIGHT_COLOR);
-    }
-    
-    if user_settings.show_airing_time.is_none() {
-        user_settings.show_airing_time = Some(true);
-    }
-    
-    if user_settings.theme.is_none() {
-        user_settings.theme = Some(0);
+
+        match file_operations::read_file_user_settings().await {
+            Ok(_result) => {
+                // settings not in older versions of gekijou must be filled in
+                let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
+                if user_settings.highlight_color.is_empty() {
+                    user_settings.highlight_color = String::from(constants::DEFAULT_HIGHLIGHT_COLOR);
+                }
+                
+                if user_settings.show_airing_time.is_none() {
+                    user_settings.show_airing_time = Some(true);
+                }
+                
+                if user_settings.theme.is_none() {
+                    user_settings.theme = Some(0);
+                }
+
+                *loaded = true;
+            },
+            Err(_error) => { println!("{}", _error); GLOBAL_USER_SETTINGS.lock().await.first_time_setup = true},
+        }
     }
 }
 
@@ -1278,8 +1305,15 @@ async fn refresh_ui() -> RefreshUI {
 
 
 
+#[tauri::command]
+async fn clear_errors() {
+    GLOBAL_REFRESH_UI.lock().await.errors.clear();
+}
+
+
 lazy_static! {
     static ref SCAN_TIMER: Mutex<Instant> = Mutex::new(Instant::now());
+    static ref NO_INTERNET_TIMER: Mutex<Instant> = Mutex::new(Instant::now());
     static ref STARTUP_SCAN: Mutex<bool> = Mutex::new(false);
 }
 // performs periodic tasks like checking for anime in media players, delayed updates that must be sent, scanning folders for files
@@ -1291,6 +1325,8 @@ async fn background_tasks() {
     anime_update_delay().await;
     // update anilist with delayed updates
     check_delayed_updates(true).await;
+    // update anilist with offline updates
+    check_queued_updates().await;
 
     // scan files for new episodes of anime every hour and a short time after startup
     let mut on_startup_scan_completed = STARTUP_SCAN.lock().await;
@@ -1305,6 +1341,40 @@ async fn background_tasks() {
         *on_startup_scan_completed = true;
         *timer = Instant::now();
     }
+}
+
+
+
+// check updates that were queued while the computer was offline
+async fn check_queued_updates() {
+
+    let mut queued_updates = GLOBAL_ANIME_UPDATE_QUEUE.lock().await;
+
+    if queued_updates.len() > 0 {
+
+        let mut timer = NO_INTERNET_TIMER.lock().await;
+        // wait 5 minutes after last attempt
+        if timer.elapsed() > Duration::from_secs(constants::NO_INTERNET_UPDATE_INTERVAL) {
+            *timer = Instant::now();
+            
+            let access_token = GLOBAL_TOKEN.lock().await.access_token.clone();
+            let mut updated: Vec<i32> = Vec::new();
+            for update in queued_updates.to_owned() {
+                
+                match api_calls::update_user_entry(access_token.clone(), update.clone()).await {
+                    Ok(_result) => {
+                        updated.push(update.media_id);
+                        GLOBAL_REFRESH_UI.lock().await.no_internet = false;
+                    },
+                    Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
+                }
+            }
+            
+            // remove anime that has been updated
+            queued_updates.retain(| entry | { updated.contains(&entry.media_id) == false });
+        }
+    }
+
 }
 
 
@@ -1685,7 +1755,7 @@ fn main() {
       })
         .invoke_handler(tauri::generate_handler![manual_scan,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
-            play_next_episode,anime_update_delay,refresh_ui,increment_decrement_episode,on_shutdown,episodes_exist,browse,
+            play_next_episode,anime_update_delay,refresh_ui,clear_errors,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
             open_url,get_list_ids,run_filename_tests,get_debug,delete_data,background_tasks,startup_finished,get_custom_filename,set_custom_filename])
         .run(tauri::generate_context!())

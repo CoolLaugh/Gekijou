@@ -8,7 +8,7 @@ use serde::Serialize;
 use tauri::async_runtime::Mutex;
 
 use crate::api_calls::AnimeInfo;
-use crate::{GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN, GLOBAL_ANIME_PATH};
+use crate::{GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN, GLOBAL_ANIME_PATH, GLOBAL_REFRESH_UI};
 
 extern crate dirs;
 
@@ -24,8 +24,8 @@ pub async fn write_file_token_data() {
 }
 
 // read access token data from the file
-pub async fn read_file_token_data() {
-    read_file_data(&GLOBAL_TOKEN, "token").await;
+pub async fn read_file_token_data() -> Result<(), &'static str> {
+    read_file_data(&GLOBAL_TOKEN, "token").await
 }
 
 // writes user settings to a file
@@ -34,8 +34,8 @@ pub async fn write_file_user_settings() {
 }
 
 // reads user settings out of a file
-pub async fn read_file_user_settings() {
-    read_file_data(&GLOBAL_USER_SETTINGS, "user_settings").await;
+pub async fn read_file_user_settings() -> Result<(), &'static str> {
+    read_file_data(&GLOBAL_USER_SETTINGS, "user_settings").await
 }
 
 // writes all held data on anime to a file
@@ -44,26 +44,30 @@ pub fn write_file_anime_info_cache(anime_data: &HashMap<i32, AnimeInfo>) {
 }
 
 // reads all stored data on anime from a file
-pub async fn read_file_anime_info_cache() {
-    read_file_data(&GLOBAL_ANIME_DATA, "anime_cache").await;
+pub async fn read_file_anime_info_cache() -> Result<(), &'static str> {
+    read_file_data(&GLOBAL_ANIME_DATA, "anime_cache").await
 }
 
 pub async fn write_file_user_info() {
     write_file_data_mutex(&GLOBAL_USER_ANIME_DATA, "user_data").await;
-    write_file_data_mutex(&GLOBAL_USER_ANIME_LISTS, "user_Lists").await;
+    write_file_data_mutex(&GLOBAL_USER_ANIME_LISTS, "user_lists").await;
 }
 
-pub async fn read_file_user_info() {
-    read_file_data(&GLOBAL_USER_ANIME_DATA, "user_data").await;
-    read_file_data(&GLOBAL_USER_ANIME_LISTS, "user_Lists").await;
+pub async fn read_file_user_info() -> Result<(), &'static str> {
+    match read_file_data(&GLOBAL_USER_ANIME_DATA, "user_data").await {
+        Ok(_result) => {
+            read_file_data(&GLOBAL_USER_ANIME_LISTS, "user_lists").await
+        },
+        Err(error) => return Err(error),
+    }
 }
 
 pub async fn write_file_episode_path() {
     write_file_data_mutex(&GLOBAL_ANIME_PATH, "episode_path").await;
 }
 
-pub async fn read_file_episode_path() {
-    read_file_data(&GLOBAL_ANIME_PATH, "episode_path").await;
+pub async fn read_file_episode_path() -> Result<(), &'static str> {
+    read_file_data(&GLOBAL_ANIME_PATH, "episode_path").await
 }
 
 // writes all held data on anime to a file
@@ -109,6 +113,8 @@ fn write_file_data<T: Serialize>(global: &T, filename: &str) {
     }
 }
 
+
+
 async fn write_file_data_mutex<T: Serialize>(global: &Mutex<T>, filename: &str) {
     write_file_data(&*global.lock().await, filename);
 }
@@ -116,27 +122,19 @@ async fn write_file_data_mutex<T: Serialize>(global: &Mutex<T>, filename: &str) 
 
 
 // reads all stored data from a file into the global collection
-async fn read_file_data<T: DeserializeOwned>(global: &Mutex<T>, filename: &str) {
+async fn read_file_data<T: DeserializeOwned>(global: &Mutex<T>, filename: &str) -> Result<(), &'static str> {
 
     let file_location = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
-    let file_backup_location = format!("{}/{}/{}_backup.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
     let file_path = Path::new(&file_location);
-    let file_backup_path = Path::new(&file_backup_location);
-
+    
     if file_path.exists() {
 
         // open the file
         let mut file = match File::open(&file_path) {
-            Err(why) => {
+            Err(_why) => {
+                GLOBAL_REFRESH_UI.lock().await.errors.push(String::from(filename.to_owned() + " Can't open file"));
                 // try to use the backup file if the file doesn't work
-                if file_backup_path.exists() {
-                    match File::open(&file_backup_path) {
-                        Err(why2) => panic!("ERROR: {}", why2),
-                        Ok(file) => file,
-                    }
-                } else {
-                    panic!("ERROR: {}", why);
-                }
+                return read_backup_file_data(global, filename).await;
             },
             Ok(file) => file,
         };
@@ -144,12 +142,63 @@ async fn read_file_data<T: DeserializeOwned>(global: &Mutex<T>, filename: &str) 
         // read all data out of the file
         let mut buffer = String::new();
         match file.read_to_string(&mut buffer) {
-            Err(why) => panic!("ERROR: {}", why),
+            Err(_why) => {
+                GLOBAL_REFRESH_UI.lock().await.errors.push(String::from(filename.to_owned() + " Can't read file"));
+                // try to use the backup file if the file doesn't work
+                return read_backup_file_data(global, filename).await;
+            },
             Ok(file) => file,
         };
         
-        *global.lock().await = serde_json::from_str(&buffer).unwrap();
+        match serde_json::from_str(&buffer) {
+            Ok(result) => {
+                *global.lock().await = result;
+            },
+            Err(_error) => {
+                GLOBAL_REFRESH_UI.lock().await.errors.push(String::from(filename.to_owned() + " Can't process json"));
+                // try to use the backup file if the file doesn't work
+                return read_backup_file_data(global, filename).await;
+            },
+        }
     }
+
+    Ok(())
+}
+
+
+
+// reads all stored data from a backup file into the global collection
+async fn read_backup_file_data<T: DeserializeOwned>(global: &Mutex<T>, filename: &str) -> Result<(), &'static str> {
+
+    let file_backup_location = format!("{}/{}/{}_backup.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
+    let file_backup_path = Path::new(&file_backup_location);
+
+    if file_backup_path.exists() {
+
+        // open the file
+        let mut file = match File::open(&file_backup_path) {
+            Err(_why) => {
+                return Err("Can't open backup file");
+            },
+            Ok(file) => file,
+        };
+    
+        // read all data out of the file
+        let mut buffer = String::new();
+        match file.read_to_string(&mut buffer) {
+            Err(_why) => { return Err("Can't read backup file")},
+            Ok(file) => file,
+        };
+        
+        match serde_json::from_str(&buffer) {
+            Ok(result) => {
+                *global.lock().await = result;
+            },
+            Err(_error) => { return Err("Can't process backup json")},
+        }
+    }
+
+    Ok(())
 }
 
 
