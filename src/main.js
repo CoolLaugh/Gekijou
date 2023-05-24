@@ -1,4 +1,22 @@
 const { invoke } = window.__TAURI__.tauri;
+const { listen } = window.__TAURI__.event;
+
+
+
+listen('tauri://file-drop', async event => {
+
+  if (document.getElementById("login_panel").style.visibility == "visible") {
+
+    var folder_text_area = document.getElementById("folders");
+
+    if (folder_text_area.value.length > 0) {
+      folder_text_area.value += "\n";
+    }
+
+    folder_text_area.value += event.payload[0];
+  }
+})
+
 
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -57,6 +75,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   }
 });
+
 
 
 async function add_adult_genres(show_adult) {

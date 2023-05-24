@@ -1739,7 +1739,7 @@ fn main() {
     .setup(|app| {
         let splashscreen_window = app.get_window("splashscreen").unwrap();
         let main_window = app.get_window("main").unwrap();
-        
+
         tauri::async_runtime::spawn(async move {
 
             load_user_settings().await;
