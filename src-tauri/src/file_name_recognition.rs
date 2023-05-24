@@ -701,6 +701,7 @@ pub async fn get_prequel_data() {
         println!("get_info size {}", get_info.len());
         match api_calls::anilist_api_call_multiple(get_info.clone(), &mut anime_data).await {
             Ok(_result) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
                 let anime_ids = get_info.clone();
                 get_info.clear();
                 for id in anime_ids {

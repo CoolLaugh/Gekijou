@@ -520,6 +520,7 @@ async fn get_list_user_info(list_name: String) -> Vec<UserAnimeInfo> {
     if GLOBAL_USER_ANIME_DATA.lock().await.is_empty() {
         match get_user_data().await {
             Ok(_result) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
                 // do nothing
             },
             Err(_error) => {
@@ -702,6 +703,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
     // update anilist
     match api_calls::update_user_entry(GLOBAL_TOKEN.lock().await.access_token.clone(), anime.clone()).await {
         Ok(result) => {
+            GLOBAL_REFRESH_UI.lock().await.no_internet = false;
             
             // update user date to match anilist
             let json: serde_json::Value = serde_json::from_str(&result).unwrap();
@@ -716,11 +718,35 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
         },
         Err(_error) => { 
             GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+            // update anime info
+            GLOBAL_USER_ANIME_DATA.lock().await.insert(anime.media_id.clone(), anime.clone());
+            file_operations::write_file_user_info().await;
+            GLOBAL_REFRESH_UI.lock().await.canvas = true;
+
             // store the information for later when the internet is connected again
-            GLOBAL_ANIME_UPDATE_QUEUE.lock().await.push(anime);
+            add_to_offline_queue(anime).await;
         }, 
     }
 
+}
+
+
+
+// add user info to a queue that will be uploaded to anilist after the internet is reconnected
+async fn add_to_offline_queue(anime_info: UserAnimeInfo) {
+    let mut queue = GLOBAL_ANIME_UPDATE_QUEUE.lock().await;
+    if let Some(position) = queue.iter().position(| entry | entry.media_id == anime_info.media_id ) {
+        if let Some(entry) = queue.get_mut(position) {
+            // replace user info with latest information
+            *entry = anime_info;
+            file_operations::write_file_update_queue(&queue).await;
+        }
+    }
+    else {
+        // add it if it doesn't exist yet
+        queue.push(anime_info);
+        file_operations::write_file_update_queue(&queue).await;
+    }
 }
 
 
@@ -778,12 +804,17 @@ async fn on_startup() {
         Ok(_result) => { /* do nothing */ },
         Err(error) => GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("File Path error: ") + error),
     }
+    match file_operations::read_file_update_queue().await {
+        Ok(_result) => { /* do nothing */ },
+        Err(error) => GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Update Queue error: ") + error),
+    }
 
     let mut user_settings = GLOBAL_USER_SETTINGS.lock().await;
     if user_settings.score_format.is_none() && user_settings.username.is_empty() == false {
         match api_calls::get_user_score_format(user_settings.username.clone()).await {
             Ok(result) => {
                 user_settings.score_format = Some(result);
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
             },
             Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
         }
@@ -809,6 +840,9 @@ async fn pull_updates_from_anilist() {
         if user_settings.user_id.is_none() {
             GLOBAL_REFRESH_UI.lock().await.no_internet = true
         }
+        else {
+            GLOBAL_REFRESH_UI.lock().await.no_internet = false;
+        }
     }
 
     if let Some(user_id) = user_settings.user_id {
@@ -817,11 +851,14 @@ async fn pull_updates_from_anilist() {
             // get modified user media data
             match api_calls::get_updated_media_id(user_id, updated_at).await {
                 Ok(list) => {
+                    GLOBAL_REFRESH_UI.lock().await.no_internet = false;
                     if list.is_empty() == false {
         
                         // for modified anime; download new info
                         match api_calls::get_media_user_data(list, GLOBAL_TOKEN.lock().await.access_token.clone()).await {
                             Ok(new_user_data) => {
+                                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
+
                                 let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
                             
                                 for entry in new_user_data {
@@ -906,12 +943,13 @@ async fn check_delayed_updates(wait: bool) {
                 if access_token.is_empty() == false {
                     match api_calls::update_user_entry(access_token, anime.clone()).await {
                         Ok(_result) => {
+                            GLOBAL_REFRESH_UI.lock().await.no_internet = false;
                             // do nothing
                         },
                         Err(_error) => { 
                             GLOBAL_REFRESH_UI.lock().await.no_internet = true;
                             // store the information for later when the internet is connected again
-                            GLOBAL_ANIME_UPDATE_QUEUE.lock().await.push(anime.clone());
+                            add_to_offline_queue(anime.to_owned()).await;
                         },
                     }
                 } else {
@@ -1190,12 +1228,13 @@ async fn anime_update_delay() {
         // update anilist with new episode/status
         match api_calls::update_user_entry(access_token.clone(), anime.clone()).await {
             Ok(_result) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
                 // do nothing
             },
             Err(_error) => { 
                 GLOBAL_REFRESH_UI.lock().await.no_internet = true;
                 // store the information for later when the internet is connected again
-                GLOBAL_ANIME_UPDATE_QUEUE.lock().await.push(anime);
+                add_to_offline_queue(anime).await;
             },
         }
     }
@@ -1293,10 +1332,10 @@ async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
 // allows the ui to check if a anime has been updated to determine if the ui will be refreshed
 #[tauri::command]
 async fn refresh_ui() -> RefreshUI {
-
+    let length = WATCHING_TRACKING.lock().await.len();
     let mut refresh = GLOBAL_REFRESH_UI.lock().await;
     let mut refresh_ui = refresh.clone();
-    refresh_ui.tracking_progress = WATCHING_TRACKING.lock().await.len() > 0;
+    refresh_ui.tracking_progress = length > 0;
     refresh.anime_list = false;
     refresh.canvas = false;
 
@@ -1372,6 +1411,7 @@ async fn check_queued_updates() {
             
             // remove anime that has been updated
             queued_updates.retain(| entry | { updated.contains(&entry.media_id) == false });
+            file_operations::write_file_update_queue(&queued_updates).await;
         }
     }
 

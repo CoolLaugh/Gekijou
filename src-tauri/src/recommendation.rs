@@ -127,6 +127,7 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
     match api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await {
         Ok(_result) => {
             file_operations::write_file_anime_info_cache(&anime_data);
+            GLOBAL_REFRESH_UI.lock().await.no_internet = false;
         },
         Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
     }
@@ -273,6 +274,7 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
     match api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await {
         Ok(_result) => {
             file_operations::write_file_anime_info_cache(&anime_data);
+            GLOBAL_REFRESH_UI.lock().await.no_internet = false;
         },
         Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
     }

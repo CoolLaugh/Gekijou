@@ -138,7 +138,7 @@ async function refresh_ui() {
     redraw_episode_canvas();
   }
 
-  if (refresh.noInternet == true) {
+  if (refresh.no_internet == true) {
     document.getElementById("internet_icon").style.visibility = "visible";
   } else {
     document.getElementById("internet_icon").style.visibility = "hidden";
@@ -1224,6 +1224,11 @@ async function get_torrents(anime_id) {
 window.open_window = open_window;
 async function open_window(url) {
   invoke("open_url", { url: url});
+}
+
+window.open_new_releases = open_new_releases;
+async function open_new_releases() {
+  invoke("open_url", { url: "https://github.com/CoolLaugh/Gekijou/releases"});
 }
 
 

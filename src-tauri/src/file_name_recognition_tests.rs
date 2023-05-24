@@ -75,6 +75,7 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
         });
         match api_calls::anilist_api_call_multiple(missing_ids, &mut anime_data).await {
             Ok(_result) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
                 // do nothing
             },
             Err(error) => {
