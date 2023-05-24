@@ -1306,42 +1306,45 @@ document.addEventListener('keyup', (e) => {
 window.delete_data = delete_data;
 async function delete_data() {
 
-  document.getElementById("user_name").value = "";
-  document.getElementById("title_language").selectedIndex = 0;
-  document.getElementById("show_spoiler_tags").checked = false;
-  document.getElementById("show_adult").checked = false;
-  document.getElementById("show_airing").checked = true;
-  document.getElementById("folders").value = "";
-  document.getElementById("update_delay").selectedIndex = 0;
-  var elements = document.getElementById("color_boxes").childNodes;
-  var first = true;
-  for (var i=0; i<elements.length; i++) {
+  if(confirm("This will delete all local data. This won't delete any data on anilist.co") == true) {
+    
+    document.getElementById("user_name").value = "";
+    document.getElementById("title_language").selectedIndex = 0;
+    document.getElementById("show_spoiler_tags").checked = false;
+    document.getElementById("show_adult").checked = false;
+    document.getElementById("show_airing").checked = true;
+    document.getElementById("folders").value = "";
+    document.getElementById("update_delay").selectedIndex = 0;
+    var elements = document.getElementById("color_boxes").childNodes;
+    var first = true;
+    for (var i=0; i<elements.length; i++) {
 
-    if(elements[i].nodeType == 1) {
-      if(first) {
-        elements[i].style.setProperty("border-style", "solid");
-        elements[i].style.setProperty("margin", "0px");
-        first = false;
-      } else {
-        elements[i].style.setProperty("border-style", "hidden");
-        elements[i].style.setProperty("margin", "2.5px");
+      if(elements[i].nodeType == 1) {
+        if(first) {
+          elements[i].style.setProperty("border-style", "solid");
+          elements[i].style.setProperty("margin", "0px");
+          first = false;
+        } else {
+          elements[i].style.setProperty("border-style", "hidden");
+          elements[i].style.setProperty("margin", "2.5px");
+        }
       }
     }
-  }
-  var theme_elements = document.getElementById("theme_boxes").childNodes;
-  var theme_element = null;
-  for (var i=0; i<theme_elements.length; i++) {
+    var theme_elements = document.getElementById("theme_boxes").childNodes;
+    var theme_element = null;
+    for (var i=0; i<theme_elements.length; i++) {
 
-    if(theme_elements[i].nodeType == 1) {
-      theme_element = theme_elements[i];
-      break;
+      if(theme_elements[i].nodeType == 1) {
+        theme_element = theme_elements[i];
+        break;
+      }
     }
-  }
-  console.log(theme_element);
-  set_theme(theme_element,0);
-  removeChildren(document.getElementById("cover_panel_grid"));
+    console.log(theme_element);
+    set_theme(theme_element,0);
+    removeChildren(document.getElementById("cover_panel_grid"));
 
-  await invoke("delete_data");
+    await invoke("delete_data");
+  }
 }
 
 

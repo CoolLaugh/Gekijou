@@ -233,7 +233,7 @@ pub fn delete_data() -> bool {
 
     let files = vec!["token","token_backup","user_settings","user_settings_backup",
                                 "anime_cache","anime_cache_backup","user_data","user_data_backup",
-                                "user_Lists","user_Lists_backup","episode_path","episode_path_backup"];
+                                "user_lists","user_lists_backup","episode_path","episode_path_backup", "update_queue", "update_queue_backup"];
 
     for file in files {
 

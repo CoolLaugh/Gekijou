@@ -1694,6 +1694,9 @@ async fn delete_data() -> bool {
     GLOBAL_ANIME_PATH.lock().await.clear();
     GLOBAL_REFRESH_UI.lock().await.clear();
     GLOBAL_UPDATE_ANIME_DELAYED.lock().await.clear();
+    GLOBAL_ANIME_UPDATE_QUEUE.lock().await.clear();
+
+    WATCHING_TRACKING.lock().await.clear();
 
     file_operations::delete_data()
 }
