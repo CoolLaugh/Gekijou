@@ -419,10 +419,12 @@ body {
 .info_bar {
   display: block;
   background: var(--background-color2);
+  margin-top: 10px;
 }
 
 .info_bar p {
   margin: 0px;
+  margin-left: 5px;
 }
 
 .cover_container {

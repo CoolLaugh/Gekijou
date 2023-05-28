@@ -118,7 +118,12 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
                 episode_fix_batch(&mut file_name_chunk, &anime_data);
 
                 println!("chunk {} done", count);
-                sender_copy.send(true).unwrap();
+                match sender_copy.send(true) {
+                    Ok(_result) => {
+                        // do nothing
+                    },
+                    Err(_error) => println!("no receiver"),
+                }
 
                 file_name_chunk
             }));

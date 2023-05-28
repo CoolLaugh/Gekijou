@@ -163,14 +163,12 @@ async function refresh_ui() {
   draw_delay_progress();
 
   if (refresh.scan_data.current_folder > 0) {
-    document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 94px)";
+    document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 109px)";
     document.getElementById("bottom_info_bar").textContent = "Scanning folder " + refresh.scan_data.current_folder + " of " + refresh.scan_data.total_folders + " " + ((refresh.scan_data.completed_chunks / refresh.scan_data.total_chunks) * 100).toFixed(0) + "%";
   } else {
     document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 69px)";
     document.getElementById("bottom_info_bar").textContent = "";
   }
-
-  
 
   refresh_ui_interval = setInterval(refresh_ui, 1000);
 }
@@ -1352,6 +1350,30 @@ async function delete_data() {
 window.manual_scan = manual_scan;
 async function manual_scan() {
 
+  var user_settings = await invoke("get_user_settings");
+
+  var folders = document.getElementById("folders").value.split('\n');
+  var set_folders = false;
+
+  if (folders.length != user_settings.folders.length) {
+    set_folders = true;
+  } else {
+    for(var i = 0; i < folders.length; i++) {
+      if (folders[i] != user_settings.folders[i]) {
+        set_folders = true;
+        break;
+      }
+    }
+  }
+
+
+  if (set_folders == true) {
+    user_settings.folders = folders;
+    await invoke("set_user_settings", { settings: user_settings});
+    console.log("set_user_settings");
+  }
+
+
   var button = document.getElementById("manual_scan_button");
   console.log(button);
   button.disabled = true;
@@ -1755,25 +1777,35 @@ function add_anime_data(info, title, show_spoilers) {
     document.getElementById("info_tags").textContent = "Tags: " + tags;
 }
 
+
+
 // fill in the user's data into the info window
 async function add_user_data(anime_id, user_settings) {
 
-  // custom filename is a separate call because it is not part of user data
-  var custom_title = await invoke("get_custom_filename", {animeId: anime_id});
-  document.getElementById("custom_filename").value = custom_title;
+  if(user_settings.username == "") {
+    document.getElementById("my_list_tab").style.display = "none";
+  } else {
+    document.getElementById("my_list_tab").style.display = "block";
 
-  var user_data = await invoke("get_user_info", {id: anime_id});
-
-  document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
-  document.getElementById("status_select").value = user_data.status;
-  document.getElementById("episode_number").value = user_data.progress;
-  setup_score_dropdown(user_settings.score_format);
-  document.getElementById("score_dropdown").value = user_data.score;
-  document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
-  document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
-  document.getElementById("user_notes").value = null_check(user_data.notes, user_data.notes, "");
-  document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
+    // custom filename is a separate call because it is not part of user data
+    var custom_title = await invoke("get_custom_filename", {animeId: anime_id});
+    document.getElementById("custom_filename").value = custom_title;
+  
+    var user_data = await invoke("get_user_info", {id: anime_id});
+  
+    document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
+    document.getElementById("status_select").value = user_data.status;
+    document.getElementById("episode_number").value = user_data.progress;
+    setup_score_dropdown(user_settings.score_format);
+    document.getElementById("score_dropdown").value = user_data.score;
+    document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
+    document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
+    document.getElementById("user_notes").value = null_check(user_data.notes, user_data.notes, "");
+    document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
+  }
 }
+
+
 
 // add the trailer if it exists or hide the trailer tab if it doesn't
 function add_trailer(trailer) {
@@ -1786,6 +1818,8 @@ function add_trailer(trailer) {
         document.getElementById("trailer_button").style.display = "none";
     }
 }
+
+
 
 // hide information window and return to cover grid
 window.hide_anime_info_window = hide_anime_info_window;
