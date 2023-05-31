@@ -5,6 +5,7 @@
   --text-color: #f6f6f6;
   --highlight: #60b6ec;
   --highlight-secondary: #707679;
+  --shadow-color: black;
 
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -25,6 +26,7 @@ body {
   overflow: hidden;
   min-height: 100vh;
   background-size: cover;
+  margin: 0px;
 }
 
 /* width */
@@ -56,7 +58,6 @@ body {
   overflow: hidden;
   min-width: 722px;
   height: 52px;
-  margin-bottom: 8px;
 }
 
 /* Style the links inside the navigation bar */
@@ -98,6 +99,7 @@ body {
   min-width: 722px;
   margin-bottom: 8px;
   align-content: center;
+  margin-top: 8px;
 }
 
 .underline {
@@ -109,10 +111,14 @@ body {
 
 .filters {
   display: none;
+  height: 44px;
+  padding-left: 10px;
 }
 
 .filters_recommended {
   display: none;
+  height: 44px;
+  padding-left: 10px;
 }
 
 .anime_info_panel {
@@ -404,11 +410,12 @@ body {
 
 .cover_panel {
   display: grid;
-  grid-gap: 20px 30px;
+  grid-gap: 20px 20px;
   grid-template-columns: repeat(auto-fill, 200px);
   transition: .5s ease;
   font-size: 14px;
   text-align: center;
+  margin: 10px;
 }
 
 .cover_panel p {
@@ -419,7 +426,6 @@ body {
 .info_bar {
   display: block;
   background: var(--background-color2);
-  margin-top: 10px;
 }
 
 .info_bar p {
@@ -427,13 +433,24 @@ body {
   margin-left: 5px;
 }
 
+.cover_image {
+  min-width: 200px;
+  min-height: 300px;
+  border-radius: 2px 2px 0px 0px;
+}
+
 .cover_container {
   position: relative;
   width: 100%;
   max-width: 200px;
   background: var(--background-color2);
-  /* border-radius: 8px; */
+  box-shadow: 0px 0px 5px 1px var(--shadow-color);
+  border-radius: 2px;
   /* padding: 4px; */
+}
+
+.cover_container:hover {
+  box-shadow: 0px 0px 7px 2px var(--shadow-color);
 }
 
 .cover_container button {
@@ -451,6 +468,14 @@ body {
 
 .cover_container:hover .add_buttons {
   opacity: 1;
+}
+
+.related_entry {
+  width: 116px; 
+  text-align: center; 
+  background: var(--background-color1); 
+  position: relative;
+  box-shadow: 0px 0px 4px 0px var(--shadow-color);
 }
 
 .sort_value_display {

@@ -139,9 +139,9 @@ async function refresh_ui() {
   }
 
   if (refresh.no_internet == true) {
-    document.getElementById("internet_icon").style.visibility = "visible";
+    document.getElementById("internet_icon").style.display = "block";
   } else {
-    document.getElementById("internet_icon").style.visibility = "hidden";
+    document.getElementById("internet_icon").style.display = "none";
   }
 
   if(refresh.errors.length != 0) {
@@ -163,10 +163,10 @@ async function refresh_ui() {
   draw_delay_progress();
 
   if (refresh.scan_data.current_folder > 0) {
-    document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 109px)";
+    document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 77px)";
     document.getElementById("bottom_info_bar").textContent = "Scanning folder " + refresh.scan_data.current_folder + " of " + refresh.scan_data.total_folders + " " + ((refresh.scan_data.completed_chunks / refresh.scan_data.total_chunks) * 100).toFixed(0) + "%";
   } else {
-    document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 69px)";
+    document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 53px)";
     document.getElementById("bottom_info_bar").textContent = "";
   }
 
@@ -754,7 +754,7 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
   var html = "";
 
   html += "<div id=\"" + anime.id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + anime.popularity + "\" score=\"" + average_score + "\" title=\"" + title + "\" trending=\"" + anime.trending + "\" started=\"" + started_date + "\" completed=\"" + completed_date + "\">"
-  html +=   "<img alt=\"Cover Image\" class=\"image\" height=\"300\" id=\"" + cover_id + "\" src=\"" + cover_image + "\" width=\"200\">"
+  html +=   "<img alt=\"Cover Image\" class=\"cover_image\" height=\"300\" id=\"" + cover_id + "\" src=\"" + cover_image + "\" width=\"200\" onerror=\"this.src='assets/missing_image.png';\">"
   html +=   "<div class=\"airing_value_display\" style=\"display: " + display_airing_value + "; color: #f6f6f6;\"><p id=\"airing_value\" airing_at=\"" + airing_at + "\" airing_ep=\"" + airing_ep + "\">" + airing_value + "</p></div>"
   html +=   "<div class=\"sort_value_display\" style=\"display: " + display_sort_value + "; color: #f6f6f6;\"><p id=\"sort_value\">" + sort_value + "</p></div>"
   html +=   "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes_" + anime.id + "\" width=\"200\"></canvas>"
@@ -1124,27 +1124,32 @@ async function browse_update() {
     sort_value += "_DESC";
   }
 
-  var list = await invoke("browse", {year: year, season: season, genre: genre, format: format, search: search, order: sort_value});
+  try {
+    var list = await invoke("browse", {year: year, season: season, genre: genre, format: format, search: search, order: sort_value});
 
-  if (year != document.getElementById("year_select").value ||
-      season != document.getElementById("season_select").value ||
-      format != document.getElementById("format_select").value ||
-      genre != document.getElementById("genre_select").value ||
-      sort != document.getElementById("sort_order").value) {
-    return;
-  }
-
-  removeChildren(document.getElementById("cover_panel_grid"));
-  list_ids = [];
-  for(var i = 0; i < list.length; i++) {
-
-    if(user_settings.show_adult == false && list[i].is_adult == true) {
-      continue;
+    // ignore browse returns with different filters
+    if (year != document.getElementById("year_select").value ||
+        season != document.getElementById("season_select").value ||
+        format != document.getElementById("format_select").value ||
+        genre != document.getElementById("genre_select").value ||
+        sort != document.getElementById("sort_order").value) {
+      return;
     }
-    add_anime(list[i], null, i, user_settings.score_format, user_settings.show_airing_time);
-    list_ids.push(list[i].id);
+
+    removeChildren(document.getElementById("cover_panel_grid"));
+    list_ids = [];
+    for(var i = 0; i < list.length; i++) {
+  
+      if(user_settings.show_adult == false && list[i].is_adult == true) {
+        continue;
+      }
+      add_anime(list[i], null, i, user_settings.score_format, user_settings.show_airing_time);
+      list_ids.push(list[i].id);
+    }
+  } catch (error) {
+    // do nothing
   }
-  //sort_anime();
+  
   document.getElementById("loader").style.display = "none";
 }
 
@@ -1568,6 +1573,7 @@ async function set_color(element) {
 var background_color_1 = ["#1f2122", "#0e0e10", "#edeeee", "#ffffff", "#f7f9fa", "#eaeded", "#eef2fe", "#feffef" ];
 var background_color_2 = ["#27292a", "#1f1f23", "#d2d2d2", "#e5e5e5", "#edeeee", "#141921", "#d6dbef", "#ede0d7" ];
 var text_color = ["#f6f6f6", "#f6f6f6", "#000000", "#1c0000", "#000000", "#f6f6f6", "#000000", "#000000"];
+var shadow_color = ["#000000","#212121","#a8a8a8","#bababa"]
 window.set_theme = set_theme;
 async function set_theme(element, index) {
 
@@ -1590,6 +1596,7 @@ async function set_theme(element, index) {
   document.styleSheets[0].cssRules[0].style.setProperty("--background-color1", background_color_1[index]);
   document.styleSheets[0].cssRules[0].style.setProperty("--background-color2", background_color_2[index]);
   document.styleSheets[0].cssRules[0].style.setProperty("--text-color", text_color[index]);
+  document.styleSheets[0].cssRules[0].style.setProperty("--shadow-color", shadow_color[index]);
 }
 
 
@@ -2010,7 +2017,7 @@ function add_related_anime(related, recommendations, title_language) {
 
         // add the show to the grid
         var html = "";
-        html +=  "<div style=\"width: 116px; text-align: center; background: var(--background-color1); position: relative;\">"
+        html +=  "<div class=\"related_entry\">"
         html +=    "<a" + href + "><img class=image href=\"#\" height=\"174px\" src=\"" + related[i].node.cover_image.large + "\" width=\"116px\"" + onclick + "></a>"
         html +=    "<div style=\"height: 49px; overflow: hidden; margin-top: -5px;\"><a" + href + "><p" + onclick + ">" + title + "</p></a></div>"
         html +=    "<div class=\"related_category\"><p style=\"color: #f6f6f6;\">" + relation_type + "</p></div>"
@@ -2047,7 +2054,7 @@ function add_related_anime(related, recommendations, title_language) {
 
         // add the show to the grid
         var html = "";
-        html +=  "<div style=\"width: 116px; text-align: center; background: var(--background-color1);\">"
+        html +=  "<div class=\"related_entry\">"
         html +=    "<a href=\"#\"><img class=image height=\"174px\" src=\"" + recommendations[i].media_recommendation.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\"></a>"
         html +=    "<div style=\"height: 49px; overflow: hidden; margin-top: -5px;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\">" + title + "</p></a></div>"
         html +=  "</div>"

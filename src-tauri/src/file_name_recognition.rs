@@ -727,6 +727,7 @@ pub async fn get_prequel_data() {
             Err(error) => {
                 if error == "no connection" {
                     GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                    break;
                 } else {
                     println!("error getting prequel data: {}", error);
                 }

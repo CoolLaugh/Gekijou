@@ -838,7 +838,7 @@ async fn pull_updates_from_anilist() {
     if user_settings.user_id.is_none() {
         user_settings.user_id = api_calls::get_user_id(user_settings.username.clone()).await;
         if user_settings.user_id.is_none() {
-            GLOBAL_REFRESH_UI.lock().await.no_internet = true
+            GLOBAL_REFRESH_UI.lock().await.no_internet = true;
         }
         else {
             GLOBAL_REFRESH_UI.lock().await.no_internet = false;
@@ -1140,7 +1140,11 @@ async fn anime_update_delay() {
         // marks movies, etc as episode 1 because movies don't have a episode number
         file_name_recognition::episode_fix(media_id, &mut episode, &anime_data);
 
-        let next_episode: bool = episode > user_data.get(&media_id).unwrap().progress && episode <= user_data.get(&media_id).unwrap().progress + length;
+        let next_episode: bool = if let Some(user_entry) = user_data.get(&media_id) {
+            episode > user_entry.progress && episode <= user_entry.progress + length
+        } else {
+            false
+        };
 
         // if the file is being monitored and the episode is the next episode
         if let Some(entry) = watching_data.get_mut(&media_id) {
@@ -1500,7 +1504,11 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
                     has_next_page = false;
                 }
             },
-            Err(error) => return Err(error),
+            Err(error) => { 
+                GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Cannot browse anilist. No internet connection."));
+                return Err(error);
+            },
         }
     }
 
