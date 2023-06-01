@@ -27,7 +27,7 @@ use tauri::Manager;
 use window_titles::{Connection, ConnectionTrait};
 use std::{collections::HashMap, path::Path, time::{Duration, Instant, SystemTime, UNIX_EPOCH}};
 use open;
-use api_calls::{TokenData, UserSettings, AnilistDate};
+use api_calls::{TokenData, UserSettings, AnilistDate, MangaInfo};
 use crate::{api_calls::{AnimeInfo, UserAnimeInfo}, file_name_recognition::AnimePath};
 
 
@@ -615,6 +615,19 @@ async fn get_anime_info(id: i32) -> Option<AnimeInfo> {
     return Some(GLOBAL_ANIME_DATA.lock().await.get(&id).unwrap().clone());
 }
 
+
+
+// get data for a specific anime
+#[tauri::command]
+async fn get_manga_info(id: i32) -> Option<MangaInfo> {
+
+    match api_calls::anilist_get_manga_ln_info(id).await {
+        Ok(result) => {
+            return Some(result);
+        },
+        Err(_error) => return None,
+    }
+}
 
 
 // updates a entry on anilist with new information
@@ -1805,7 +1818,7 @@ fn main() {
         Ok(())
       })
         .invoke_handler(tauri::generate_handler![manual_scan,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
-            get_user_settings,get_list_user_info,get_anime_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
+            get_user_settings,get_list_user_info,get_anime_info,get_manga_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,refresh_ui,clear_errors,increment_decrement_episode,on_shutdown,episodes_exist,browse,
             add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
             open_url,get_list_ids,run_filename_tests,get_debug,delete_data,background_tasks,startup_finished,get_custom_filename,set_custom_filename])

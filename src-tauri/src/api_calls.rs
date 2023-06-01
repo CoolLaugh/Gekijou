@@ -157,6 +157,48 @@ pub struct AnimeInfo {
 }
 
 
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct MangaInfo {
+    pub average_score: Option<i32>,
+    pub cover_image: CoverImage,
+    pub description: Option<String>,
+    pub format: Option<String>,
+    pub genres: Vec<String>,
+    pub id: i32,
+    pub is_adult: bool,
+    pub popularity: i32,
+    pub start_date: AnilistDate,
+    pub title: Title,
+    pub trailer: Option<TrailerData>,
+    pub media_type: String, // type is a rust keyword
+    pub relations: Relations,
+    pub recommendations: Option<Recommendations>,
+    pub tags: Vec<Tag>,
+    pub trending: i32,
+    pub chapters: Option<i32>,
+    pub volumes: Option<i32>,
+    pub source: Option<String>,
+    pub staff: Staff,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Staff {
+    pub nodes: Vec<StaffNodes>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct StaffNodes {
+    pub name: Name,
+    pub primary_occupations: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Name {
+    pub full: String,
+}
+
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct NextAiringEpisode {
     pub airing_at: i32,
@@ -209,7 +251,6 @@ impl TokenData {
 pub struct UserSettings {
     pub username: String,
     pub title_language: String,
-    pub show_spoilers: bool,
     pub show_adult: bool,
     pub folders: Vec<String>,
     pub update_delay: i32,
@@ -225,13 +266,12 @@ pub struct UserSettings {
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_spoilers: false, show_adult: false, folders: Vec::new(), update_delay: 0, score_format: None, highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0), user_id: None, updated_at: None }
+        UserSettings { username: String::new(), title_language: String::new(), show_adult: false, folders: Vec::new(), update_delay: 0, score_format: None, highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0), user_id: None, updated_at: None }
     }
     
     pub fn clear(&mut self) {
         self.username.clear();
         self.title_language.clear();
-        self.show_spoilers = false;
         self.show_adult = false;
         self.folders.clear();
         self.update_delay = 0;
@@ -451,6 +491,7 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i
 
 
 
+// convert names used by anilist to snake case used by rust
 fn anilist_to_snake_case(anilist_json: String) -> String {
 
     anilist_json
@@ -472,6 +513,7 @@ fn anilist_to_snake_case(anilist_json: String) -> String {
         .replace("startedAt", "started_at")
         .replace("completedAt", "completed_at")
         .replace("isAnimationStudio", "is_animation_studio")
+        .replace("primaryOccupations", "primary_occupations")
 }
 
 fn ceiling_div(x: usize, y: usize) -> usize {
@@ -590,6 +632,45 @@ pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<(), &'static
             let anime_data: AnimeInfo = serde_json::from_value(anime_value["data"]["media"].take()).unwrap();
             GLOBAL_ANIME_DATA.lock().await.insert(anime_data.id, anime_data);
             return Ok(())
+        },
+        Err(error) => return Err(error),
+    }
+}
+
+
+
+// query for a specific list along with all user data and media data for the manga on that list
+const MEDIA_INFO_MANGA: &str = "query ($id: Int) {
+    Media (id: $id) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
+        id title { english romaji native userPreferred } coverImage { large } type format isAdult genres 
+        averageScore popularity description trailer { id site } startDate { year month day } trending
+        chapters volumes source 
+        staff { nodes { name { full } primaryOccupations } }
+        relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+        recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+        tags { name isGeneralSpoiler isMediaSpoiler description }
+    }
+}";
+// get information on manga (or light novel) from anilist
+pub async fn anilist_get_manga_ln_info(media_id: i32) -> Result<MangaInfo, &'static str> {
+    
+    // create client and query json
+    let json = json!({"query": MEDIA_INFO_MANGA, "variables": {"id": media_id}});
+
+    // get media information from anilist api
+    match post(&json, None).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
+            println!("{}", response);
+            let mut anime_value: serde_json::Value = serde_json::from_str(&response).unwrap();
+            let mut manga_data: MangaInfo = serde_json::from_value(anime_value["data"]["media"].take()).unwrap();
+            
+            manga_data.staff.nodes.retain(|staff_member| { 
+                staff_member.primary_occupations.len() > 0 && 
+                staff_member.primary_occupations.first().unwrap().contains("Translator") == false 
+            });
+
+            return Ok(manga_data)
         },
         Err(error) => return Err(error),
     }

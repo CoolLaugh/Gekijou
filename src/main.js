@@ -163,8 +163,12 @@ async function refresh_ui() {
   draw_delay_progress();
 
   if (refresh.scan_data.current_folder > 0) {
+    var percent = (refresh.scan_data.completed_chunks / refresh.scan_data.total_chunks) * 100;
+    if (percent.isNaN == true) {
+      percent = 0.0;
+    }
     document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 77px)";
-    document.getElementById("bottom_info_bar").textContent = "Scanning folder " + refresh.scan_data.current_folder + " of " + refresh.scan_data.total_folders + " " + ((refresh.scan_data.completed_chunks / refresh.scan_data.total_chunks) * 100).toFixed(0) + "%";
+    document.getElementById("bottom_info_bar").textContent = "Scanning folder " + refresh.scan_data.current_folder + " of " + refresh.scan_data.total_folders + " " + percent.toFixed(0) + "%";
   } else {
     document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 53px)";
     document.getElementById("bottom_info_bar").textContent = "";
@@ -1409,7 +1413,6 @@ async function get_user_settings() {
   var user_settings = await invoke("get_user_settings");
   document.getElementById("user_name").value = user_settings.username;
   document.getElementById("title_language").value = user_settings.title_language;
-  document.getElementById("show_spoiler_tags").checked = user_settings.show_spoilers;
   document.getElementById("show_adult").checked = user_settings.show_adult;
   document.getElementById("show_airing").checked = user_settings.show_airing_time;
   document.getElementById("update_delay").value = user_settings.update_delay;
@@ -1503,7 +1506,6 @@ async function hide_setting_window() {
   var settings = {
     username: document.getElementById("user_name").value,
     title_language: document.getElementById("title_language").value,
-    show_spoilers: document.getElementById("show_spoiler_tags").checked,
     show_adult: document.getElementById("show_adult").checked,
     show_airing_time: document.getElementById("show_airing").checked,
     folders: document.getElementById("folders").value.split('\n'),
@@ -1636,7 +1638,9 @@ async function show_anime_info_window(anime_id) {
   var title = await determine_title(info.title, user_settings);
 
   // fill in info window with data
-  add_anime_data(info, title, user_settings.show_spoilers);
+  add_anime_data(info, title);
+  document.getElementById("my_list_tab").style.display = "";
+  document.getElementById("torrent_button").style.display = "";
   await add_user_data(anime_id, user_settings);
   add_trailer(info.trailer);
   add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
@@ -1655,11 +1659,14 @@ async function show_anime_info_window(anime_id) {
 
   var previous_info = await invoke("get_anime_info", {id: list_ids[index_previous]});
   var previous_title = await determine_title(previous_info.title, user_settings);
+  console.log(document.getElementById("info_window_previous").style.display);
+  document.getElementById("info_window_previous").style.display = "";
   document.getElementById("info_window_previous").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_previous] + ")");
   document.getElementById("info_window_previous").title = previous_title;
 
   var next_info = await invoke("get_anime_info", {id: list_ids[index_next]});
   var next_title = await determine_title(next_info.title, user_settings);
+  document.getElementById("info_window_next").style.display = "";
   document.getElementById("info_window_next").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_next] + ")");
   document.getElementById("info_window_next").title = next_title;
 
@@ -1671,8 +1678,41 @@ async function show_anime_info_window(anime_id) {
 
 
 
+window.show_manga_info_window = show_manga_info_window;
+async function show_manga_info_window(manga_id) {
+    
+  info_window_anime_id = manga_id;
+
+  // retrieve necessary information
+  var user_settings = await invoke("get_user_settings");
+  var info = await invoke("get_manga_info", {id: manga_id});
+  var title = await determine_title(info.title, user_settings);
+
+  // fill in info window with data
+  add_anime_data(info, title);
+  document.getElementById("my_list_tab").style.display = "none";
+  document.getElementById("torrent_button").style.display = "none";
+  add_trailer(info.trailer);
+  add_related_anime(info.relations.edges, info.recommendations.nodes, user_settings.title_language);
+  var table = document.getElementById("torrent_table");
+  var rows = table.rows.length - 1;
+  for(var i = 0; i < rows; i++) {
+    table.deleteRow(1);
+  }
+
+  document.getElementById("info_window_previous").style.display = "none";
+  document.getElementById("info_window_next").style.display = "none";
+
+  // make the window visible
+  openTab('information', 'underline_tab_0');
+  document.getElementById("info_panel").style.display = "block";
+  document.getElementById("cover_panel_grid").style.opacity = 0.3;
+}
+
+
+
 // fill in data about the selected anime into the info window
-function add_anime_data(info, title, show_spoilers) {
+function add_anime_data(info, title) {
 
     // text strings for parts that are more complicated than a simple assignment
     var studio_name = "";
@@ -1680,23 +1720,41 @@ function add_anime_data(info, title, show_spoilers) {
     var episode_text = "";
     var date = "";
 
-    // determine the name of the main studio
-    if (info.studios.nodes.length == 0 || info.studios.nodes[0].name == null) {
-        studio_name = "Unknown Studio";
-    } else {
-        studio_name = info.studios.nodes[0].name;
-        for(var i = 1; i < info.studios.nodes.length; i++){
-          studio_name += "<br>" + info.studios.nodes[i].name;
-        }
+
+    if (info.media_type == "ANIME") {
+      // determine the name of the main studio
+      if (info.studios.nodes.length == 0 || info.studios.nodes[0].name == null) {
+          studio_name = "Unknown Studio";
+      } else {
+          studio_name = info.studios.nodes[0].name;
+          for(var i = 1; i < info.studios.nodes.length; i++){
+            studio_name += "<br>" + info.studios.nodes[i].name;
+          }
+      }
+    } else { // manga and LNs
+      studio_name = info.staff.nodes[0].name.full;
+      for(var i = 1; i < info.staff.nodes.length; i++){
+        studio_name += "<br>" + info.staff.nodes[i].name.full;
+      }
     }
 
-    // determine the number of episodes and length of each episode
-    if (info.episodes == null) {
-        episode_text = "?? x "
-    } else if (info.episodes > 1) {
-        episode_text = info.episodes + " x "
+    if (info.media_type == "ANIME") {
+      // determine the number of episodes and length of each episode
+      if (info.episodes == null) {
+          episode_text = "?? x ";
+      } else if (info.episodes > 1) {
+          episode_text = info.episodes + " x ";
+      }
+      episode_text += null_check(info.duration, info.duration + " Minutes", "?? Minutes");
+    } else { // manga and LNs
+      if (info.chapters != null) {
+        episode_text = info.chapters + " chapters";
+      } else if (info.volumes != null) {
+        episode_text = info.volumes + " volumes";
+      } else {
+        episode_text = "unknown";
+      }
     }
-    episode_text += null_check(info.duration, info.duration + " Minutes", "?? Minutes");
 
     // determine the format of the anime(TV, Movie, OVA, etc)
     if (info.format == null) {
@@ -1714,6 +1772,8 @@ function add_anime_data(info, title, show_spoilers) {
     if (info.season != null) {
         // capitalize the first letter
         date = info.season.charAt(0) + info.season.toLowerCase().slice(1) + " " + info.season_year; 
+    } else if (info.start_date != null) {
+        date = info.start_date.year + "-" + info.start_date.month + "-" + info.start_date.day;
     } else {
         date = "Unknown Date";
     }
@@ -1729,14 +1789,18 @@ function add_anime_data(info, title, show_spoilers) {
   
     // list all tags
     var tags = "";
+    spoiler_tags = "";
     for (var i = 0; i < info.tags.length; i++) {
-        // don't list tags that are marked as spoiler if the user doesn't want to see them
-        if (show_spoilers == false && (info.tags[i].is_general_spoiler || info.tags[i].is_media_spoiler)) {
-            continue;
-        }
-        tags += info.tags[i].name;
-        if (i != info.tags.length - 1) {
+        if (info.tags[i].is_general_spoiler || info.tags[i].is_media_spoiler) {
+          if (spoiler_tags.length > 0) {
+            spoiler_tags += ", ";
+          }
+          spoiler_tags += info.tags[i].name;
+        } else {
+          if (tags.length > 0) {
             tags += ", ";
+          }
+          tags += info.tags[i].name;
         }
     }
 
@@ -1760,18 +1824,39 @@ function add_anime_data(info, title, show_spoilers) {
 
     // create string of episode and duration information for episode hover
     var episode_title_text = "";
-    if (info.episodes <= 1) {
-      episode_title_text = episode_text;
-    } else {
-      episode_title_text = info.episodes + " Episodes, " + info.duration + " Minutes each";
+    if (info.media_type == "ANIME") {
+      if (info.episodes <= 1) {
+        episode_title_text = episode_text;
+      } else {
+        episode_title_text = info.episodes + " Episodes, " + info.duration + " Minutes each";
+      }
+    } else { // manga and LNs
+      if (info.chapters != null) {
+        episode_title_text = info.chapters + " chapters";
+        if (info.volumes != null) {
+          episode_title_text += " " + info.volumes + " volumes";
+        }
+      } else if (info.volumes != null) {
+        episode_title_text = info.volumes + " volumes";
+      } else {
+        episode_title_text = "unknown";
+      }
     }
+
+    var cover_onclick = "";
+    if (info.media_type == "ANIME") {
+      cover_onclick = "open_window(\"https://anilist.co/anime/" + info.id + "\")";
+    } else {
+      cover_onclick = "open_window(\"https://anilist.co/manga/" + info.id + "\")";
+    }
+
   
     // populate window with the anime's information
     document.getElementById("info_title").textContent = title;
     document.getElementById("info_title").title = all_titles;
     document.getElementById("info_cover").src = info.cover_image.large;
     document.getElementById("info_cover").title = "https://anilist.co/anime/" + info.id;
-    document.getElementById("info_cover").setAttribute("onclick", "open_window(\"https://anilist.co/anime/" + info.id + "\")");
+    document.getElementById("info_cover").setAttribute("onclick", cover_onclick);
     document.getElementById("studio").innerHTML = studio_name;
     document.getElementById("info_description").innerHTML = info.description;
     document.getElementById("info_format").textContent = anime_format;
@@ -1781,7 +1866,18 @@ function add_anime_data(info, title, show_spoilers) {
     document.getElementById("info_season_year").textContent = date;
     document.getElementById("info_season_year").title = info.start_date.year + "-" + info.start_date.month + "-" + info.start_date.day;
     document.getElementById("info_genres").textContent = "Genres: " + genres_text;
-    document.getElementById("info_tags").textContent = "Tags: " + tags;
+    document.getElementById("info_tags").innerHTML = "Tags: " + tags;
+    if (spoiler_tags.length > 0) {
+      document.getElementById("info_tags").innerHTML += "<a style=\"color: var(--highlight);\" href=\"#\" id=\"show_spoilers\" onclick=\"show_spoiler_tags()\"> Show Spoiler Tags</a>";
+    }
+}
+
+
+var spoiler_tags = "";
+window.show_spoiler_tags = show_spoiler_tags;
+function show_spoiler_tags(tags) {
+  document.getElementById("show_spoilers").remove();
+  document.getElementById("info_tags").innerHTML += ", " + spoiler_tags;
 }
 
 
@@ -2010,9 +2106,8 @@ function add_related_anime(related, recommendations, title_language) {
         var href = " href=\"#\"";
         var onclick = " onclick=\"show_anime_info_window(" + related[i].node.id + ")\"";
         // don't allow clicking for manga sources, the info window is only designed for anime
-        if (relation_type == "Adaptation") {
-            onclick = "";
-            href = "";
+        if (related[i].node.media_type == "MANGA") {
+            onclick = " onclick=\"show_manga_info_window(" + related[i].node.id + ")\"";
         }
 
         // add the show to the grid

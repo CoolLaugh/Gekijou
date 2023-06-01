@@ -406,7 +406,11 @@ body {
   z-index: 3;
 }
 
-.episodes_exist {transform: translate(-200px, 300px);position: absolute;background: var(--background-color1);}
+.episodes_exist {
+  transform: translate(-200px, 300px);
+  position: absolute;
+  background: var(--background-color1);
+}
 
 .cover_panel {
   display: grid;
@@ -426,6 +430,9 @@ body {
 .info_bar {
   display: block;
   background: var(--background-color2);
+  position: absolute;
+  width: 100%;
+  top: calc(100vh - 25px);
 }
 
 .info_bar p {
