@@ -363,4 +363,14 @@
     "expected_anime_id": 147864,
     "expected_episode": 1,
     "expected_resolution": 0
+},{
+    "filename":"[Cleo]Overlord_II_-_01_(Dual Audio_10bit_BD1080p_x265).mkv",
+    "expected_anime_id": 98437,
+    "expected_episode": 1,
+    "expected_resolution": 1080
+},{
+    "filename":"[HorribleSubs] Overlord III - 01 [1080p].mkv",
+    "expected_anime_id": 101474,
+    "expected_episode": 1,
+    "expected_resolution": 1080
 }]

@@ -151,6 +151,17 @@ async function refresh_ui() {
       table.deleteRow(0);
     }*/
 
+    // don't show the same error twice
+    for(var i = 0; i < refresh.errors.length; i++) {
+      for(var j = 0; j < table.rows.length; j++) {
+        if(table.rows[j].innerHTML == refresh.errors[i]) {
+          refresh.errors.splice(i, 1);
+          i--;
+          break;
+        }
+      }
+    }
+
     for(var i = 0; i < refresh.errors.length; i++) {
       var row = table.insertRow(i);
       row.innerHTML = refresh.errors[i];
@@ -163,12 +174,12 @@ async function refresh_ui() {
   draw_delay_progress();
 
   if (refresh.scan_data.current_folder > 0) {
-    var percent = (refresh.scan_data.completed_chunks / refresh.scan_data.total_chunks) * 100;
-    if (percent.isNaN == true) {
-      percent = 0.0;
+    var percent = ((refresh.scan_data.completed_chunks / refresh.scan_data.total_chunks) * 100).toFixed(0);
+    if (percent == "NaN") {
+      percent = "0";
     }
     document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 77px)";
-    document.getElementById("bottom_info_bar").textContent = "Scanning folder " + refresh.scan_data.current_folder + " of " + refresh.scan_data.total_folders + " " + percent.toFixed(0) + "%";
+    document.getElementById("bottom_info_bar").textContent = "Scanning folder " + refresh.scan_data.current_folder + " of " + refresh.scan_data.total_folders + " " + percent + "%";
   } else {
     document.getElementById("cover_panel_id").style.maxHeight = "calc(100vh - 53px)";
     document.getElementById("bottom_info_bar").textContent = "";
@@ -502,7 +513,7 @@ async function show_anime_list_paged(page) {
 
   var get_list_response = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order").value, ascending: sort_ascending, page: page});
   if (get_list_response[1] != null) {
-    alert(get_list_response[1]);
+    //alert(get_list_response[1]);
   }
   var watching = get_list_response[0];
 
@@ -1313,11 +1324,10 @@ document.addEventListener('keyup', (e) => {
 window.delete_data = delete_data;
 async function delete_data() {
 
-  if(confirm("This will delete all local data. This won't delete any data on anilist.co") == true) {
+  if(await confirm("This will delete all local data. This won't delete any data on anilist.co") == true) {
     
     document.getElementById("user_name").value = "";
     document.getElementById("title_language").selectedIndex = 0;
-    document.getElementById("show_spoiler_tags").checked = false;
     document.getElementById("show_adult").checked = false;
     document.getElementById("show_airing").checked = true;
     document.getElementById("folders").value = "";
@@ -1868,16 +1878,16 @@ function add_anime_data(info, title) {
     document.getElementById("info_genres").textContent = "Genres: " + genres_text;
     document.getElementById("info_tags").innerHTML = "Tags: " + tags;
     if (spoiler_tags.length > 0) {
-      document.getElementById("info_tags").innerHTML += "<a style=\"color: var(--highlight);\" href=\"#\" id=\"show_spoilers\" onclick=\"show_spoiler_tags()\"> Show Spoiler Tags</a>";
+      document.getElementById("info_tags").innerHTML += ", <a style=\"color: var(--highlight);\" href=\"#\" id=\"show_spoilers\" onclick=\"show_spoiler_tags()\">Show Spoiler Tags</a>";
     }
 }
 
 
 var spoiler_tags = "";
 window.show_spoiler_tags = show_spoiler_tags;
-function show_spoiler_tags(tags) {
+function show_spoiler_tags() {
   document.getElementById("show_spoilers").remove();
-  document.getElementById("info_tags").innerHTML += ", " + spoiler_tags;
+  document.getElementById("info_tags").innerHTML += spoiler_tags;
 }
 
 
@@ -2113,7 +2123,7 @@ function add_related_anime(related, recommendations, title_language) {
         // add the show to the grid
         var html = "";
         html +=  "<div class=\"related_entry\">"
-        html +=    "<a" + href + "><img class=image href=\"#\" height=\"174px\" src=\"" + related[i].node.cover_image.large + "\" width=\"116px\"" + onclick + "></a>"
+        html +=    "<a" + href + "><img class=image href=\"#\" height=\"174px\" src=\"" + related[i].node.cover_image.large + "\" width=\"116px\"" + onclick + " onerror=\"this.src='assets/missing_image.png';\"></a>"
         html +=    "<div style=\"height: 49px; overflow: hidden; margin-top: -5px;\"><a" + href + "><p" + onclick + ">" + title + "</p></a></div>"
         html +=    "<div class=\"related_category\"><p style=\"color: #f6f6f6;\">" + relation_type + "</p></div>"
         html +=  "</div>"
@@ -2150,7 +2160,7 @@ function add_related_anime(related, recommendations, title_language) {
         // add the show to the grid
         var html = "";
         html +=  "<div class=\"related_entry\">"
-        html +=    "<a href=\"#\"><img class=image height=\"174px\" src=\"" + recommendations[i].media_recommendation.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\"></a>"
+        html +=    "<a href=\"#\"><img class=image height=\"174px\" src=\"" + recommendations[i].media_recommendation.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\" onerror=\"this.src='assets/missing_image.png';\"></a>"
         html +=    "<div style=\"height: 49px; overflow: hidden; margin-top: -5px;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\">" + title + "</p></a></div>"
         html +=  "</div>"
 

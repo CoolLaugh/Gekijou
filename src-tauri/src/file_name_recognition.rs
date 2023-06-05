@@ -53,6 +53,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
     for folder in folders {
 
         GLOBAL_REFRESH_UI.lock().await.scan_data.current_folder += 1;
+        GLOBAL_REFRESH_UI.lock().await.scan_data.completed_chunks = 0;
         let path = Path::new(&folder);
         if path.exists() == false {
             continue;

@@ -169,6 +169,7 @@ async fn set_user_settings(settings: UserSettings) {
         api_calls::anilist_get_list(user_settings.username.clone(), String::from("PAUSED"), access_token.clone(), &mut user_data, &mut user_lists).await;
         api_calls::anilist_get_list(user_settings.username.clone(), String::from("DROPPED"), access_token.clone(), &mut user_data, &mut user_lists).await;
         api_calls::anilist_get_list(user_settings.username.clone(), String::from("PLANNING"), access_token, &mut user_data, &mut user_lists).await;
+        user_settings.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
     }
 
     drop(user_settings);
@@ -244,8 +245,11 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone(), &mut *GLOBAL_USER_ANIME_DATA.lock().await, &mut *GLOBAL_USER_ANIME_LISTS.lock().await).await;
         if let Some(error_message_string) = error_message {
             //println!("{}", error_message_string);
+            GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+            GLOBAL_REFRESH_UI.lock().await.errors.push(error_message_string.clone());
             return (Vec::new(), Some(error_message_string));
         }
+        GLOBAL_REFRESH_UI.lock().await.no_internet = false;
         file_operations::write_file_anime_info_cache(&*GLOBAL_ANIME_DATA.lock().await);
         file_operations::write_file_user_info().await;
     }
@@ -263,9 +267,14 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
         if unknown_ids.is_empty() == false {
             match api_calls::anilist_api_call_multiple(unknown_ids, &mut anime_data).await {
                 Ok(_result) => {
+                    GLOBAL_REFRESH_UI.lock().await.no_internet = false;
                     file_operations::write_file_anime_info_cache(&anime_data);
                 },
-                Err(error) => return (Vec::new(), Some(String::from(error))),
+                Err(error) => {
+                    GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                    GLOBAL_REFRESH_UI.lock().await.errors.push(String::from(error));
+                    return (Vec::new(), Some(String::from(error)));
+                },
             }
         }
         
@@ -295,8 +304,13 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
         match api_calls::anilist_airing_time(get_airing_time_ids, &mut anime_data).await {
             Ok(_result) => {
                 // do nothing
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
             },
-            Err(error) => return (Vec::new(), Some(String::from(error))),
+            Err(error) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                GLOBAL_REFRESH_UI.lock().await.errors.push(String::from(error));
+                return (Vec::new(), Some(String::from(error))); 
+            },
         }
     }
 
@@ -606,9 +620,14 @@ async fn get_anime_info(id: i32) -> Option<AnimeInfo> {
     if GLOBAL_ANIME_DATA.lock().await.contains_key(&id) == false {
         match api_calls::anilist_get_anime_info_single(id).await {
             Ok(_result) => {
-                // do nothing
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
+                file_operations::write_file_anime_info_cache(&*GLOBAL_ANIME_DATA.lock().await);
             },
-            Err(_error) => return None,
+            Err(_error) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Anime information is missing. No internet connection."));
+                return None;
+            },
         }
     }
 
@@ -625,7 +644,10 @@ async fn get_manga_info(id: i32) -> Option<MangaInfo> {
         Ok(result) => {
             return Some(result);
         },
-        Err(_error) => return None,
+        Err(_error) => { 
+            GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Manga information is missing. No internet connection."));
+            return None; 
+        },
     }
 }
 
@@ -847,46 +869,35 @@ async fn pull_updates_from_anilist() {
     if user_settings.username.is_empty() {
         return;
     }
+    println!("user_settings.updated_at.is_some() {}", user_settings.updated_at.is_some());
+    if let Some(updated_at) = user_settings.updated_at {
+        println!("{}", updated_at);
+        // get modified user media data
+        match api_calls::get_updated_media_ids(user_settings.username.clone(), updated_at).await {
+            Ok(list) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
+                println!("list.len() {}", list.len());
+                if list.is_empty() == false {
+                    println!("{:?}", list);
+                    // for modified anime; download new info
+                    match api_calls::get_media_user_data(list, GLOBAL_TOKEN.lock().await.access_token.clone()).await {
+                        Ok(new_user_data) => {
+                            GLOBAL_REFRESH_UI.lock().await.no_internet = false;
 
-    if user_settings.user_id.is_none() {
-        user_settings.user_id = api_calls::get_user_id(user_settings.username.clone()).await;
-        if user_settings.user_id.is_none() {
-            GLOBAL_REFRESH_UI.lock().await.no_internet = true;
-        }
-        else {
-            GLOBAL_REFRESH_UI.lock().await.no_internet = false;
-        }
-    }
-
-    if let Some(user_id) = user_settings.user_id {
-        if let Some(updated_at) = user_settings.updated_at {
-    
-            // get modified user media data
-            match api_calls::get_updated_media_id(user_id, updated_at).await {
-                Ok(list) => {
-                    GLOBAL_REFRESH_UI.lock().await.no_internet = false;
-                    if list.is_empty() == false {
-        
-                        // for modified anime; download new info
-                        match api_calls::get_media_user_data(list, GLOBAL_TOKEN.lock().await.access_token.clone()).await {
-                            Ok(new_user_data) => {
-                                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
-
-                                let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
-                            
-                                for entry in new_user_data {
-                                    user_data.insert(entry.media_id, entry);
-                                }
-                            },
-                            Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
-                        }
+                            let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+                        
+                            for entry in new_user_data {
+                                user_data.insert(entry.media_id, entry);
+                            }
+                        },
+                        Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
                     }
-                    
-                    // update time to now so old updates aren't processed
-                    user_settings.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-                },
-                Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
-            }
+                }
+                
+                // update time to now so old updates aren't processed
+                user_settings.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+            },
+            Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
         }
     }
 
@@ -1671,7 +1682,14 @@ async fn get_list_ids(list: String) -> Option<Vec<i32>> {
         let mut ids = user_lists.get(&list).unwrap().clone();
         if GLOBAL_USER_SETTINGS.lock().await.show_adult == false {
             let anime_data = GLOBAL_ANIME_DATA.lock().await;
-            ids.retain(|id| { anime_data.get(id).unwrap().is_adult == false });
+
+            ids.retain(|id| {
+                if let Some(anime) = anime_data.get(id) {
+                    anime.is_adult == false
+                } else {
+                    true
+                }
+            });
         }
         return Some(ids);
     }

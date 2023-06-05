@@ -866,19 +866,22 @@ const USER_MEDIA_DATA: &str = "query($ids: [Int]) { Page(page: 0, perPage: 50) {
 pub async fn get_media_user_data(ids: Vec<i32>, access_token: String) -> Result<Vec<UserAnimeInfo>, &'static str> {
     
     let json = json!({"query": USER_MEDIA_DATA, "variables": {"ids": ids}});
-
+    println!("{:?}", json);
     match post(&json, Some(&access_token)).await {
         Ok(result) => {
             let response = anilist_to_snake_case(result);
 
             let response_json = serde_json::from_str::<serde_json::Value>(&response).unwrap();
-
+            println!("{:?}", response_json);
             let mut user_anime_data: Vec<UserAnimeInfo> = Vec::new();
             if let Some(media) = response_json["data"]["Page"]["media"].as_array(){
         
                 for entry in media {
-                    let updated_anime: UserAnimeInfo = serde_json::from_value(entry["mediaListEntry"].clone()).unwrap();
-                    user_anime_data.push(updated_anime);
+                    if let Ok(updated_anime) = serde_json::from_value(entry["mediaListEntry"].clone()) {
+                        user_anime_data.push(updated_anime);
+                    } else {
+
+                    }
                 }
             }
             Ok(user_anime_data)
@@ -932,39 +935,74 @@ pub async fn get_user_updated_at(username: String) -> Option<u64> {
 
 
 
+const USER_MEDIA_UPDATED: &str = "
+query($name: String) { 
+    Page(page: 0, perPage: 50){
+        pageInfo {
+            hasNextPage
+        }
+        mediaList(userName: $name, sort: UPDATED_TIME_DESC) {
+            updatedAt
+            mediaId
+        }
+    }
+}";
 // returns a list of media that has been updated after the supplied time
-const USER_MEDIA_UPDATED: &str = "query($userId: Int, $page: Int, $time: Int) { Page(page: $page, perPage: 50) { pageInfo { hasNextPage } activities(userId: $userId, type: ANIME_LIST, createdAt_greater: $time) { ... on ListActivity { media { id } } } } }";
-pub async fn get_updated_media_id(user_id: i32, time: u64) -> Result<Vec<i32>, &'static str> {
-
-    let mut has_next_page = true;
+pub async fn get_updated_media_ids(username: String, newer_than_this: u64) -> Result<Vec<i32>, &'static str> {
+    
+    let mut continue_to_next_page = true;
     let mut page_number = 0;
     let mut media_ids: Vec<i32> = Vec::new();
-    
-    while has_next_page {
 
-        let json = json!({"query": USER_MEDIA_UPDATED, "variables": {"userId": user_id,"page": page_number,"time": time}});
-    
+    while continue_to_next_page {
+
+        let json = json!({"query": USER_MEDIA_UPDATED, "variables": {"name": username,"page": page_number}});
+        //println!("json {}", json);
         match post(&json, None).await {
             Ok(result) => {
                 let response_value = serde_json::from_str::<serde_json::Value>(&result).unwrap();
-        
-                if let Some(activities_list) = response_value["data"]["Page"]["activities"].as_array() {
-                    for activity in activities_list {
-                        if let Some(media_id) = activity["media"]["id"].as_i64() {
-                            if media_ids.contains(&(media_id as i32)) == false {
-                                media_ids.push(media_id as i32);
+                //println!("{:?}", response_value);
+
+                if let Some(error_list) = response_value["errors"].as_array() {
+                    for entry in error_list {
+                        if let Some(message) = entry["message"].as_str() {
+                            println!("message {}", message);
+                        }
+                        if let Some(status) = entry["status"].as_i64() {
+                            println!("status {}", status);
+                        }
+                    }
+                    break;
+                }
+
+                if let Some(media_list) = response_value["data"]["Page"]["mediaList"].as_array() {
+                    for media in media_list {
+                        if let Some(updated_at) = media["updatedAt"].as_u64() {
+                            if updated_at > newer_than_this {
+                                if let Some(media_id) = media["mediaId"].as_i64() {
+                                    media_ids.push(media_id as i32);
+                                }
+                            } else {
+                                // this and all following media will be older than time specified
+                                continue_to_next_page = false;
+                                break;
                             }
                         }
                     }
                 }
-    
-                has_next_page = response_value["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool().unwrap();
+
+                if continue_to_next_page == true {
+                    if let Some(has_next_page) = response_value["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
+                        continue_to_next_page = has_next_page;
+                    }
+                }
+
                 page_number += 1;
             },
             Err(error) => return Err(error),
         }
     }
-    
+
     Ok(media_ids)
 }
 
