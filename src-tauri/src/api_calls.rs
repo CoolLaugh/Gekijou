@@ -109,6 +109,7 @@ pub struct  MediaRecommendation {
     pub id: i32,
     pub title: Title,
     pub cover_image: CoverImage,
+    pub media_type: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -352,7 +353,7 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
             id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
             duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
             relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
-            recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+            recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
             tags { name isGeneralSpoiler isMediaSpoiler description }
             studios(isMain: true) { nodes { name isAnimationStudio } }
             nextAiringEpisode { airingAt, episode }
@@ -445,7 +446,7 @@ query($page: Int $ids: [Int]) {
           id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
           duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
           relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
-          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
           tags { name isGeneralSpoiler isMediaSpoiler description }
           studios(isMain: true) { nodes { name isAnimationStudio } }
           nextAiringEpisode { airingAt, episode }
@@ -534,7 +535,7 @@ query($userName: String, $status: [MediaListStatus]) {
           id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
           duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
           relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
-          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
           tags { name isGeneralSpoiler isMediaSpoiler description }
           studios(isMain: true) { nodes { name isAnimationStudio } }
           nextAiringEpisode { airingAt, episode }
@@ -611,7 +612,7 @@ const MEDIA_INFO: &str = "query ($id: Int) {
         id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
         duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
         relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
-        recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+        recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
         tags { name isGeneralSpoiler isMediaSpoiler description }
         studios(isMain: true) { nodes { name isAnimationStudio } }
         nextAiringEpisode { airingAt, episode }
@@ -628,9 +629,19 @@ pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<(), &'static
         Ok(result) => {
             let response = anilist_to_snake_case(result);
 
-            let mut anime_value: serde_json::Value = serde_json::from_str(&response).unwrap();
-            let anime_data: AnimeInfo = serde_json::from_value(anime_value["data"]["media"].take()).unwrap();
-            GLOBAL_ANIME_DATA.lock().await.insert(anime_data.id, anime_data);
+            if let Ok(mut anime_value) = serde_json::from_str::<serde_json::Value>(&response) {
+
+                if let Ok(anime_data) = serde_json::from_value::<AnimeInfo>(anime_value["data"]["media"].take()) {
+                    GLOBAL_ANIME_DATA.lock().await.insert(anime_data.id, anime_data);
+                    return Ok(())
+                } else {
+                    println!("serde_json::from_value::<AnimeInfo>(anime_value[\"data\"][\"media\"].take()) failed");
+                    println!("{:?}", anime_value);
+                }
+            } else {
+                println!("serde_json::from_str::<serde_json::Value>(&response) failed");
+                println!("{}", response);
+            }
             return Ok(())
         },
         Err(error) => return Err(error),
@@ -647,7 +658,7 @@ const MEDIA_INFO_MANGA: &str = "query ($id: Int) {
         chapters volumes source 
         staff { nodes { name { full } primaryOccupations } }
         relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
-        recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } } } }
+        recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
         tags { name isGeneralSpoiler isMediaSpoiler description }
     }
 }";

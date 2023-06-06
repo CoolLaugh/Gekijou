@@ -41,17 +41,16 @@ pub struct DerivedValues {
 pub async fn get_rss(anime_id: i32) -> Vec<RssEntry> {
 
     let anime_data = GLOBAL_ANIME_DATA.lock().await;
-    let mut search = String::new();
 
-    if let Some(anime) = anime_data.get(&anime_id) {
+    let search = if let Some(anime) = anime_data.get(&anime_id) {
         if let Some(romaji) = anime.title.romaji.clone() {
-            search = romaji.replace(" ", "+");
+            romaji.replace(" ", "+")
         } else {
             return Vec::new()
         }
     } else {
         return Vec::new()
-    }
+    };
 
     let url = format!("https://nyaa.si/?page=rss&q={}&c=1_2&f=0", search);
 

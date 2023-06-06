@@ -766,6 +766,11 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
     airing_ep = anime.next_airing_episode.episode;
   }
 
+  var trailer_id = "";
+  if (anime.trailer != null) {
+    trailer_id = anime.trailer.id
+  }
+
   var html = "";
 
   html += "<div id=\"" + anime.id + "\" class=\"cover_container\" date=\"" + start_date + "\" popularity=\"" + anime.popularity + "\" score=\"" + average_score + "\" title=\"" + title + "\" trending=\"" + anime.trending + "\" started=\"" + started_date + "\" completed=\"" + completed_date + "\">"
@@ -778,7 +783,7 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
   html +=     "<div class=\"add_buttons\"><a href=\"#\" onclick=\"show_anime_info_window(" + anime.id + ")\" title=\"See the description, score, episodes, etc\">Information</a></div>"
   html +=     "<div class=\"add_buttons\" style=\"top: 93px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime.id + ", 'PLANNING')\" title=\"Add this anime to your plan to watch list\">Add to Planning</a></div>"
   html +=     "<div class=\"add_buttons\" style=\"top: 163px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime.id + ", 'CURRENT')\" title=\"Add this anime to your watching list\">Add to Watching</a></div>"
-  html +=     "<div class=\"add_buttons\" style=\"top: 232px; display: " + display_trailer + ";\"><a href=\"#\" onclick=\"show_anime_info_window_trailer(" + anime.id + ")\" title=\"Watch the trailer\">Watch Trailer</a></div>"
+  html +=     "<div class=\"add_buttons\" style=\"top: 232px; display: " + display_trailer + ";\"><a href=\"#\" onclick=\"show_anime_info_window_trailer(" + anime.id + ", '" + trailer_id + "')\" title=\"Watch the trailer\">Watch Trailer</a></div>"
   html +=     "<button class=\"big_play_button\" onclick=\"play_next_episode(" + anime.id + ")\" type=\"button\" style=\"display: " + display_not_browse + ";\" title=\"Play Next Episode\">►</button>"
   html +=     "<div class=\"cover_nav\" style=\"display: " + display_not_browse + ";\">"
   html +=       "<a href=\"#\" onclick=\"decrease_episode(" + anime.id + ")\" style=\"border-top-left-radius: 12px; border-bottom-left-radius:12px; font-size: 24px;\" title=\"Decrease episode progress\">-</a>"
@@ -1184,8 +1189,6 @@ async function add_to_list(id, list) {
 window.decrease_episode = decrease_episode;
 async function decrease_episode(anime_id) {
   
-  await invoke("increment_decrement_episode", {animeId: anime_id, change: -1});
-
   var text = document.getElementById("episode_text_"+ anime_id);
   var episodes = text.textContent.split('/');
   var progress = parseInt(episodes[0]) - 1;
@@ -1199,14 +1202,14 @@ async function decrease_episode(anime_id) {
 
     draw_episode_canvas(progress, total, anime_id);
   }
+
+  await invoke("increment_decrement_episode", {animeId: anime_id, change: -1});
 }
 
 
 // increases the users progress by 1
 window.increase_episode = increase_episode;
 async function increase_episode(anime_id) {
-
-  await invoke("increment_decrement_episode", {animeId: anime_id, change: 1});
 
   var text = document.getElementById("episode_text_"+ anime_id);
   var episodes = text.textContent.split('/');
@@ -1225,6 +1228,8 @@ async function increase_episode(anime_id) {
       show_anime_list(current_tab);
     }
   }
+
+  await invoke("increment_decrement_episode", {animeId: anime_id, change: 1});
 }
 
 // clears the date next the the button that has been pushed
@@ -1628,9 +1633,9 @@ async function show_anime_info_window_edit(anime_id) {
 
 // open the info window to the edit user info tab
 window.show_anime_info_window_trailer = show_anime_info_window_trailer;
-async function show_anime_info_window_trailer(anime_id) {
+async function show_anime_info_window_trailer(anime_id, trailer_id) {
   await show_anime_info_window(anime_id);
-  openTab('trailer', 'underline_tab_2')
+  open_trailer_tab('trailer', 'underline_tab_2', trailer_id);
 }
 
 
@@ -1640,6 +1645,8 @@ var info_window_anime_id = 0;
 window.show_anime_info_window = show_anime_info_window;
 async function show_anime_info_window(anime_id) {
     
+  document.getElementById("youtube_embed").src = "";
+
   info_window_anime_id = anime_id;
 
   // retrieve necessary information
@@ -1742,9 +1749,11 @@ function add_anime_data(info, title) {
           }
       }
     } else { // manga and LNs
-      studio_name = info.staff.nodes[0].name.full;
-      for(var i = 1; i < info.staff.nodes.length; i++){
-        studio_name += "<br>" + info.staff.nodes[i].name.full;
+      if (info.staff.nodes.length > 0) {
+        studio_name = info.staff.nodes[0].name.full;
+        for(var i = 1; i < info.staff.nodes.length; i++){
+          studio_name += "<br>" + info.staff.nodes[i].name.full;
+        }
       }
     }
 
@@ -1925,7 +1934,7 @@ function add_trailer(trailer) {
 
     if(trailer != null && trailer.site == "youtube") {
         document.getElementById("trailer_button").style.display = "block";
-        document.getElementById("youtube_embed").src = "https://www.youtube.com/embed/" + trailer.id;
+        document.getElementById("trailer_button").onclick = function() { open_trailer_tab('trailer', 'underline_tab_2', trailer.id)};
     } else {
         // trailer does not exist, hide the tab
         document.getElementById("trailer_button").style.display = "none";
@@ -2115,7 +2124,7 @@ function add_related_anime(related, recommendations, title_language) {
 
         var href = " href=\"#\"";
         var onclick = " onclick=\"show_anime_info_window(" + related[i].node.id + ")\"";
-        // don't allow clicking for manga sources, the info window is only designed for anime
+        // allow clicking for manga sources
         if (related[i].node.media_type == "MANGA") {
             onclick = " onclick=\"show_manga_info_window(" + related[i].node.id + ")\"";
         }
@@ -2157,16 +2166,23 @@ function add_related_anime(related, recommendations, title_language) {
         title = recommendations[i].media_recommendation.title.native;
         }
 
+        var onclick = " onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\"";
+        // allow clicking for manga sources
+        if (recommendations[i].media_recommendation.media_type == "MANGA") {
+            onclick = " onclick=\"show_manga_info_window(" + recommendations[i].media_recommendation.id + ")\"";
+        }
+
         // add the show to the grid
         var html = "";
         html +=  "<div class=\"related_entry\">"
-        html +=    "<a href=\"#\"><img class=image height=\"174px\" src=\"" + recommendations[i].media_recommendation.cover_image.large + "\" width=\"116px\" onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\" onerror=\"this.src='assets/missing_image.png';\"></a>"
+        html +=    "<a href=\"#\"><img class=image height=\"174px\" src=\"" + recommendations[i].media_recommendation.cover_image.large + "\" width=\"116px\"" + onclick + " onerror=\"this.src='assets/missing_image.png';\"></a>"
         html +=    "<div style=\"height: 49px; overflow: hidden; margin-top: -5px;\"><a href=\"#\"><p onclick=\"show_anime_info_window(" + recommendations[i].media_recommendation.id + ")\">" + title + "</p></a></div>"
         html +=  "</div>"
 
         recommended_grid.innerHTML += html;
     }
 }
+
 
 
 var rss_data;
@@ -2358,7 +2374,16 @@ function openTab(tab_name, underline_name) {
 }
 
 window.open_torrents_tab = open_torrents_tab;
-function open_torrents_tab(tab_name, underline_name){
+function open_torrents_tab(tab_name, underline_name) {
   openTab(tab_name, underline_name);
   add_torrent_data(info_window_anime_id);
+}
+
+window.open_trailer_tab = open_trailer_tab;
+function open_trailer_tab(tab_name, underline_name, youtube_id) {
+  openTab(tab_name, underline_name);
+  var youtube_embed = document.getElementById("youtube_embed");
+  if (youtube_embed.src.includes("www.youtube.com") == false) {
+    youtube_embed.src = "https://www.youtube.com/embed/" + youtube_id;
+  }
 }

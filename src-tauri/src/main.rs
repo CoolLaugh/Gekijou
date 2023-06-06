@@ -885,8 +885,18 @@ async fn pull_updates_from_anilist() {
                             GLOBAL_REFRESH_UI.lock().await.no_internet = false;
 
                             let mut user_data = GLOBAL_USER_ANIME_DATA.lock().await;
+                            //let mut user_lists = GLOBAL_USER_ANIME_LISTS.lock().await;
                         
                             for entry in new_user_data {
+
+                                if let Some(user_entry) = user_data.get(&entry.media_id) {
+                                    // move media id to new list if it has changed
+                                    if entry.status != user_entry.status {
+
+                                        move_list_id(entry.media_id, Some(user_entry.status.clone()), entry.status.clone()).await;
+                                    }
+                                }
+
                                 user_data.insert(entry.media_id, entry);
                             }
                         },
@@ -1324,35 +1334,37 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: O
 // new_list can be any status including REPEATING, REPEATING shows will be placed into the CURRENT list
 // CURRENT and REPEATING shows are treated differently even though they are in the same list
 async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
+    move_list_id(anime.media_id, Some(anime.status.clone()), new_list.clone()).await;
+    anime.status = new_list;
+}
+
+
+
+async fn move_list_id(media_id: i32, old_list: Option<String>, mut new_list: String) {
 
     let mut lists = GLOBAL_USER_ANIME_LISTS.lock().await;
-    let old_list = if anime.status == "REPEATING" {
-        String::from("CURRENT") // repeating and current are combined together
-    } else {
-        anime.status.clone()
-    };
-
-    // remove from old list
-    lists.entry(old_list).and_modify(|list| {
-        let index = list.iter().position(|v| *v == anime.media_id).unwrap();
-        list.remove(index);
-    });
-
-    anime.status = new_list;
-    let new_list = if anime.status == "REPEATING" {
-        String::from("CURRENT") // repeating and current are combined together
-    } else {
-        anime.status.clone()
-    };
-
-    // insert into new list
-    lists.entry(new_list).and_modify(|list| {
-        
-        if list.contains(&anime.media_id) == false {
-
-            list.push(anime.media_id);
+    if let Some(mut old_list_unwraped) = old_list {
+        if old_list_unwraped == "REPEATING" {
+            old_list_unwraped = String::from("CURRENT");
         }
-    });
+        if let Some(list) = lists.get_mut(&old_list_unwraped) {
+            list.retain(|entry| *entry != media_id);
+        }
+    } else {
+        for (_,list) in lists.iter_mut() {
+            list.retain(|entry| *entry != media_id);
+        }
+    }
+
+    if new_list == "REPEATING" {
+        new_list = String::from("CURRENT");
+    }
+
+    if let Some(list) = lists.get_mut(&new_list) {
+        if list.contains(&media_id) == false {
+            list.push(media_id);
+        }
+    }
 }
 
 
