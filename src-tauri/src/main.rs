@@ -41,6 +41,7 @@ pub struct RefreshUI {
     pub no_internet: bool,
     pub scan_data: ScanData,
     pub errors: Vec<String>,
+    pub loading_dialog: Option<String>,
 }
 
 impl RefreshUI {
@@ -52,6 +53,7 @@ impl RefreshUI {
         self.no_internet = false;
         self.scan_data.clear();
         self.errors.clear();
+        self.loading_dialog = None;
     }
 }
 
@@ -163,13 +165,33 @@ async fn set_user_settings(settings: UserSettings) {
         }
         
         let access_token = GLOBAL_TOKEN.lock().await.access_token.clone();
-
-        api_calls::anilist_get_list(user_settings.username.clone(), String::from("CURRENT"), access_token.clone(), &mut user_data, &mut user_lists).await;
-        api_calls::anilist_get_list(user_settings.username.clone(), String::from("COMPLETED"), access_token.clone(), &mut user_data, &mut user_lists).await;
-        api_calls::anilist_get_list(user_settings.username.clone(), String::from("PAUSED"), access_token.clone(), &mut user_data, &mut user_lists).await;
-        api_calls::anilist_get_list(user_settings.username.clone(), String::from("DROPPED"), access_token.clone(), &mut user_data, &mut user_lists).await;
-        api_calls::anilist_get_list(user_settings.username.clone(), String::from("PLANNING"), access_token, &mut user_data, &mut user_lists).await;
+        let lists = vec!["CURRENT","COMPLETED","PAUSED","DROPPED","PLANNING"];
+        let mut list_count = 0;
+        for list in lists {
+            list_count += 1;
+            GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading User Lists {} of 5", list_count));
+            api_calls::anilist_get_list(user_settings.username.clone(), String::from(list), access_token.clone(), &mut user_data, &mut user_lists).await;
+        }
         user_settings.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+
+        // get missing anime data
+        let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+        list_count = 0;
+        for (_,list) in user_lists.iter() {
+            list_count += 1;
+            GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading Anime Data {} of 5", list_count));
+            let missing_ids = list.iter().filter(|id| anime_data.contains_key(id) == false).map(|f| *f).collect();
+            match api_calls::anilist_api_call_multiple(missing_ids, &mut anime_data).await {
+                Ok(_result) => {
+                    // do nothing
+                },
+                Err(_error) => {
+                    GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                },
+            }
+        }
+        GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
+        GLOBAL_REFRESH_UI.lock().await.anime_list = true;
     }
 
     drop(user_settings);

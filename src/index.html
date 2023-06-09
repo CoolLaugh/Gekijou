@@ -28,7 +28,7 @@
     <div id="cover_panel_id" class="container">
       <div class="sub_navigation">
         <div id="sort_area">
-          <a class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" order="ASC" title="Sort by ascending or descending" style="font-size: 25px;cursor: pointer;">▲</a>
+          <a class="container_header" id="sort_order_ascending" onclick="change_sort_ascending()" order="ASC" title="Sort by ascending or descending" style="font-size: 25px;cursor: pointer;margin-right: 7px;">▲</a>
           <select class="container_header" id="sort_order" title="Sorting category" onchange="change_sort_type()">
             <option value="Alphabetical">Alphabetical</option>
           </select>
@@ -362,6 +362,9 @@
         </table>
         <button onclick="close_error_window()" type="button" style="left: 50%; position: relative; translate: -50%;">OK</button>
       </div>
+      <dialog id="loading_dialog">
+        <p id="loading_dialog_text"></p>
+      </dialog>
     </div>
     <div class="info_bar" id="info_bar">
       <p id="bottom_info_bar">scanning folders</p>

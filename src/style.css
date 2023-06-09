@@ -29,6 +29,17 @@ body {
   margin: 0px;
 }
 
+dialog {
+  color: var(--text-color);
+  background-color: var(--background-color1);
+  border-color: var(--highlight);
+  border-radius: 17px;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
 /* width */
 ::-webkit-scrollbar {
   width: 10px;

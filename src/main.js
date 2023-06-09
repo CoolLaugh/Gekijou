@@ -185,6 +185,17 @@ async function refresh_ui() {
     document.getElementById("bottom_info_bar").textContent = "";
   }
 
+  if (refresh.loading_dialog != null) {
+    document.getElementById("loading_dialog_text").innerText = refresh.loading_dialog;
+    var loading_dialog = document.getElementById("loading_dialog");
+    console.log(loading_dialog);
+    if (loading_dialog.open == false){
+      loading_dialog.showModal();
+    }
+  } else {
+    document.getElementById("loading_dialog").close();
+  }
+
   refresh_ui_interval = setInterval(refresh_ui, 1000);
 }
 
@@ -779,7 +790,7 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
   html +=   "<div class=\"sort_value_display\" style=\"display: " + display_sort_value + "; color: #f6f6f6;\"><p id=\"sort_value\">" + sort_value + "</p></div>"
   html +=   "<canvas class=\"episodes_exist\" height=\"5\" id=\"progress_episodes_" + anime.id + "\" width=\"200\"></canvas>"
   html +=   "<div class=\"cover_title\"><p id=\"title" + anime.id + "\">" + title + "</p></div>"
-  html +=   "<div class=\"overlay\">"
+  html +=   "<div class=\"overlay\" onclick=\"show_click(this)\">"
   html +=     "<div class=\"add_buttons\"><a href=\"#\" onclick=\"show_anime_info_window(" + anime.id + ")\" title=\"See the description, score, episodes, etc\">Information</a></div>"
   html +=     "<div class=\"add_buttons\" style=\"top: 93px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime.id + ", 'PLANNING')\" title=\"Add this anime to your plan to watch list\">Add to Planning</a></div>"
   html +=     "<div class=\"add_buttons\" style=\"top: 163px; display: " + display_browse + ";\"><a href=\"#\" onclick=\"add_to_list(" + anime.id + ", 'CURRENT')\" title=\"Add this anime to your watching list\">Add to Watching</a></div>"
@@ -1407,6 +1418,15 @@ async function manual_scan() {
   console.log(button);
 }
 
+
+window.show_click = show_click;
+async function show_click(element) {
+  var rect = element.getBoundingClientRect();
+  var cover_panel_grid = document.getElementById("cover_panel_grid").getBoundingClientRect();
+  console.log(rect.left, rect.top, rect.right, rect.bottom);
+  console.log(cover_panel_grid.left, cover_panel_grid.top, cover_panel_grid.right, cover_panel_grid.bottom);
+  console.log(rect.left / cover_panel_grid.right, rect.top / cover_panel_grid.bottom, rect.right / cover_panel_grid.right, rect.bottom / cover_panel_grid.bottom);
+}
 
 
 //// settings window

@@ -458,11 +458,11 @@ query($page: Int $ids: [Int]) {
 pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str>  {
 
     let pages = ceiling_div(ids.len(), 50);
-    println!("ids {} pages {}", ids.len(), pages);
+    //println!("ids {} pages {}", ids.len(), pages);
     
     for i in 0..pages {
 
-        println!("page {}", i);
+        //println!("page {}", i);
         let start = i * 50;
         let end = 
         if start + 50 > ids.len() {
