@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::mpsc;
 use std::thread;
 use std::path::Path;
@@ -8,6 +8,7 @@ use walkdir::WalkDir;
 use crate::api_calls::{AnimeInfo, self};
 use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_USER_SETTINGS, file_operations, GLOBAL_REFRESH_UI};
 use strsim;
+use tauri::async_runtime::Mutex;
 
 
 
@@ -35,6 +36,12 @@ impl AnimePathWorking {
 pub struct AnimePath {
     pub path: String,
     pub similarity_score: f64,
+}
+
+
+
+lazy_static! {
+    static ref GLOBAL_KNOWN_FILES: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
 }
 
 
@@ -97,10 +104,14 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         for mut file_name_chunk in file_names_chunks {
 
             let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
+            let known_files = GLOBAL_KNOWN_FILES.lock().await.clone();
+            println!("known_files.len() {}", known_files.len());
 
             let sender_copy = sender.clone();
             children.push(thread::spawn(move || -> Vec<AnimePathWorking> {
                 
+                file_name_chunk.retain(|anime_path| known_files.contains(&anime_path.filename) == false);
+
                 remove_invalid_files(&mut file_name_chunk);
         
                 // remove brackets and their contents, the name and episode are unlikely to be here
@@ -139,6 +150,13 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
                 break;
             }
         }
+
+        let mut known_files = GLOBAL_KNOWN_FILES.lock().await;
+        for anime_path in file_names {
+            known_files.insert(anime_path.filename);
+        }
+        println!("known_files.len() {}", known_files.len());
+        drop(known_files);
         
         let file_names_collected = children.into_iter().map(|c| c.join().unwrap()).flatten().collect::<Vec<_>>();
         
@@ -705,6 +723,7 @@ pub async fn get_prequel_data() {
 
     while get_info.is_empty() == false {
         println!("get_info size {}", get_info.len());
+        println!("{:?}", get_info);
         match api_calls::anilist_api_call_multiple(get_info.clone(), &mut anime_data).await {
             Ok(_result) => {
                 GLOBAL_REFRESH_UI.lock().await.no_internet = false;

@@ -476,10 +476,7 @@ async function show_anime_list(name) {
   document.getElementById("recommended_filters").style.display = "none";
   var watching = await invoke("get_list", { listName: name });
 
-  if (watching[1] != null) {
-    alert(watching[1]);
-  } else {
-
+  if (watching.length > 0) {
     var user_data = await invoke("get_list_user_info", { listName: name });
 
     // get user data on anime

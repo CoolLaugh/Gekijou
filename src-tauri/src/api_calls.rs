@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
 
-use crate::{secrets, GLOBAL_ANIME_DATA, file_operations};
+use crate::{secrets, GLOBAL_ANIME_DATA, file_operations, GLOBAL_REFRESH_UI};
 
 
 // the structs below replicate the structure of data being returned by anilist api calls
@@ -453,7 +453,6 @@ query($page: Int $ids: [Int]) {
         }
     }
 }";
-
 // get anime data from anilist for all ids
 pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str>  {
 
@@ -462,7 +461,7 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i
     
     for i in 0..pages {
 
-        //println!("page {}", i);
+        GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading anime data ({} of {})", i, pages));
         let start = i * 50;
         let end = 
         if start + 50 > ids.len() {
@@ -483,10 +482,13 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i
                     anime_data.insert(anime.id, anime);
                 }
             },
-            Err(error) => return Err(error),
+            Err(error) => { 
+                GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
+                return Err(error); 
+            },
         }
     }
-
+    GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
     return Ok(());
 }
 

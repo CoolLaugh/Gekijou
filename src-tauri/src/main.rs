@@ -169,7 +169,7 @@ async fn set_user_settings(settings: UserSettings) {
         let mut list_count = 0;
         for list in lists {
             list_count += 1;
-            GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading User Lists {} of 5", list_count));
+            GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading User Lists ({} of 5)", list_count));
             api_calls::anilist_get_list(user_settings.username.clone(), String::from(list), access_token.clone(), &mut user_data, &mut user_lists).await;
         }
         user_settings.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
@@ -179,7 +179,7 @@ async fn set_user_settings(settings: UserSettings) {
         list_count = 0;
         for (_,list) in user_lists.iter() {
             list_count += 1;
-            GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading Anime Data {} of 5", list_count));
+            GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading Anime Data ({} of 5)", list_count));
             let missing_ids = list.iter().filter(|id| anime_data.contains_key(id) == false).map(|f| *f).collect();
             match api_calls::anilist_api_call_multiple(missing_ids, &mut anime_data).await {
                 Ok(_result) => {
@@ -224,13 +224,14 @@ async fn set_current_tab(current_tab: String) {
 
 // gets anime data for all anime in a specific list
 #[tauri::command]
-async fn get_list(list_name: String) -> (Vec<AnimeInfo>, Option<String>) {
+async fn get_list(list_name: String) -> Vec<AnimeInfo> {
 
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
         
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone(), &mut *GLOBAL_USER_ANIME_DATA.lock().await, &mut *GLOBAL_USER_ANIME_LISTS.lock().await).await;
-        if error_message.is_some() {
-            return (Vec::new(), error_message)
+        if let Some(error_message_unwrapped) = error_message {
+            GLOBAL_REFRESH_UI.lock().await.errors.push(error_message_unwrapped);
+            return Vec::new()
         }
         file_operations::write_file_anime_info_cache(&*GLOBAL_ANIME_DATA.lock().await);
         file_operations::write_file_user_info().await;
@@ -246,7 +247,7 @@ async fn get_list(list_name: String) -> (Vec<AnimeInfo>, Option<String>) {
         list_info.push(anime_data.get(id).unwrap().clone());
     }
 
-    (list_info, None)
+    list_info
 }
 
 
@@ -266,8 +267,10 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone(), &mut *GLOBAL_USER_ANIME_DATA.lock().await, &mut *GLOBAL_USER_ANIME_LISTS.lock().await).await;
         if let Some(error_message_string) = error_message {
-            //println!("{}", error_message_string);
-            GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+            println!("{}", error_message_string);
+            if error_message_string != "User not found" {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+            }
             GLOBAL_REFRESH_UI.lock().await.errors.push(error_message_string.clone());
             return (Vec::new(), Some(error_message_string));
         }
