@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, create_dir};
 use std::fs::File;
 use std::io::{Write, Read};
@@ -76,6 +76,14 @@ pub async fn write_file_update_queue(update_queue: &Vec<UserAnimeInfo>) {
 
 pub async fn read_file_update_queue() -> Result<(), &'static str> {
     read_file_data(&GLOBAL_ANIME_UPDATE_QUEUE, "update_queue").await
+}
+
+pub async fn write_file_known_files(known_files: &HashSet<String>) {
+    write_file_data(&known_files, "known_files");
+}
+
+pub async fn read_file_known_files(known_files: &Mutex<HashSet<String>>) -> Result<(), &'static str> {
+    read_file_data(known_files, "known_files").await
 }
 
 // writes all held data on anime to a file

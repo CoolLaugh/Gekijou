@@ -53,6 +53,13 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
     get_prequel_data().await;
 
+    if GLOBAL_KNOWN_FILES.lock().await.len() == 0 {
+        match file_operations::read_file_known_files(&GLOBAL_KNOWN_FILES).await {
+            Ok(_result) => { /* do nothing */ },
+            Err(_error) => { /* ignore */ },
+        }
+    }
+
     let mut episode_found = false;
     let folders = GLOBAL_USER_SETTINGS.lock().await.folders.clone();
     GLOBAL_REFRESH_UI.lock().await.scan_data.clear();
@@ -184,6 +191,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         }
     }
 
+    file_operations::write_file_known_files(&*GLOBAL_KNOWN_FILES.lock().await).await;
     GLOBAL_REFRESH_UI.lock().await.scan_data.clear();
     remove_missing_files().await;
     GLOBAL_REFRESH_UI.lock().await.canvas = true;
