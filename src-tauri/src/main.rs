@@ -767,10 +767,16 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
             
             // update user date to match anilist
             let json: serde_json::Value = serde_json::from_str(&result).unwrap();
-            let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
+            if json["data"].is_null() == false {
+                let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
 
-            GLOBAL_USER_ANIME_DATA.lock().await.insert(new_info.media_id.clone(), new_info);
-            file_operations::write_file_user_info().await;
+                GLOBAL_USER_ANIME_DATA.lock().await.insert(new_info.media_id.clone(), new_info);
+                file_operations::write_file_user_info().await;
+            } else if json["errors"].is_array() {
+                for error in json["errors"].as_array().unwrap() {
+                    println!("{}", error["message"]);
+                }
+            }
 
             // update time to now so this update isn't downloaded later
             GLOBAL_USER_SETTINGS.lock().await.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());

@@ -53,7 +53,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
     get_prequel_data().await;
 
-    if GLOBAL_KNOWN_FILES.lock().await.len() == 0 {
+    if media_id == None && GLOBAL_KNOWN_FILES.lock().await.len() == 0 {
         match file_operations::read_file_known_files(&GLOBAL_KNOWN_FILES).await {
             Ok(_result) => { /* do nothing */ },
             Err(_error) => { /* ignore */ },
@@ -117,7 +117,9 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
             let sender_copy = sender.clone();
             children.push(thread::spawn(move || -> Vec<AnimePathWorking> {
                 
-                file_name_chunk.retain(|anime_path| known_files.contains(&anime_path.filename) == false);
+                if media_id == None {
+                    file_name_chunk.retain(|anime_path| known_files.contains(&anime_path.filename) == false);
+                }
 
                 remove_invalid_files(&mut file_name_chunk);
         
@@ -158,12 +160,14 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
             }
         }
 
-        let mut known_files = GLOBAL_KNOWN_FILES.lock().await;
-        for anime_path in file_names {
-            known_files.insert(anime_path.filename);
+        if media_id == None {
+            let mut known_files = GLOBAL_KNOWN_FILES.lock().await;
+            for anime_path in file_names {
+                known_files.insert(anime_path.filename);
+            }
+            println!("known_files.len() {}", known_files.len());
+            drop(known_files);
         }
-        println!("known_files.len() {}", known_files.len());
-        drop(known_files);
         
         let file_names_collected = children.into_iter().map(|c| c.join().unwrap()).flatten().collect::<Vec<_>>();
         
@@ -191,7 +195,9 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         }
     }
 
-    file_operations::write_file_known_files(&*GLOBAL_KNOWN_FILES.lock().await).await;
+    if media_id == None {
+        file_operations::write_file_known_files(&*GLOBAL_KNOWN_FILES.lock().await).await;
+    }
     GLOBAL_REFRESH_UI.lock().await.scan_data.clear();
     remove_missing_files().await;
     GLOBAL_REFRESH_UI.lock().await.canvas = true;

@@ -1664,6 +1664,11 @@ async function show_anime_info_window(anime_id) {
     
   document.getElementById("youtube_embed").src = "";
 
+  // if moving to another window save my list
+  if (document.getElementById("info_panel").display != "") {
+    update_user_entry(info_window_anime_id);
+  }
+
   info_window_anime_id = anime_id;
 
   // retrieve necessary information
@@ -1714,7 +1719,12 @@ async function show_anime_info_window(anime_id) {
 
 window.show_manga_info_window = show_manga_info_window;
 async function show_manga_info_window(manga_id) {
-    
+  
+  // if moving to another window save my list
+  if (document.getElementById("info_panel").display != "") {
+    update_user_entry(info_window_anime_id);
+  }
+
   info_window_anime_id = manga_id;
 
   // retrieve necessary information
@@ -1733,6 +1743,14 @@ async function show_manga_info_window(manga_id) {
   for(var i = 0; i < rows; i++) {
     table.deleteRow(1);
   }
+
+  document.getElementById("custom_filename").value = null;
+  document.getElementById("status_select").value = null;
+  document.getElementById("episode_number").value = 0;
+  document.getElementById("score_dropdown").value = null;
+  document.getElementById("started_date").value = null;
+  document.getElementById("finished_date").value = null;
+  document.getElementById("user_notes").value = null;
 
   document.getElementById("info_window_previous").style.display = "none";
   document.getElementById("info_window_next").style.display = "none";
@@ -1979,6 +1997,10 @@ async function hide_anime_info_window(anime_id) {
 // updates the entry for the current anime with new information from the info window
 async function update_user_entry(anime_id) {
 
+  if (anime_id == null) {
+    return;
+  }
+
   // update the custom filename separately because it is not part of user data
   var custom_title = await invoke("get_custom_filename", {animeId: anime_id});
   if(custom_title != document.getElementById("custom_filename").value) {
@@ -2034,16 +2056,30 @@ async function update_user_entry(anime_id) {
     user_entry.completed_at = {year: null, month: null, day: null};
   }
 
+  var started_changed = false;
+  if (user_entry.started_at != null && user_data.started_at != null) {
+    started_changed = user_entry.started_at.year != user_data.started_at.year ||
+                      user_entry.started_at.month != user_data.started_at.month ||
+                      user_entry.started_at.day != user_data.started_at.day;
+  } else if (user_entry.started_at != user_data.started_at) {
+    started_changed = true;
+  }
+
+  var completed_changed = false;
+  if (user_entry.completed_at != null && user_data.completed_at != null) {
+    completed_changed = user_entry.completed_at.year != user_data.completed_at.year ||
+                      user_entry.completed_at.month != user_data.completed_at.month ||
+                      user_entry.completed_at.day != user_data.completed_at.day;
+  } else if (user_entry.completed_at != user_data.completed_at) {
+    completed_changed = true;
+  }
+
   // only update if something changed
   if (user_entry.status != user_data.status ||
     user_entry.score != user_data.score ||
     user_entry.progress != user_data.progress ||
-    user_entry.started_at.year != user_data.started_at.year ||
-    user_entry.started_at.month != user_data.started_at.month ||
-    user_entry.started_at.day != user_data.started_at.day ||
-    user_entry.completed_at.year != user_data.completed_at.year ||
-    user_entry.completed_at.month != user_data.completed_at.month ||
-    user_entry.completed_at.day != user_data.completed_at.day ||
+    started_changed == true ||
+    completed_changed == true ||
     user_entry.notes != user_data.notes) {
 
       await invoke("update_user_entry", {anime: user_entry});
@@ -2060,7 +2096,11 @@ async function update_user_entry(anime_id) {
   }
 
   // return true if the status has changed and the list needs to be refreshed
-  return user_entry.status != user_data.status;
+  if (user_data != null) {
+    return user_entry.status != user_data.status;
+  } else {
+    return user_entry.status != "";
+  }
 }
 
 
