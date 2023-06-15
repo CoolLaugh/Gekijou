@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
 
-use crate::{secrets, GLOBAL_ANIME_DATA, file_operations, GLOBAL_REFRESH_UI};
+use crate::{secrets, GLOBAL_ANIME_DATA, file_operations, GLOBAL_REFRESH_UI, GLOBAL_ANIME_SCAN_IDS};
 
 
 // the structs below replicate the structure of data being returned by anilist api calls
@@ -457,6 +457,7 @@ query($page: Int $ids: [Int]) {
 pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str>  {
 
     let pages = ceiling_div(ids.len(), 50);
+    let mut scan_ids = GLOBAL_ANIME_SCAN_IDS.lock().await;
     //println!("ids {} pages {}", ids.len(), pages);
     
     for i in 0..pages {
@@ -477,8 +478,11 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i
                 let response = anilist_to_snake_case(result);
                 let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
                 let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
-    
+
                 for anime in anime_vec {
+                    if anime_data.contains_key(&anime.id) == false {
+                        scan_ids.push(anime.id);
+                    }
                     anime_data.insert(anime.id, anime);
                 }
             },
@@ -634,6 +638,10 @@ pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<(), &'static
             if let Ok(mut anime_value) = serde_json::from_str::<serde_json::Value>(&response) {
 
                 if let Ok(anime_data) = serde_json::from_value::<AnimeInfo>(anime_value["data"]["media"].take()) {
+
+                    if GLOBAL_ANIME_DATA.lock().await.contains_key(&anime_data.id) == false {
+                        GLOBAL_ANIME_SCAN_IDS.lock().await.push(anime_data.id);
+                    }
                     GLOBAL_ANIME_DATA.lock().await.insert(anime_data.id, anime_data);
                     return Ok(())
                 } else {

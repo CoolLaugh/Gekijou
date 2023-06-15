@@ -25,7 +25,7 @@ use serde::{Serialize, Deserialize};
 use tauri::async_runtime::Mutex;
 use tauri::Manager;
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::HashMap, path::Path, time::{Duration, Instant, SystemTime, UNIX_EPOCH}};
+use std::{collections::{HashMap, HashSet}, path::Path, time::{Duration, Instant, SystemTime, UNIX_EPOCH}};
 use open;
 use api_calls::{TokenData, UserSettings, AnilistDate, MangaInfo};
 use crate::{api_calls::{AnimeInfo, UserAnimeInfo}, file_name_recognition::AnimePath};
@@ -78,7 +78,7 @@ impl ScanData {
 
 
 lazy_static! {
-    static ref GLOBAL_TOKEN: Mutex<TokenData> = Mutex::new(TokenData { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() });
+    static ref GLOBAL_TOKEN: Mutex<TokenData> = Mutex::new(TokenData::new());
     static ref GLOBAL_ANIME_DATA: Mutex<HashMap<i32, AnimeInfo>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_ANIME_DATA: Mutex<HashMap<i32, UserAnimeInfo>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_ANIME_LISTS: Mutex<HashMap<String, Vec<i32>>> = Mutex::new(HashMap::new());
@@ -87,6 +87,8 @@ lazy_static! {
     static ref GLOBAL_REFRESH_UI: Mutex<RefreshUI> = Mutex::new(RefreshUI::default());
     static ref GLOBAL_UPDATE_ANIME_DELAYED: Mutex<HashMap<i32, Instant>> = Mutex::new(HashMap::new());
     static ref GLOBAL_ANIME_UPDATE_QUEUE: Mutex<Vec<UserAnimeInfo>> = Mutex::new(Vec::new());
+    static ref GLOBAL_KNOWN_FILES: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
+    static ref GLOBAL_ANIME_SCAN_IDS: Mutex<Vec<i32>> = Mutex::new(Vec::new());
 }
 
 
@@ -1438,6 +1440,9 @@ async fn background_tasks() {
     // update anilist with offline updates
     check_queued_updates().await;
 
+    // do a full scan for anime recently added to program
+    //file_name_recognition::parse_file_names(media_id);
+
     // scan files for new episodes of anime every hour and a short time after startup
     let mut on_startup_scan_completed = STARTUP_SCAN.lock().await;
     let mut timer = SCAN_TIMER.lock().await;
@@ -1556,6 +1561,9 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
                     let id = anime["id"].as_i64().unwrap() as i32;
                     let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
                     list.push(anime_entry.clone());
+                    if anime_data.contains_key(&id) == false {
+                        GLOBAL_ANIME_SCAN_IDS.lock().await.push(id);
+                    }
                     anime_data.insert(id, anime_entry);
                 }
         
@@ -1777,6 +1785,8 @@ async fn delete_data() -> bool {
     GLOBAL_REFRESH_UI.lock().await.clear();
     GLOBAL_UPDATE_ANIME_DELAYED.lock().await.clear();
     GLOBAL_ANIME_UPDATE_QUEUE.lock().await.clear();
+    GLOBAL_KNOWN_FILES.lock().await.clear();
+    GLOBAL_ANIME_SCAN_IDS.lock().await.clear();
 
     WATCHING_TRACKING.lock().await.clear();
 

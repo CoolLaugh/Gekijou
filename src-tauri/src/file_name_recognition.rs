@@ -1,14 +1,14 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread;
 use std::path::Path;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
+use tauri::async_runtime::Mutex;
 use walkdir::WalkDir;
 use crate::api_calls::{AnimeInfo, self};
-use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_USER_SETTINGS, file_operations, GLOBAL_REFRESH_UI};
+use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_USER_SETTINGS, file_operations, GLOBAL_REFRESH_UI, constants, GLOBAL_KNOWN_FILES};
 use strsim;
-use tauri::async_runtime::Mutex;
 
 
 
@@ -38,18 +38,21 @@ pub struct AnimePath {
     pub similarity_score: f64,
 }
 
-
-
 lazy_static! {
-    static ref GLOBAL_KNOWN_FILES: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
+    static ref SCAN_MUTEX: Mutex<()> = Mutex::new(());
 }
-
-
 
 // scans these folders and subfolders looking for files that match titles in the users anime list
 // found files are then stored in a global list for each anime and episode
 // media_id is for finding files for a specific anime instead of any anime known
 pub async fn parse_file_names(media_id: Option<i32>) -> bool {
+
+    // don't start another scan while a scan is currently occurring
+    if GLOBAL_REFRESH_UI.lock().await.scan_data.current_folder > 0 && media_id.is_none() {
+        return false;
+    }
+
+    let _scan_lock = SCAN_MUTEX.lock().await;
 
     get_prequel_data().await;
 
@@ -166,7 +169,6 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
                 known_files.insert(anime_path.filename);
             }
             println!("known_files.len() {}", known_files.len());
-            drop(known_files);
         }
         
         let file_names_collected = children.into_iter().map(|c| c.join().unwrap()).flatten().collect::<Vec<_>>();
@@ -176,7 +178,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
         for file in file_names_collected {
 
-            if file.similarity_score > 0.8 && file.episode <= anime_data.get(&file.media_id).unwrap().episodes.unwrap() {
+            if file.similarity_score > constants::SIMILARITY_SCORE_THRESHOLD && file.episode <= anime_data.get(&file.media_id).unwrap().episodes.unwrap() {
 
                 let media = file_paths.entry(file.media_id).or_default();
                 if media.contains_key(&file.episode) && media.get(&file.episode).unwrap().similarity_score < file.similarity_score {
@@ -291,7 +293,7 @@ fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>, a
 
 
         
-        if similarity_score > 0.8 && similarity_score > path.similarity_score {
+        if similarity_score > constants::SIMILARITY_SCORE_THRESHOLD && similarity_score > path.similarity_score {
             path.media_id = id;
             path.similarity_score = similarity_score;
         }
@@ -325,7 +327,7 @@ pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>,
             title_compare(data.1, filename, &mut score, &mut media_id, &mut title, true);
         });
 
-        if score < 0.8 {
+        if score < constants::SIMILARITY_SCORE_THRESHOLD {
 
             anime_data.iter().for_each(|data| {
             
@@ -333,7 +335,7 @@ pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>,
             });
         }
 
-        if score < 0.8 {
+        if score < constants::SIMILARITY_SCORE_THRESHOLD {
 
             let captures = pre_dash.captures(filename);
             if captures.is_some() {
@@ -351,11 +353,11 @@ pub fn identify_media_id(filename: &String, anime_data: &HashMap<i32,AnimeInfo>,
         let anime = anime_data.get(&only_compare.unwrap()).unwrap();
         title_compare(anime, filename, &mut score, &mut media_id, &mut title, true);
 
-        if score < 0.8 {
+        if score < constants::SIMILARITY_SCORE_THRESHOLD {
             title_compare(anime, filename, &mut score, &mut media_id, &mut title, false);
         }
 
-        if score < 0.8 {
+        if score < constants::SIMILARITY_SCORE_THRESHOLD {
 
             if let Some(captures) = pre_dash.captures(filename) {
 

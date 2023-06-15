@@ -128,9 +128,9 @@ async function refresh_ui() {
   var refresh = await invoke("refresh_ui");
   if (refresh.anime_list == true) {
     if (current_tab == "RECOMMENDED") {
-      show_recommended_anime_list();
+      await show_recommended_anime_list();
     } else {
-      show_anime_list(current_tab);
+      await show_anime_list(current_tab);
     }
   }
 
@@ -488,11 +488,11 @@ async function show_anime_list(name) {
       // add anime to UI
       removeChildren(document.getElementById("cover_panel_grid"));
 
-      for(var i = 0; i < watching[0].length; i++) {
-        if(user_settings.show_adult == false && watching[0][i].is_adult == true) {
+      for(var i = 0; i < watching.length; i++) {
+        if(user_settings.show_adult == false && watching[i].is_adult == true) {
           continue;
         }
-        add_anime(watching[0][i], user_data[i], i, user_settings.score_format, user_settings.show_airing_time);
+        add_anime(watching[i], user_data[i], i, user_settings.score_format, user_settings.show_airing_time);
       }
 
       sort_anime();
@@ -1233,7 +1233,7 @@ async function increase_episode(anime_id) {
     draw_episode_canvas(progress, total, anime_id);
   
     if (progress == total) {
-      show_anime_list(current_tab);
+      //show_anime_list(current_tab);
     }
   }
 
