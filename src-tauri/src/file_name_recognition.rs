@@ -45,7 +45,7 @@ lazy_static! {
 // scans these folders and subfolders looking for files that match titles in the users anime list
 // found files are then stored in a global list for each anime and episode
 // media_id is for finding files for a specific anime instead of any anime known
-pub async fn parse_file_names(media_id: Option<i32>) -> bool {
+pub async fn parse_file_names(skip_files: bool, media_id: Option<i32>) -> bool {
 
     // don't start another scan while a scan is currently occurring
     if GLOBAL_REFRESH_UI.lock().await.scan_data.current_folder > 0 && media_id.is_none() {
@@ -56,7 +56,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
     get_prequel_data().await;
 
-    if media_id == None && GLOBAL_KNOWN_FILES.lock().await.len() == 0 {
+    if skip_files == true && GLOBAL_KNOWN_FILES.lock().await.len() == 0 {
         match file_operations::read_file_known_files(&GLOBAL_KNOWN_FILES).await {
             Ok(_result) => { /* do nothing */ },
             Err(_error) => { /* ignore */ },
@@ -115,12 +115,11 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
 
             let anime_data = GLOBAL_ANIME_DATA.lock().await.clone();
             let known_files = GLOBAL_KNOWN_FILES.lock().await.clone();
-            println!("known_files.len() {}", known_files.len());
 
             let sender_copy = sender.clone();
             children.push(thread::spawn(move || -> Vec<AnimePathWorking> {
                 
-                if media_id == None {
+                if skip_files == true {
                     file_name_chunk.retain(|anime_path| known_files.contains(&anime_path.filename) == false);
                 }
 
@@ -141,7 +140,6 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         
                 episode_fix_batch(&mut file_name_chunk, &anime_data);
 
-                println!("chunk {} done", count);
                 match sender_copy.send(true) {
                     Ok(_result) => {
                         // do nothing
@@ -157,18 +155,16 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         for _received in receiver {
             let mut refresh_ui = GLOBAL_REFRESH_UI.lock().await;
             refresh_ui.scan_data.completed_chunks += 1;
-            println!("completed {} chunks", refresh_ui.scan_data.completed_chunks);
             if refresh_ui.scan_data.completed_chunks >= refresh_ui.scan_data.total_chunks {
                 break;
             }
         }
 
-        if media_id == None {
+        if skip_files == true {
             let mut known_files = GLOBAL_KNOWN_FILES.lock().await;
             for anime_path in file_names {
                 known_files.insert(anime_path.filename);
             }
-            println!("known_files.len() {}", known_files.len());
         }
         
         let file_names_collected = children.into_iter().map(|c| c.join().unwrap()).flatten().collect::<Vec<_>>();
@@ -197,7 +193,7 @@ pub async fn parse_file_names(media_id: Option<i32>) -> bool {
         }
     }
 
-    if media_id == None {
+    if skip_files == true {
         file_operations::write_file_known_files(&*GLOBAL_KNOWN_FILES.lock().await).await;
     }
     GLOBAL_REFRESH_UI.lock().await.scan_data.clear();
@@ -701,7 +697,13 @@ pub fn replace_with_sequel(anime_id: &mut i32, episode: &mut i32, anime_data: &H
 
         sequel_exists = false;
         for edge in anime_data.get(&anime_id).unwrap().relations.edges.iter() {
-            if edge.relation_type == "SEQUEL" && anime_data.contains_key(&edge.node.id) && anime_data.get(&edge.node.id).unwrap().format.as_ref().unwrap() == "TV" {
+            let mut format: String = String::from("");
+            if let Some(anime_data_entry) = anime_data.get(&edge.node.id) {
+                if let Some(anime_format) = anime_data_entry.format.clone() {
+                    format = anime_format;
+                }
+            }
+            if edge.relation_type == "SEQUEL" && format == "TV" {
                 *anime_id = edge.node.id;
                 *episode -= episodes;
                 sequel_exists = true;

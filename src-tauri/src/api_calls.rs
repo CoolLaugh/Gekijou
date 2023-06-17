@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
 
-use crate::{secrets, GLOBAL_ANIME_DATA, file_operations, GLOBAL_REFRESH_UI, GLOBAL_ANIME_SCAN_IDS};
+use crate::{secrets, GLOBAL_ANIME_DATA, file_operations, GLOBAL_REFRESH_UI, GLOBAL_ANIME_SCAN_IDS, GLOBAL_404_ANIME_IDS};
 
 
 // the structs below replicate the structure of data being returned by anilist api calls
@@ -454,11 +454,27 @@ query($page: Int $ids: [Int]) {
     }
 }";
 // get anime data from anilist for all ids
-pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str>  {
+pub async fn anilist_api_call_multiple(get_ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str>  {
 
+    if GLOBAL_404_ANIME_IDS.lock().await.len() == 0 {
+        match file_operations::read_file_404_ids(&GLOBAL_404_ANIME_IDS).await {
+            Ok(_result) => {
+                // do nothing
+            },
+            Err(error) => {
+                println!("{}", error);
+            },
+        }
+    }
+
+    let mut anilist_not_found_ids = GLOBAL_404_ANIME_IDS.lock().await;
+    let ids = get_ids.iter().filter(|id| anilist_not_found_ids.contains(id) == false).map(|id| *id).collect::<Vec<i32>>();
+    if ids.len() == 0 {
+        return Ok(());
+    }
     let pages = ceiling_div(ids.len(), 50);
     let mut scan_ids = GLOBAL_ANIME_SCAN_IDS.lock().await;
-    //println!("ids {} pages {}", ids.len(), pages);
+    println!("ids {} pages {}", ids.len(), pages);
     
     for i in 0..pages {
 
@@ -479,6 +495,14 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i
                 let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
                 let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
 
+                if anime_vec.len() == 0 {
+                    println!("{}", response);
+                    println!("{:?}", sub_vec);
+                    for id in sub_vec.iter() {
+                        anilist_not_found_ids.insert(*id);
+                    }
+                }
+
                 for anime in anime_vec {
                     if anime_data.contains_key(&anime.id) == false {
                         scan_ids.push(anime.id);
@@ -492,6 +516,7 @@ pub async fn anilist_api_call_multiple(ids: Vec<i32>, anime_data: &mut HashMap<i
             },
         }
     }
+    file_operations::write_file_404_ids(&anilist_not_found_ids).await;
     GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
     return Ok(());
 }

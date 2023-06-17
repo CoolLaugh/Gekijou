@@ -35,7 +35,7 @@ pub async fn recommendations(mode: String, genre_filter: String, year_min_filter
 
 // return a list of anime recommended by users based on the users completed list
 async fn tally_recommendations() -> Vec<RecommendTally> {
-    
+
     let mut anime_data = GLOBAL_ANIME_DATA.lock().await; // used to remove anime the user has already watched
 
     // use the completed list to grab user recommendations
@@ -45,10 +45,10 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
     if list.contains_key("COMPLETED") == false {
 
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), 
-        "COMPLETED".to_owned(), 
-        GLOBAL_TOKEN.lock().await.access_token.clone(),
-        &mut user_data,
-        &mut list).await;
+            "COMPLETED".to_owned(), 
+            GLOBAL_TOKEN.lock().await.access_token.clone(),
+            &mut user_data,
+            &mut list).await;
 
         if error_message.is_some() {
             println!("api_calls::anilist_get_list for completed list returned a error: {}", error_message.unwrap());
@@ -56,7 +56,6 @@ async fn tally_recommendations() -> Vec<RecommendTally> {
         }
 
         file_operations::write_file_anime_info_cache(&anime_data);
-        file_operations::write_file_user_info().await;
     }
     let completed_list = list.get("COMPLETED").unwrap();
 
@@ -262,7 +261,7 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
     }
     
     // remove anime already in the users lists
-    recommend_total.retain(|id, _| { user_data.contains_key(&id) == false });
+    recommend_total.retain(|id, _| { user_data.contains_key(&id) == false || user_data.get(&id).unwrap().status == "" });
 
     // find shows that are missing data
     let unknown_ids: Vec<i32> = recommend_total.iter()
@@ -279,7 +278,6 @@ async fn related_recommendations(mode: String) -> Vec<RecommendTally> {
         Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
     }
 
-    let anime_data = GLOBAL_ANIME_DATA.lock().await; // used to remove anime the user has already watched
     // some ids lead to 404 pages, these ids won't be in anime_data, remove them
     recommend_total.retain(|anime_id, _| { anime_data.contains_key(anime_id) == true });
     

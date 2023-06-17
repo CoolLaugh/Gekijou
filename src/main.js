@@ -3,6 +3,10 @@ const { listen } = window.__TAURI__.event;
 
 
 
+document.addEventListener('contextmenu', event => event.preventDefault());
+
+
+
 listen('tauri://file-drop', async event => {
 
   if (document.getElementById("login_panel").style.visibility == "visible") {
@@ -38,7 +42,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   add_adult_genres(user_settings.show_adult);
 
   if (user_settings.first_time_setup == true) {
-    console.log(user_settings);
     show_setting_window();
     document.getElementById("login_panel").style.setProperty("left", "100%");
     document.getElementById("login_panel").style.setProperty("transform", "translate(-102%,-50%)");
@@ -130,7 +133,10 @@ async function refresh_ui() {
     if (current_tab == "RECOMMENDED") {
       await show_recommended_anime_list();
     } else {
-      await show_anime_list(current_tab);
+      
+      if (current_tab == "CURRENT" || current_tab == "COMPLETED" || current_tab == "PAUSED" || current_tab == "DROPPED" || current_tab == "PLANNING") {
+        await show_anime_list(current_tab);
+      }
     }
   }
 
@@ -188,7 +194,6 @@ async function refresh_ui() {
   if (refresh.loading_dialog != null) {
     document.getElementById("loading_dialog_text").innerText = refresh.loading_dialog;
     var loading_dialog = document.getElementById("loading_dialog");
-    console.log(loading_dialog);
     if (loading_dialog.open == false){
       loading_dialog.showModal();
     }
@@ -232,7 +237,7 @@ async function confirm_delete_entry(id, media_id) {
     if (removed == true) {
 
       if (current_tab == "CURRENT" || current_tab == "COMPLETED" || current_tab == "PAUSED" || current_tab == "DROPPED" || current_tab == "PLANNING") {
-        show_anime_list(current_tab);
+        await show_anime_list(current_tab);
       }
       document.getElementById("status_select").value = "";
       document.getElementById("episode_number").value = 0;
@@ -956,14 +961,15 @@ async function redraw_episode_canvas() {
       var id = parseInt(grid_children[i].getAttribute("id"));
       var anime = await invoke("get_anime_info", {id: id});
       var user_data = await invoke("get_user_info", {id: id});
-      draw_episode_canvas(user_data.progress, anime.episodes, id);
 
       // left side of episode text
       var episode_text = "";
       if (user_data != null) {
         episode_text = null_check(user_data.progress, user_data.progress + "/", "0/");
+        draw_episode_canvas(user_data.progress, anime.episodes, id);
       } else {
         episode_text = "0/";
+        draw_episode_canvas(0, anime.episodes, id);
       }
       // right side of episode text
       episode_text += null_check(anime.episodes, anime.episodes, "??");
@@ -991,6 +997,9 @@ async function draw_episode_canvas(episode, total_episodes, media_id) {
   }
 
   var bar = document.getElementById("progress_episodes_" + media_id);
+  if (bar == null) {
+    return;
+  }
   if (Number.isNaN(total_episodes) == false && total_episodes != null) {
     bar.title = "Watched: " + episode + " / " + total_episodes;
   } else {
@@ -1268,7 +1277,6 @@ window.run_tests = run_tests;
 async function run_tests() {
 
   var results = await invoke("run_filename_tests");
-  console.log(results);
   removeChildren(document.getElementById("cover_panel_grid"));
 
   document.getElementById("cover_panel_grid").innerHTML = 
@@ -1369,7 +1377,6 @@ async function delete_data() {
         break;
       }
     }
-    console.log(theme_element);
     set_theme(theme_element,0);
     removeChildren(document.getElementById("cover_panel_grid"));
 
@@ -1402,17 +1409,13 @@ async function manual_scan() {
   if (set_folders == true) {
     user_settings.folders = folders;
     await invoke("set_user_settings", { settings: user_settings});
-    console.log("set_user_settings");
   }
 
 
   var button = document.getElementById("manual_scan_button");
-  console.log(button);
   button.disabled = true;
-  console.log(button);
   await invoke("manual_scan");
   button.disabled = false;
-  console.log(button);
 }
 
 
@@ -1420,9 +1423,7 @@ window.show_click = show_click;
 async function show_click(element) {
   var rect = element.getBoundingClientRect();
   var cover_panel_grid = document.getElementById("cover_panel_grid").getBoundingClientRect();
-  console.log(rect.left, rect.top, rect.right, rect.bottom);
-  console.log(cover_panel_grid.left, cover_panel_grid.top, cover_panel_grid.right, cover_panel_grid.bottom);
-  console.log(rect.left / cover_panel_grid.right, rect.top / cover_panel_grid.bottom, rect.right / cover_panel_grid.right, rect.bottom / cover_panel_grid.bottom);
+  console.log(rect.left - cover_panel_grid.left, cover_panel_grid.right - rect.right);
 }
 
 
@@ -1485,7 +1486,6 @@ async function get_user_settings() {
     if(elements[i].nodeType != 1) { 
       continue;
     }
-    console.log(user_settings.theme);
     if (elements[i].getAttribute("index") == user_settings.theme) {
       elements[i].style.setProperty("border-style", "solid");
       elements[i].style.setProperty("margin", "0px");
@@ -1665,7 +1665,7 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("youtube_embed").src = "";
 
   // if moving to another window save my list
-  if (document.getElementById("info_panel").display != "") {
+  if (document.getElementById("info_panel").display != "" && document.getElementById("info_panel").display != undefined) {
     update_user_entry(info_window_anime_id);
   }
 
@@ -1698,7 +1698,6 @@ async function show_anime_info_window(anime_id) {
 
   var previous_info = await invoke("get_anime_info", {id: list_ids[index_previous]});
   var previous_title = await determine_title(previous_info.title, user_settings);
-  console.log(document.getElementById("info_window_previous").style.display);
   document.getElementById("info_window_previous").style.display = "";
   document.getElementById("info_window_previous").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_previous] + ")");
   document.getElementById("info_window_previous").title = previous_title;
@@ -1950,14 +1949,25 @@ async function add_user_data(anime_id, user_settings) {
   
     var user_data = await invoke("get_user_info", {id: anime_id});
   
-    document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
-    document.getElementById("status_select").value = user_data.status;
-    document.getElementById("episode_number").value = user_data.progress;
+    if (user_data != null) {
+      document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
+      document.getElementById("status_select").value = user_data.status;
+      document.getElementById("episode_number").value = user_data.progress;
+      document.getElementById("score_dropdown").value = user_data.score;
+      document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
+      document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
+      document.getElementById("user_notes").value = null_check(user_data.notes, user_data.notes, "");
+    } else {
+      document.getElementById("delete_anime").onclick = function() { }
+      document.getElementById("status_select").value = null;
+      document.getElementById("episode_number").value = 0;
+      document.getElementById("score_dropdown").value = null;
+      document.getElementById("started_date").value = "";
+      document.getElementById("finished_date").value = "";
+      document.getElementById("user_notes").value = "";
+    }
+
     setup_score_dropdown(user_settings.score_format);
-    document.getElementById("score_dropdown").value = user_data.score;
-    document.getElementById("started_date").value = null_check_date_string(user_data.started_at, "");
-    document.getElementById("finished_date").value = null_check_date_string(user_data.completed_at, "");
-    document.getElementById("user_notes").value = null_check(user_data.notes, user_data.notes, "");
     document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
   }
 }
@@ -1986,8 +1996,8 @@ async function hide_anime_info_window(anime_id) {
   document.getElementById("cover_panel_grid").style.opacity = 1;
   if (anime_id != null) {
     var refresh = await update_user_entry(anime_id);
-    if (refresh == true && current_tab != "BROWSE") {
-      show_anime_list(current_tab);
+    if (refresh == true && (current_tab == "CURRENT" || current_tab == "COMPLETED" || current_tab == "PAUSED" || current_tab == "DROPPED" || current_tab == "PLANNING")) {
+      await show_anime_list(current_tab);
     }
   }
 }
@@ -2011,7 +2021,6 @@ async function update_user_entry(anime_id) {
 
   // grab data from ui
   var user_entry = {
-    'id': user_data.id,
     'media_id': anime_id,
     'status': document.getElementById("status_select").value,
     'score': parseFloat(document.getElementById("score_dropdown").value),
@@ -2019,8 +2028,18 @@ async function update_user_entry(anime_id) {
     'notes' : document.getElementById("user_notes").value
   };
 
+  if (user_data != null) {
+    user_entry.id = user_data.id;
+  } else {
+    user_entry.id = 0;
+  }
+
+  // don't update anime if user didn't set status
+  if (user_entry.status == "") {
+    return; 
+  }
+
   // keep notes null/None if it is empty
-  console.log(user_entry.notes);
   if (user_entry.notes.size == 0) {
     user_entry.notes = null;
   }
@@ -2057,35 +2076,45 @@ async function update_user_entry(anime_id) {
   }
 
   var started_changed = false;
-  if (user_entry.started_at != null && user_data.started_at != null) {
-    started_changed = user_entry.started_at.year != user_data.started_at.year ||
-                      user_entry.started_at.month != user_data.started_at.month ||
-                      user_entry.started_at.day != user_data.started_at.day;
-  } else if (user_entry.started_at != user_data.started_at) {
-    started_changed = true;
-  }
-
   var completed_changed = false;
-  if (user_entry.completed_at != null && user_data.completed_at != null) {
-    completed_changed = user_entry.completed_at.year != user_data.completed_at.year ||
-                      user_entry.completed_at.month != user_data.completed_at.month ||
-                      user_entry.completed_at.day != user_data.completed_at.day;
-  } else if (user_entry.completed_at != user_data.completed_at) {
-    completed_changed = true;
-  }
 
-  // only update if something changed
-  if (user_entry.status != user_data.status ||
-    user_entry.score != user_data.score ||
-    user_entry.progress != user_data.progress ||
-    started_changed == true ||
-    completed_changed == true ||
-    user_entry.notes != user_data.notes) {
+  if (user_data != null) {
 
+    if (user_entry.started_at != null && user_data.started_at != null) {
+      started_changed = user_entry.started_at.year != user_data.started_at.year ||
+                        user_entry.started_at.month != user_data.started_at.month ||
+                        user_entry.started_at.day != user_data.started_at.day;
+    } else if (user_entry.started_at != user_data.started_at) {
+      started_changed = true;
+    }
+  
+    if (user_entry.completed_at != null && user_data.completed_at != null) {
+      completed_changed = user_entry.completed_at.year != user_data.completed_at.year ||
+                        user_entry.completed_at.month != user_data.completed_at.month ||
+                        user_entry.completed_at.day != user_data.completed_at.day;
+    } else if (user_entry.completed_at != user_data.completed_at) {
+      completed_changed = true;
+    }
+
+    // only update if something changed
+    if (user_entry.status != user_data.status ||
+      user_entry.score != user_data.score ||
+      user_entry.progress != user_data.progress ||
+      started_changed == true ||
+      completed_changed == true ||
+      user_entry.notes != user_data.notes) {
+  
+        await invoke("update_user_entry", {anime: user_entry});
+    }
+  } else {
+    if (user_entry.status != null && user_entry.status != "") {
+      
       await invoke("update_user_entry", {anime: user_entry});
+    }
   }
 
-  if (user_entry.progress != user_data.progress) {
+  // change episode text in UI
+  if (user_data != null && user_entry.progress != user_data.progress) {
     
     var text = document.getElementById("episode_text_"+ anime_id);
     var total = text.textContent.split('/')[1];

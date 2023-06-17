@@ -89,6 +89,7 @@ lazy_static! {
     static ref GLOBAL_ANIME_UPDATE_QUEUE: Mutex<Vec<UserAnimeInfo>> = Mutex::new(Vec::new());
     static ref GLOBAL_KNOWN_FILES: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
     static ref GLOBAL_ANIME_SCAN_IDS: Mutex<Vec<i32>> = Mutex::new(Vec::new());
+    static ref GLOBAL_404_ANIME_IDS: Mutex<HashSet<i32>> = Mutex::new(HashSet::new());
 }
 
 
@@ -198,7 +199,7 @@ async fn set_user_settings(settings: UserSettings) {
 
     drop(user_settings);
     if scan {
-        file_name_recognition::parse_file_names(None).await;
+        file_name_recognition::parse_file_names(true, None).await;
     }
 
     file_operations::write_file_user_settings().await;
@@ -228,6 +229,12 @@ async fn set_current_tab(current_tab: String) {
 #[tauri::command]
 async fn get_list(list_name: String) -> Vec<AnimeInfo> {
 
+    // only allow these 5 lists, any other lists like browse or recommended should not be used
+    if (list_name == "CURRENT" || list_name == "COMPLETED" || list_name == "PAUSED" || list_name == "DROPPED" || list_name == "PLANNING") == false {
+        return Vec::new();
+    }
+
+    // if list does not exist, get it from anilist
     if GLOBAL_USER_ANIME_LISTS.lock().await.contains_key(&list_name) == false {
         
         let error_message = api_calls::anilist_get_list(GLOBAL_USER_SETTINGS.lock().await.username.clone(), list_name.clone(), GLOBAL_TOKEN.lock().await.access_token.clone(), &mut *GLOBAL_USER_ANIME_DATA.lock().await, &mut *GLOBAL_USER_ANIME_LISTS.lock().await).await;
@@ -595,8 +602,12 @@ async fn get_user_info(id: i32) -> Option<UserAnimeInfo> {
             Err(_error) => return None,
         }
     }
-
-    Some(GLOBAL_USER_ANIME_DATA.lock().await.entry(id).or_insert(UserAnimeInfo::new()).clone())
+    
+    if let Some(data) = GLOBAL_USER_ANIME_DATA.lock().await.get(&id) {
+        return Some(data.clone());
+    } else {
+        return None;
+    }
 }
 
 
@@ -710,7 +721,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
     // we need to change what list the anime is in
     if old_list != new_list {
         
-        // if the anime is not newly added
+        // if the anime is not newly added remove from old list
         if old_status.is_empty() == false {
 
             GLOBAL_USER_ANIME_LISTS.lock().await.entry(old_list.clone()).and_modify(|data|{ 
@@ -719,12 +730,13 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
                 }
             });
         }
-        
+        // add anime to other list
         GLOBAL_USER_ANIME_LISTS.lock().await.entry(new_list.clone()).and_modify(|list| {
             if list.contains(&anime.media_id) == false {
                 list.push(anime.media_id);
             }
         }).or_insert(vec![anime.media_id]);
+        GLOBAL_REFRESH_UI.lock().await.anime_list = true;
     }
     
     // update completed and started date if show is completed and don't change original start and end date if rewatching
@@ -1039,7 +1051,7 @@ async fn play_next_episode(id: i32) {
 
     if play_episode(id, next_episode).await == false {
         // if episode location is unknown, search for new episodes and try again
-        file_name_recognition::parse_file_names(None).await;
+        file_name_recognition::parse_file_names(false, Some(id)).await;
         play_episode(id, next_episode).await;
     }
 }
@@ -1123,7 +1135,7 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
 // scan folders for episodes of anime
 #[tauri::command]
 async fn scan_anime_folder() {
-    file_name_recognition::parse_file_names(None).await;
+    file_name_recognition::parse_file_names(true, None).await;
 }
 
 
@@ -1449,7 +1461,7 @@ async fn background_tasks() {
     if timer.elapsed() > Duration::from_secs(constants::ONE_HOUR) || 
         (timer.elapsed() >= Duration::from_secs(constants::STARTUP_SCAN_DELAY) && *on_startup_scan_completed == false) {
 
-        if file_name_recognition::parse_file_names(None).await {
+        if file_name_recognition::parse_file_names(true, None).await {
 
             GLOBAL_REFRESH_UI.lock().await.canvas = true;
         }
@@ -1603,7 +1615,7 @@ async fn add_to_list(id: i32, list: String) {
     user_anime.status = list;
 
     update_user_entry(user_anime).await;
-    file_name_recognition::parse_file_names(Some(id)).await;
+    file_name_recognition::parse_file_names(false, Some(id)).await;
 }
 
 
@@ -1863,7 +1875,7 @@ async fn get_user_data() -> Result<(), &'static str> {
 
 #[tauri::command]
 async fn manual_scan() {
-    file_name_recognition::parse_file_names(None).await;
+    file_name_recognition::parse_file_names(false, None).await;
 }
 
 

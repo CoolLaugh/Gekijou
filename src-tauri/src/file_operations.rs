@@ -8,7 +8,7 @@ use serde::Serialize;
 use tauri::async_runtime::Mutex;
 
 use crate::api_calls::{AnimeInfo, UserAnimeInfo};
-use crate::{GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN, GLOBAL_ANIME_PATH, GLOBAL_REFRESH_UI, GLOBAL_ANIME_UPDATE_QUEUE};
+use crate::{GLOBAL_ANIME_DATA, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_ANIME_LISTS, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN, GLOBAL_ANIME_PATH, GLOBAL_REFRESH_UI, GLOBAL_ANIME_UPDATE_QUEUE, GLOBAL_404_ANIME_IDS};
 
 extern crate dirs;
 
@@ -84,6 +84,14 @@ pub async fn write_file_known_files(known_files: &HashSet<String>) {
 
 pub async fn read_file_known_files(known_files: &Mutex<HashSet<String>>) -> Result<(), &'static str> {
     read_file_data(known_files, "known_files").await
+}
+
+pub async fn write_file_404_ids(not_found_ids: &HashSet<i32>) {
+    write_file_data(&not_found_ids, "404_ids");
+}
+
+pub async fn read_file_404_ids(not_found_ids: &Mutex<HashSet<i32>>) -> Result<(), &'static str> {
+    read_file_data(&not_found_ids, "404_ids").await
 }
 
 // writes all held data on anime to a file
@@ -239,10 +247,9 @@ fn gekijou_folder_exists_or_created() -> bool {
 // delete all files that store information between sessions
 pub fn delete_data() -> bool {
 
-    let files = vec!["token","token_backup","user_settings","user_settings_backup",
-                                "anime_cache","anime_cache_backup","user_data","user_data_backup",
-                                "user_lists","user_lists_backup","episode_path","episode_path_backup",
-                                "update_queue", "update_queue_backup", "known_files", "known_files_backup"];
+    let files = vec!["token","token_backup","user_settings","user_settings_backup","anime_cache","anime_cache_backup",
+                                "user_data","user_data_backup","user_lists","user_lists_backup","episode_path","episode_path_backup",
+                                "update_queue","update_queue_backup","known_files","known_files_backup","404_ids","404_ids_backup"];
 
     for file in files {
 
