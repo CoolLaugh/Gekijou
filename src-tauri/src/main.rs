@@ -940,6 +940,9 @@ async fn pull_updates_from_anilist() {
 
                                         move_list_id(entry.media_id, Some(user_entry.status.clone()), entry.status.clone()).await;
                                     }
+                                } else {
+                                    // user data is new so add it to a list
+                                    move_list_id(entry.media_id, None, entry.status.clone()).await;
                                 }
 
                                 user_data.insert(entry.media_id, entry);
