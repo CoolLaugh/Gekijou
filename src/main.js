@@ -1690,23 +1690,29 @@ async function show_anime_info_window(anime_id) {
   }
 
   var index = list_ids.indexOf(anime_id);
-  var index_previous = (index - 1) % list_ids.length;
-  if (index == 0) {
-    index_previous = list_ids.length - 1;
+  if (index == -1) {
+    document.getElementById("info_window_previous").style.display = "none";
+    document.getElementById("info_window_next").style.display = "none";
+  } else {
+    console.log(list_ids);
+    var index_previous = (index - 1) % list_ids.length;
+    if (index == 0) {
+      index_previous = list_ids.length - 1;
+    }
+    var index_next = (index + 1) % list_ids.length;
+  
+    var previous_info = await invoke("get_anime_info", {id: list_ids[index_previous]});
+    var previous_title = await determine_title(previous_info.title, user_settings);
+    document.getElementById("info_window_previous").style.display = "";
+    document.getElementById("info_window_previous").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_previous] + ")");
+    document.getElementById("info_window_previous").title = previous_title;
+  
+    var next_info = await invoke("get_anime_info", {id: list_ids[index_next]});
+    var next_title = await determine_title(next_info.title, user_settings);
+    document.getElementById("info_window_next").style.display = "";
+    document.getElementById("info_window_next").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_next] + ")");
+    document.getElementById("info_window_next").title = next_title;
   }
-  var index_next = (index + 1) % list_ids.length;
-
-  var previous_info = await invoke("get_anime_info", {id: list_ids[index_previous]});
-  var previous_title = await determine_title(previous_info.title, user_settings);
-  document.getElementById("info_window_previous").style.display = "";
-  document.getElementById("info_window_previous").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_previous] + ")");
-  document.getElementById("info_window_previous").title = previous_title;
-
-  var next_info = await invoke("get_anime_info", {id: list_ids[index_next]});
-  var next_title = await determine_title(next_info.title, user_settings);
-  document.getElementById("info_window_next").style.display = "";
-  document.getElementById("info_window_next").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_next] + ")");
-  document.getElementById("info_window_next").title = next_title;
 
   // make the window visible
   openTab('information', 'underline_tab_0');
