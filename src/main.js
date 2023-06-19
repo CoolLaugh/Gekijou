@@ -241,7 +241,7 @@ async function confirm_delete_entry(id, media_id) {
       }
       document.getElementById("status_select").value = "";
       document.getElementById("episode_number").value = 0;
-      document.getElementById("score_dropdown").value = "0";
+      document.getElementById("score_dropdown").value = 0;
       document.getElementById("started_date").value = "";
       document.getElementById("finished_date").value = "";
     }
@@ -1665,7 +1665,8 @@ async function show_anime_info_window(anime_id) {
   document.getElementById("youtube_embed").src = "";
 
   // if moving to another window save my list
-  if (document.getElementById("info_panel").display != "" && document.getElementById("info_panel").display != undefined) {
+  console.log(document.getElementById("info_panel").display);
+  if (info_window_anime_id != 0) {
     update_user_entry(info_window_anime_id);
   }
 
@@ -1955,6 +1956,8 @@ async function add_user_data(anime_id, user_settings) {
   
     var user_data = await invoke("get_user_info", {id: anime_id});
   
+    setup_score_dropdown(user_settings.score_format);
+
     if (user_data != null) {
       document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
       document.getElementById("status_select").value = user_data.status;
@@ -1973,7 +1976,6 @@ async function add_user_data(anime_id, user_settings) {
       document.getElementById("user_notes").value = "";
     }
 
-    setup_score_dropdown(user_settings.score_format);
     document.getElementById("info_close_button").onclick = function() { hide_anime_info_window(anime_id)};
   }
 }
@@ -1997,6 +1999,7 @@ function add_trailer(trailer) {
 // hide information window and return to cover grid
 window.hide_anime_info_window = hide_anime_info_window;
 async function hide_anime_info_window(anime_id) {
+  info_window_anime_id = 0;
   document.getElementById("youtube_embed").src = "";
   document.getElementById("info_panel").style.display = "none";
   document.getElementById("cover_panel_grid").style.opacity = 1;
@@ -2169,6 +2172,10 @@ async function determine_title(title_struct, user_settings) {
 
 // change the score input to match the user's score format
 function setup_score_dropdown(format) {
+  // if format did not change, don't change anything
+  if (document.getElementById("score_dropdown").getAttribute("format") == format) {
+    return;
+  }
   switch(format) {
     case "POINT_100":
       document.getElementById("score_cell").innerHTML = "<input id=\"score_dropdown\" format=\"" + format + "\" min=\"0\" max=\"100\" step=1 type=\"number\">";
@@ -2180,7 +2187,7 @@ function setup_score_dropdown(format) {
       document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">1</option><option value=\"2\">2</option><option value=\"3\">3</option><option value=\"4\">4</option><option value=\"5\">5</option><option value=\"6\">6</option><option value=\"7\">7</option><option value=\"8\">8</option><option value=\"9\">9</option><option value=\"10\">10</option></select>";
       break;
     case "POINT_5":
-      document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">★☆☆☆☆</option><option value=\"2\">★★☆☆☆</option><option value=\"3\">★★★☆☆</option><option value=\"4\">★★★★☆</option><option value=\"5\">★★★★★</option></select>";
+      document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=0>No Score</option><option value=1>★☆☆☆☆</option><option value=2>★★☆☆☆</option><option value=3>★★★☆☆</option><option value=4>★★★★☆</option><option value=5>★★★★★</option></select>";
       break;
     case "POINT_3":
       document.getElementById("score_cell").innerHTML = "<select id=\"score_dropdown\" format=\"" + format + "\" name=\"score_select\"><option value=\"0\">No Score</option><option value=\"1\">🙁</option><option value=\"2\">😐</option><option value=\"3\">🙂</option></select>";
