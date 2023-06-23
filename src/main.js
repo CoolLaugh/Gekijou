@@ -2413,10 +2413,10 @@ function filter_sort_torrents(sort_category) {
 function add_torrent_row(table, rss_entry) {
 
   var row = table.insertRow(1);
-
   var download_link_cell = row.insertCell(0);
   /* cspell: disable-next-line */
-  download_link_cell.innerHTML = "<a title=\"" + rss_entry.title + "\" href=\"magnet:?xt=urn:btih:" + rss_entry.info_hash + "&dn=" + rss_entry.title + "&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce\">⤓</a>";
+  var magnet = "magnet:?xt=urn:btih:" + rss_entry.info_hash + "&dn=" + rss_entry.title + "&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce";
+  download_link_cell.innerHTML = "<a title=\"" + rss_entry.title + "\" href=\"#\" onclick=\"open_window('" + magnet + "')\">⤓</a>";
 
   var sub_group_cell = row.insertCell(1);
   sub_group_cell.innerHTML = rss_entry.derived_values.sub_group;

@@ -109,7 +109,6 @@ pub async fn parse_file_names(skip_files: bool, media_id: Option<i32>) -> bool {
 
         let (sender, receiver) = mpsc::channel::<bool>();
 
-        let mut count = 0;
         let mut children = vec![];
         for mut file_name_chunk in file_names_chunks {
 
@@ -149,7 +148,6 @@ pub async fn parse_file_names(skip_files: bool, media_id: Option<i32>) -> bool {
 
                 file_name_chunk
             }));
-            count += 1;
         }
 
         for _received in receiver {
