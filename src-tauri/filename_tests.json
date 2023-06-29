@@ -373,4 +373,9 @@
     "expected_anime_id": 101474,
     "expected_episode": 1,
     "expected_resolution": 1080
+},{
+    "filename":"[Anime Time] Mahoutsukai no Yome season 2 E02 [1080p][HEVC 10bit x265][AAC][Multi Sub].mkv",
+    "expected_anime_id": 154364,
+    "expected_episode": 2,
+    "expected_resolution": 1080
 }]

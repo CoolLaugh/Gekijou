@@ -12,15 +12,7 @@
   },
   "tauri": {
     "allowlist": {
-      "all": false,
-      "fs": {
-        "all":true
-      },
-      "dialog": {
-        "all": true,
-        "open": true,
-        "save": true
-      }
+      "all": false
     },
     "bundle": {
       "active": true,
@@ -68,10 +60,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 850,
+        "width": 1110,
+        "height": 865,
         "resizable": true,
         "title": "Gekijou",
-        "width": 1110,
         "decorations": true,
         "visible": false,
         "minWidth": 700,

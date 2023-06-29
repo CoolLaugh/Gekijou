@@ -3,7 +3,7 @@ const { listen } = window.__TAURI__.event;
 
 
 
-document.addEventListener('contextmenu', event => event.preventDefault());
+//document.addEventListener('contextmenu', event => event.preventDefault());
 
 
 
@@ -1753,7 +1753,7 @@ async function show_manga_info_window(manga_id) {
   document.getElementById("custom_filename").value = null;
   document.getElementById("status_select").value = null;
   document.getElementById("episode_number").value = 0;
-  document.getElementById("score_dropdown").value = null;
+  document.getElementById("score_dropdown").value = 0;
   document.getElementById("started_date").value = null;
   document.getElementById("finished_date").value = null;
   document.getElementById("user_notes").value = null;
@@ -1970,7 +1970,7 @@ async function add_user_data(anime_id, user_settings) {
       document.getElementById("delete_anime").onclick = function() { }
       document.getElementById("status_select").value = null;
       document.getElementById("episode_number").value = 0;
-      document.getElementById("score_dropdown").value = null;
+      document.getElementById("score_dropdown").value = 0;
       document.getElementById("started_date").value = "";
       document.getElementById("finished_date").value = "";
       document.getElementById("user_notes").value = "";
@@ -2340,6 +2340,9 @@ async function add_torrent_data(anime_id) {
 
     add_torrent_row(table,rss_data[i]);
   }
+
+  var anime_data = await invoke("get_anime_info", {id: anime_id});
+  document.getElementById("torrent_link").onclick = function() { invoke("open_url", { url: "https://nyaa.si/?f=0&c=1_2&q=" + anime_data.title.romaji}); };
 }
 
 
@@ -2408,15 +2411,22 @@ function filter_sort_torrents(sort_category) {
 
     add_torrent_row(table, rss_data[i]);
   }
+
 }
 
 function add_torrent_row(table, rss_entry) {
 
   var row = table.insertRow(1);
   var download_link_cell = row.insertCell(0);
+  var a = document.createElement("a");
+  a.title = rss_entry.title;
+  a.href = "#";
+  a.innerText = "⤓";
   /* cspell: disable-next-line */
   var magnet = "magnet:?xt=urn:btih:" + rss_entry.info_hash + "&dn=" + rss_entry.title + "&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce";
-  download_link_cell.innerHTML = "<a title=\"" + rss_entry.title + "\" href=\"#\" onclick=\"open_window('" + magnet + "')\">⤓</a>";
+  //download_link_cell.innerHTML = "<a title=\"" + rss_entry.title + "\" href=\"#\" onclick=\"open_window(\"" + magnet + "\")\">⤓</a>";
+  a.onclick = function() { open_window(magnet) };
+  download_link_cell.appendChild(a);
 
   var sub_group_cell = row.insertCell(1);
   sub_group_cell.innerHTML = rss_entry.derived_values.sub_group;
