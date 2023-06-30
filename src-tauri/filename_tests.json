@@ -378,4 +378,9 @@
     "expected_anime_id": 154364,
     "expected_episode": 2,
     "expected_resolution": 1080
+},{
+    "filename":"VINLAND SAGA S02E02.mkv",
+    "expected_anime_id": 136430,
+    "expected_episode": 2,
+    "expected_resolution": 1080
 }]

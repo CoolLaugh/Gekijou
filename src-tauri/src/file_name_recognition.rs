@@ -284,8 +284,6 @@ fn string_similarity(paths: &mut Vec<AnimePathWorking>, media_id: Option<i32>, a
         }
 
         let (id, _title, similarity_score) = identify_media_id(&path.filename, &anime_data, media_id);
-
-
         
         if similarity_score > constants::SIMILARITY_SCORE_THRESHOLD && similarity_score > path.similarity_score {
             path.media_id = id;
@@ -546,7 +544,7 @@ lazy_static! {
     static ref DOTS_AS_SPACES: Regex = Regex::new(r"\w\.\w").unwrap();
     static ref EPISODE_TITLE: Regex = Regex::new(r"'.+'").unwrap();
     static ref XVID: Regex = Regex::new(r"[xX][vV][iI][dD]").unwrap();
-    static ref SEASON_NUMBER: Regex = Regex::new(r" ?[sS]0\d").unwrap();
+    static ref SEASON_NUMBER: Regex = Regex::new(r" ?[sS]0(\d)").unwrap();
 }
 
 
@@ -580,7 +578,12 @@ pub fn irrelevant_information_removal(filename: String) -> String {
         .replace(" AV1", "")
         .replace(" x264-ZQ", "")
         .replace(" x264", "")
-        .replace(" DTS", "");
+        .replace(" DTS", "")
+        .replace(" AAC2", "")
+        .replace(" AAC2 0", "")
+        .replace(" WEB-DL", "")
+        .replace(" H264", "")
+        .replace(" H 264", "");
     
     filename_clean = VERSION.replace_all(&filename_clean, "").to_string();
     filename_clean = XVID.replace_all(&filename_clean, "").to_string();
@@ -589,7 +592,15 @@ pub fn irrelevant_information_removal(filename: String) -> String {
     filename_clean = EPISODE_TITLE.replace_all(&filename_clean, "").to_string();
     filename_clean = TRAILING_SPACES.replace_all(&filename_clean, "").to_string();
     filename_clean = TRAILING_DASH2.replace_all(&filename_clean, "").to_string();
-    filename_clean = SEASON_NUMBER.replace_all(&filename_clean, "").to_string();
+    //filename_clean = SEASON_NUMBER.replace_all(&filename_clean, "").to_string();
+
+    let (episode_str, episode_i32) = extract_number(&filename_clean, SEASON_NUMBER.to_owned());
+    if episode_i32 > 1 {
+        let season_text = format!(" Season {}", episode_i32);
+        filename_clean = filename_clean.replace(&episode_str, &season_text);
+    } else {
+        filename_clean = filename_clean.replace(&episode_str, "");
+    }
 
     // convert title to lowercase so the comparison doesn't think upper/lower case letters are different
     filename_clean.to_ascii_lowercase()
