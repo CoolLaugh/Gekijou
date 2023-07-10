@@ -740,7 +740,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
     }
     
     // update completed and started date if show is completed and don't change original start and end date if rewatching
-    if new_list == "COMPLETED" && anime.status != "REPEATING" {
+    if new_list == "COMPLETED" && old_status != "REPEATING" {
 
         // set completed date to today
         if anime.completed_at.is_none() { // user didn't input a date
@@ -779,7 +779,7 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
         Ok(result) => {
             GLOBAL_REFRESH_UI.lock().await.no_internet = false;
             
-            // update user date to match anilist
+            // update user data to match anilist
             let json: serde_json::Value = serde_json::from_str(&result).unwrap();
             if json["data"].is_null() == false {
                 let new_info: UserAnimeInfo = serde_json::from_value(json["data"]["SaveMediaListEntry"].to_owned()).unwrap();
@@ -1129,8 +1129,7 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
     } else {
         println!("user data is missing {}", anime_id);
     }
-    drop(user_data);
-    file_operations::write_file_user_info().await;
+    file_operations::write_file_user_data(&user_data).await;
 }
 
 
@@ -1339,7 +1338,7 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: O
     anime.progress = episode;
 
     // set start date when the first episode is watched
-    if progress == 0 && episode >= 1 {
+    if anime.status != "REPEATING" && progress == 0 && episode >= 1 {
         let now: DateTime<Local> = Local::now();
         anime.started_at = Some(AnilistDate {
             year: Some(now.year()),
@@ -1349,7 +1348,10 @@ async fn change_episode(anime: &mut UserAnimeInfo, episode: i32, max_episodes: O
     }
 
     // add anime to watching if progress increases
-    if episode > progress && (max_episodes.is_none() || episode != max_episodes.unwrap()) && anime.status != "CURRENT"{
+    if episode > progress && 
+        (max_episodes.is_none() || episode != max_episodes.unwrap()) && 
+        anime.status != "CURRENT" && 
+        anime.status != "REPEATING" {
 
         change_list(anime, String::from("CURRENT")).await;
         GLOBAL_REFRESH_UI.lock().await.anime_list = true;

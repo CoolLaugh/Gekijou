@@ -1341,6 +1341,13 @@ document.addEventListener('keyup', (e) => {
 });
 
 
+window.status_change = status_change;
+async function status_change() {
+  if(document.getElementById("status_select").value == "REPEATING") {
+    document.getElementById("episode_number").value = 0;
+  }
+}
+
 
 window.delete_data = delete_data;
 async function delete_data() {

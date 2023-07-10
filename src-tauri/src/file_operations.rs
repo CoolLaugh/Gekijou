@@ -62,6 +62,10 @@ pub async fn read_file_user_info() -> Result<(), &'static str> {
     }
 }
 
+pub async fn write_file_user_data(user_data: &HashMap<i32, UserAnimeInfo>) {
+    write_file_data(&user_data, "user_data");
+}
+
 pub async fn write_file_episode_path() {
     write_file_data_mutex(&GLOBAL_ANIME_PATH, "episode_path").await;
 }
