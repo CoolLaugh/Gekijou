@@ -742,8 +742,18 @@ async fn update_user_entry(mut anime: UserAnimeInfo) {
     // update completed and started date if show is completed and don't change original start and end date if rewatching
     if new_list == "COMPLETED" && old_status != "REPEATING" {
 
+        let mut set_completed = false;
+        // user didn't input a date
+        if anime.completed_at.is_none() {
+            set_completed = true;
+        } else if let Some(completed_at) = anime.completed_at.clone() {
+            if completed_at.day.is_none() && completed_at.month.is_none() && completed_at.year.is_none() {
+                set_completed = true;
+            }
+        }
+
         // set completed date to today
-        if anime.completed_at.is_none() { // user didn't input a date
+        if set_completed { 
             let now: DateTime<Local> = Local::now();
             anime.completed_at = Some(AnilistDate {
                 year: Some(now.year()),

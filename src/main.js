@@ -1564,7 +1564,7 @@ async function hide_setting_window() {
 // open another window for the user to log in and get a code they can copy and paste
 window.open_oauth_window = open_oauth_window;
 async function open_oauth_window() {
-  window.open("https://anilist.co/api/v2/oauth/authorize?client_id=9965&redirect_uri=https://anilist.co/api/v2/oauth/pin&response_type=code");
+  window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13512&redirect_uri=https://anilist.co/api/v2/oauth/pin&response_type=code");
 }
 
 

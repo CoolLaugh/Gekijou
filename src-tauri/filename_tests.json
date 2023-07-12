@@ -382,5 +382,20 @@
     "filename":"VINLAND SAGA S02E02.mkv",
     "expected_anime_id": 136430,
     "expected_episode": 2,
+    "expected_resolution": 0
+},{
+    "filename":"[Erai-raws] Mushoku Tensei II - Isekai Ittara Honki Dasu - 01 [1080p][Multiple Subtitle][2FBCEDA0].mkv",
+    "expected_anime_id": 146065,
+    "expected_episode": 1,
+    "expected_resolution": 1080
+},{
+    "filename":"[SubsPlease] Magia Record Mahou Shoujo Madoka☆Magica Gaiden 2nd SEASON - Kakusei Zenya - 01v3 (1080p) [E256B3FB].mkv",
+    "expected_anime_id": 117002,
+    "expected_episode": 1,
+    "expected_resolution": 1080
+},{
+    "filename":"[SubsPlease] Magia Record Mahou Shoujo Madoka☆Magica Gaiden 2nd SEASON - Kakusei Zenya - 08v2 (1080p) [2D2C92F0].mkv",
+    "expected_anime_id": 117002,
+    "expected_episode": 8,
     "expected_resolution": 1080
 }]

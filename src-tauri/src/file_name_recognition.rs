@@ -172,7 +172,24 @@ pub async fn parse_file_names(skip_files: bool, media_id: Option<i32>) -> bool {
         let mut file_paths = GLOBAL_ANIME_PATH.lock().await;
         for file in file_names_collected {
 
-            if file.similarity_score > constants::SIMILARITY_SCORE_THRESHOLD && file.episode <= anime_data.get(&file.media_id).unwrap().episodes.unwrap() {
+            // non anime file
+            if file.media_id == 0 || file.similarity_score < constants::SIMILARITY_SCORE_THRESHOLD {
+                continue;
+            }
+
+            let file_in_range = if let Some(anime_entry) = anime_data.get(&file.media_id) {
+                if let Some(episodes) = anime_entry.episodes {
+                    file.episode <= episodes
+                } else {
+                    true
+                }
+            } else {
+                println!("media_id: {}", file.media_id);
+                assert!(false); // should never be this.  anime entry must exist if file variable has its media id
+                false
+            };
+
+            if file_in_range {
 
                 let media = file_paths.entry(file.media_id).or_default();
                 if media.contains_key(&file.episode) && media.get(&file.episode).unwrap().similarity_score < file.similarity_score {
