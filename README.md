@@ -11,8 +11,8 @@ Gekijou is a multiplatform user interface for browsing and watching anime on you
 - Recommendations based on user recommendations from shows you have watched
 - Search Nyaa.si for episodes
 
-## Upcoming Plans for 0.3.0
-- Better state management between anilist and gekijou
+## Upcoming Plans for 0.4
+- My Anime List support
 
 ## Screenshots
 ![Gekijou](https://raw.githubusercontent.com/rC5HUaxv9j/Gekijou/master/Gekijou.png)
