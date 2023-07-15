@@ -1,6 +1,6 @@
 [package]
 name = "gekijou"
-version = "0.3.0"
+version = "0.4.0"
 description = "A multiplatform user interface for browsing and watching anime on your computer"
 authors = ["CoolLaugh"]
 license = ""

@@ -8,6 +8,8 @@ pub const ONE_HOUR: u64 = 60 * 60;
 pub const NO_INTERNET_UPDATE_INTERVAL: u64 = 5 * 60;
 pub const BROWSE_PAGE_LIMIT: i32 = 4;
 pub const FILENAME_CHUNKS: usize = 200;
+pub const USER_LISTS: [&'static str; 5] = ["CURRENT","COMPLETED","PAUSED","DROPPED","PLANNING"];
+pub const USER_STATUSES: [&'static str; 6] = ["CURRENT","COMPLETED","PAUSED","DROPPED","PLANNING","REPEATING"];
 
 
 #[cfg(debug_assertions)]

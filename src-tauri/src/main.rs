@@ -13,6 +13,8 @@ pub mod file_name_recognition;
 pub mod rss_parser;
 pub mod recommendation;
 pub mod file_name_recognition_tests;
+pub mod user_data;
+pub mod anime_data;
 
 #[macro_use]
 extern crate lazy_static;
@@ -1403,11 +1405,11 @@ async fn change_list(anime: &mut UserAnimeInfo, new_list: String) {
 async fn move_list_id(media_id: i32, old_list: Option<String>, mut new_list: String) {
 
     let mut lists = GLOBAL_USER_ANIME_LISTS.lock().await;
-    if let Some(mut old_list_unwraped) = old_list {
-        if old_list_unwraped == "REPEATING" {
-            old_list_unwraped = String::from("CURRENT");
+    if let Some(mut old_list_unwrapped) = old_list {
+        if old_list_unwrapped == "REPEATING" {
+            old_list_unwrapped = String::from("CURRENT");
         }
-        if let Some(list) = lists.get_mut(&old_list_unwraped) {
+        if let Some(list) = lists.get_mut(&old_list_unwrapped) {
             list.retain(|entry| *entry != media_id);
         }
     } else {

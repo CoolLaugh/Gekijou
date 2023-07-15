@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
 
-use crate::{secrets, GLOBAL_ANIME_DATA, file_operations, GLOBAL_REFRESH_UI, GLOBAL_ANIME_SCAN_IDS, GLOBAL_404_ANIME_IDS};
+use crate::{secrets, GLOBAL_ANIME_DATA, file_operations, GLOBAL_REFRESH_UI, GLOBAL_ANIME_SCAN_IDS, GLOBAL_404_ANIME_IDS, user_data::UserInfo, anime_data};
 
 
 // the structs below replicate the structure of data being returned by anilist api calls
@@ -521,7 +521,55 @@ pub async fn anilist_api_call_multiple(get_ids: Vec<i32>, anime_data: &mut HashM
     return Ok(());
 }
 
+const ANIME_INFO_QUERY_MULTIPLE2: &str = "
+query($page: Int $ids: [Int]) {
+    Page(page: $page, perPage: 50) {
+        pageInfo { total perPage currentPage lastPage hasNextPage }
+        media(type: ANIME, id_in: $ids) {
+          id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+          duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
+          relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
+          tags { name isGeneralSpoiler isMediaSpoiler description }
+          studios(isMain: true) { nodes { name isAnimationStudio } }
+          nextAiringEpisode { airingAt, episode }
+        }
+    }
+}";
+// get anime data from anilist for all ids
+pub async fn anilist_api_call_multiple2(get_ids: Vec<i32>) -> Result<Vec<anime_data::AnimeInfo>, &'static str>  {
 
+    let mut anime_info: Vec<anime_data::AnimeInfo> = Vec::new();
+    let pages = ceiling_div(get_ids.len(), 50);
+    println!("ids {} pages {}", get_ids.len(), pages);
+    
+    for i in 0..pages {
+
+        let start = i * 50;
+        let end = 
+        if start + 50 > get_ids.len() {
+            get_ids.len()
+        } else {
+            start + 50
+        };
+        let sub_vec = &get_ids[start..end];
+        let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE, "variables": { "page": 0, "ids": sub_vec}});
+
+        match post(&json, None).await {
+            Ok(result) => {
+                let response = anilist_to_snake_case(result);
+                let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
+                let anime_vec: Vec<anime_data::AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
+                anime_info.extend(anime_vec);
+            },
+            Err(error) => {
+                return Err(error); 
+            },
+        }
+    }
+
+    return Ok(anime_info);
+}
 
 // convert names used by anilist to snake case used by rust
 fn anilist_to_snake_case(anilist_json: String) -> String {
@@ -683,6 +731,47 @@ pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<(), &'static
     }
 }
 
+// query for a specific list along with all user data and media data for the anime on that list
+const MEDIA_INFO2: &str = "query ($id: Int) {
+    Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
+        id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+        duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
+        relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
+        recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
+        tags { name isGeneralSpoiler isMediaSpoiler description }
+        studios(isMain: true) { nodes { name isAnimationStudio } }
+        nextAiringEpisode { airingAt, episode }
+    }
+}";
+
+pub async fn anilist_get_anime_info_single2(anime_id: i32) -> Result<anime_data::AnimeInfo, &'static str> {
+
+    // create client and query json
+    let json = json!({"query": MEDIA_INFO2, "variables": {"id": anime_id}});
+
+    // get media information from anilist api
+    match post(&json, None).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
+
+            if let Ok(mut anime_value) = serde_json::from_str::<serde_json::Value>(&response) {
+
+                if let Ok(anime_data) = serde_json::from_value::<anime_data::AnimeInfo>(anime_value["data"]["media"].take()) {
+
+                    return Ok(anime_data);
+                } else {
+                    println!("serde_json::from_value::<AnimeInfo>(anime_value[\"data\"][\"media\"].take()) failed");
+                    println!("{:?}", anime_value);
+                }
+            } else {
+                println!("serde_json::from_str::<serde_json::Value>(&response) failed");
+                println!("{}", response);
+            }
+            return Err("Cannot extract response");
+        },
+        Err(error) => return Err(error),
+    }
+}
 
 
 // query for a specific list along with all user data and media data for the manga on that list
@@ -1050,6 +1139,93 @@ pub async fn get_updated_media_ids(username: String, newer_than_this: u64) -> Re
     }
 
     Ok(media_ids)
+}
+
+
+
+const USER_MEDIA_UPDATED2: &str = "
+query($name: String) { 
+    Page(page: 0, perPage: 10){
+        pageInfo {
+            hasNextPage
+        }
+        mediaList(userName: $name, sort: UPDATED_TIME_DESC) {
+            updatedAt
+            mediaId
+            id
+            progress
+            score
+            status
+            startedAt {
+              day
+              month
+              year
+            }
+      		completedAt {
+              day
+              month
+              year
+            }
+      		notes
+        }
+    }
+}";
+// returns a list of media that has been updated after the supplied time
+pub async fn get_updated_media_ids2(username: String, newer_than_this: u64) -> Result<Vec<UserInfo>, &'static str> {
+    
+    let mut continue_to_next_page = true;
+    let mut page_number = 0;
+    let mut media_entrys: Vec<UserInfo> = Vec::new();
+
+    while continue_to_next_page {
+
+        let json = json!({"query": USER_MEDIA_UPDATED2, "variables": {"name": username,"page": page_number}});
+        //println!("json {}", json);
+        match post(&json, None).await {
+            Ok(result) => {
+                let response_value = serde_json::from_str::<serde_json::Value>(&result).unwrap();
+                //println!("{:?}", response_value);
+
+                if let Some(error_list) = response_value["errors"].as_array() {
+                    for entry in error_list {
+                        if let Some(message) = entry["message"].as_str() {
+                            println!("message {}", message);
+                        }
+                        if let Some(status) = entry["status"].as_i64() {
+                            println!("status {}", status);
+                        }
+                    }
+                    break;
+                }
+
+                if let Some(media_list) = response_value["data"]["Page"]["mediaList"].as_array() {
+                    for media in media_list {
+                        if let Some(updated_at) = media["updatedAt"].as_u64() {
+                            if updated_at > newer_than_this {
+                                let data: UserInfo = serde_json::from_value(media.to_owned()).unwrap();
+                                media_entrys.push(data);
+                            } else {
+                                // this and all following media will be older than time specified
+                                continue_to_next_page = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if continue_to_next_page == true {
+                    if let Some(has_next_page) = response_value["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
+                        continue_to_next_page = has_next_page;
+                    }
+                }
+
+                page_number += 1;
+            },
+            Err(error) => return Err(error),
+        }
+    }
+
+    Ok(media_entrys)
 }
 
 
