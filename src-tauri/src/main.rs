@@ -1681,33 +1681,6 @@ async fn get_highlight() -> String {
 
 
 
-// close the splashscreen and show main window
-#[tauri::command]
-async fn close_splashscreen(window: tauri::Window) {
-
-  // Close splashscreen
-  if let Some(splashscreen) = window.get_window("splashscreen") {
-    match splashscreen.close() {
-        Ok(v) => v,
-        Err(e) => println!("Can't close splashscreen window, {e:?}"),
-    }
-  } else {
-    println!("Can't find splashscreen window")
-  }
-
-  // Show main window
-  if let Some(splashscreen) = window.get_window("main") {
-    match splashscreen.show() {
-        Ok(v) => v,
-        Err(e) => println!("Can't show main window, {e:?}"),
-    }
-  } else {
-    println!("Can't find main window")
-  }
-}
-
-
-
 // returns a list of rss entries from nyaa.si for a given anime
 // id is the anilist id of the anime being searched for
 #[tauri::command]
@@ -1920,7 +1893,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![manual_scan,set_highlight,get_highlight,anilist_oauth_token,write_token_data,set_user_settings,
             get_user_settings,get_list_user_info,get_anime_info,get_manga_info,get_user_info,update_user_entry,get_list,on_startup,load_user_settings,scan_anime_folder,
             play_next_episode,anime_update_delay,refresh_ui,clear_errors,increment_decrement_episode,on_shutdown,episodes_exist,browse,
-            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,close_splashscreen,get_torrents,recommend_anime,
+            add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,get_torrents,recommend_anime,
             open_url,get_list_ids,run_filename_tests,get_debug,delete_data,background_tasks,startup_finished,get_custom_filename,set_custom_filename])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
