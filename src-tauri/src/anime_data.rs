@@ -242,9 +242,17 @@ pub struct AnimeData {
 
 impl AnimeData {
 
+    pub const fn new() -> AnimeData {
+        AnimeData { data: HashMap::new(), nonexistent_ids: HashSet::new(), needs_scan: Vec::new() }
+    }
+
     pub fn clear(&mut self) {
         self.data.clear();
         self.nonexistent_ids.clear();
+    }
+
+    pub fn contains_key(&self, media_id: i32) -> bool {
+        self.data.contains_key(&media_id)
     }
 
     pub async fn get_anime_data(&mut self, media_id: i32) -> Result<AnimeInfo, &'static str> {
@@ -394,10 +402,10 @@ impl AnimeData {
         }
     }
 
-    pub fn identify_anime(&self, filename: String, media_id: Option<i32>) {
+    pub fn identify_anime(&self, filename: String, media_id: Option<i32>) -> Option<IdentifyInfo> {
         
         if EXTENSION_CHECK.is_match(&filename) == false {
-            // return nothing
+            return None;
         }
         
         let mut info = IdentifyInfo::new();
@@ -464,6 +472,8 @@ impl AnimeData {
 
         self.replace_with_sequel(&mut info);
         self.episode_fix(&mut info);
+
+        Some(info)
     }
 
     fn identify_number(&self, filename: &String) -> (String, i32, i32) {
@@ -699,4 +709,19 @@ impl AnimeData {
         }
     }
 
+    pub fn set_custom_filename(&mut self, media_id: i32, filename: String) -> Result<(), &'static str> {
+        if self.data.contains_key(&media_id) == false {
+            Err("Anime does not exist")
+        } else {
+            self.data.entry(media_id).and_modify(|anime| anime.title.custom = Some(filename));
+            Ok(())
+        }
+    }
+
+    pub fn get_custom_filename(&self, media_id: i32) -> Option<String> {
+        match self.data.get(&media_id) {
+            Some(anime) => anime.title.custom,
+            None => return None,
+        }
+    }
 }

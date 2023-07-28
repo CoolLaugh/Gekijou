@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::{GLOBAL_USER_ANIME_LISTS, GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_USER_ANIME_DATA, GLOBAL_USER_SETTINGS, GLOBAL_TOKEN, GLOBAL_REFRESH_UI};
+use crate::{GLOBAL_ANIME_DATA, api_calls, file_operations, GLOBAL_REFRESH_UI};
 
 
 

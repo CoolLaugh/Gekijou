@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
 
-use crate::{secrets, GLOBAL_ANIME_DATA, file_operations, GLOBAL_REFRESH_UI, GLOBAL_ANIME_SCAN_IDS, GLOBAL_404_ANIME_IDS, user_data::UserInfo, anime_data};
+use crate::{secrets, file_operations, GLOBAL_REFRESH_UI, user_data::{UserInfo, TokenData2}, anime_data};
 
 
 // the structs below replicate the structure of data being returned by anilist api calls
@@ -131,33 +131,6 @@ pub struct Tag {
     pub description: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct AnimeInfo {
-    pub average_score: Option<i32>,
-    pub cover_image: CoverImage,
-    pub description: Option<String>,
-    pub duration: Option<i32>,
-    pub episodes: Option<i32>,
-    pub format: Option<String>,
-    pub genres: Vec<String>,
-    pub id: i32,
-    pub is_adult: bool,
-    pub popularity: i32,
-    pub season: Option<String>,
-    pub season_year: Option<i32>,
-    pub start_date: AnilistDate,
-    pub title: Title,
-    pub trailer: Option<TrailerData>,
-    pub media_type: String, // type is a rust keyword
-    pub relations: Relations,
-    pub recommendations: Option<Recommendations>,
-    pub tags: Vec<Tag>,
-    pub trending: i32,
-    pub studios: Studio,
-    pub next_airing_episode: Option<NextAiringEpisode>,
-}
-
-
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct MangaInfo {
@@ -218,16 +191,6 @@ pub struct NodeName {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Media {
-    pub media: AnimeInfo
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Data {
-    pub data: Media
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct TokenData {
     pub token_type: String,
     pub expires_in: i32,
@@ -248,44 +211,6 @@ impl TokenData {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct UserSettings {
-    pub username: String,
-    pub title_language: String,
-    pub show_adult: bool,
-    pub folders: Vec<String>,
-    pub update_delay: i32,
-    pub score_format: Option<String>,
-    pub highlight_color: String,
-    pub current_tab: String,
-    pub first_time_setup: bool,
-    pub show_airing_time: Option<bool>,
-    pub theme: Option<i32>,
-    pub user_id: Option<i32>,
-    pub updated_at: Option<u64>,
-}
-
-impl UserSettings {
-    pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_adult: false, folders: Vec::new(), update_delay: 0, score_format: None, highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0), user_id: None, updated_at: None }
-    }
-    
-    pub fn clear(&mut self) {
-        self.username.clear();
-        self.title_language.clear();
-        self.show_adult = false;
-        self.folders.clear();
-        self.update_delay = 0;
-        self.score_format = None;
-        self.highlight_color.clear();
-        self.current_tab.clear();
-        self.first_time_setup = true;
-        self.show_airing_time = Some(true);
-        self.theme = Some(0);
-        self.user_id = None;
-        self.updated_at = None;
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct UserAnimeInfo {
@@ -553,7 +478,7 @@ pub async fn anilist_api_call_multiple2(get_ids: Vec<i32>) -> Result<Vec<anime_d
             start + 50
         };
         let sub_vec = &get_ids[start..end];
-        let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE, "variables": { "page": 0, "ids": sub_vec}});
+        let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE2, "variables": { "page": 0, "ids": sub_vec}});
 
         match post(&json, None).await {
             Ok(result) => {
@@ -626,7 +551,7 @@ query($userName: String, $status: [MediaListStatus]) {
 
 // retrieve information on anime using it's anilist id
 // returns a message if a error occurred
-pub async fn anilist_get_list(username: String, status: String, access_token: String, anime_user_data: &mut HashMap<i32, UserAnimeInfo>, anime_user_list_lock: &mut HashMap<String, Vec<i32>>) -> Option<String> {
+pub async fn anilist_get_list(username: String, status: String, access_token: String, anime_user_data: &mut HashMap<i32, UserInfo>, anime_user_list_lock: &mut HashMap<String, Vec<i32>>) -> Option<String> {
 
     // create query json
     let status_array = 
@@ -657,7 +582,7 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
                 
                 for entry in list["entries"].as_array().unwrap() {
                     
-                    let user_info: UserAnimeInfo = UserAnimeInfo { id: entry["id"].as_i64().unwrap() as i32, 
+                    let user_info: UserInfo = UserInfo { id: entry["id"].as_i64().unwrap() as i32, 
                                                                     media_id: entry["media_id"].as_i64().unwrap() as i32, 
                                                                     status: entry["status"].as_str().unwrap().to_string(), 
                                                                     score: entry["score"].as_f64().unwrap() as f32, 
@@ -858,6 +783,38 @@ pub async fn anilist_get_access_token(code: String) -> TokenData {
 
     if response_string.contains("\"error\"") {
         return TokenData { token_type: json.to_string(), expires_in: 0, access_token: response_string, refresh_token: String::new() };
+    }
+    
+    return serde_json::from_str(&response_string).unwrap();
+}
+
+// exchanges a code the user pastes in for a access token that is used to authorize access
+pub async fn anilist_get_access_token2(code: String) -> TokenData2 {
+
+    let client = Client::new();
+
+    let json = serde_json::json!({
+        "grant_type": "authorization_code",
+        "client_id": secrets::CLIENT_ID,
+        "client_secret": secrets::CLIENT_SECRET,
+        "redirect_uri": secrets::REDIRECT_URI,
+        "code": code
+    });
+
+    let response = client.post("https://anilist.co/api/v2/oauth/token")
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .json(&json)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await;
+
+    let response_string = response.unwrap();
+
+    if response_string.contains("\"error\"") {
+        return TokenData2 { token_type: json.to_string(), expires_in: 0, access_token: response_string, refresh_token: String::new() };
     }
     
     return serde_json::from_str(&response_string).unwrap();

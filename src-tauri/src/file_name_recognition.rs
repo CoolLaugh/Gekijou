@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 use tauri::async_runtime::Mutex;
 use walkdir::WalkDir;
 use crate::api_calls::{AnimeInfo, self};
-use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_USER_SETTINGS, file_operations, GLOBAL_REFRESH_UI, constants, GLOBAL_KNOWN_FILES};
+use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, file_operations, GLOBAL_REFRESH_UI, constants, GLOBAL_KNOWN_FILES};
 use strsim;
 
 
