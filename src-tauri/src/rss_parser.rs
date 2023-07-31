@@ -3,7 +3,7 @@ use regex::Regex;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use xml;
-use crate::{file_name_recognition, GLOBAL_ANIME_DATA};
+use crate::{file_name_recognition, anime_data::AnimeInfo};
 
 
 
@@ -40,111 +40,107 @@ pub struct DerivedValues {
 // search nyaa.si for a anime and returns all entries in a struct format
 pub async fn get_rss(anime_id: i32) -> Vec<RssEntry> {
 
-    let anime_data = GLOBAL_ANIME_DATA.lock().await;
+    return Vec::new();
 
-    let search = if let Some(anime) = anime_data.get(&anime_id) {
-        if let Some(romaji) = anime.title.romaji.clone() {
-            romaji.replace(" ", "+")
-        } else {
-            return Vec::new()
-        }
-    } else {
-        return Vec::new()
-    };
+    // let search if let Some(romaji) = anime_data.title.romaji.clone() {
+    //     romaji.replace(" ", "+")
+    // } else {
+    //     return Vec::new()
+    // };
 
-    let url = format!("https://nyaa.si/?page=rss&q={}&c=1_2&f=0", search);
+    // let url = format!("https://nyaa.si/?page=rss&q={}&c=1_2&f=0", search);
 
-    let response = reqwest::get(url).await.unwrap().text().await.unwrap()
-        .replace("\n", "")
-        .replace("\t", "");
+    // let response = reqwest::get(url).await.unwrap().text().await.unwrap()
+    //     .replace("\n", "")
+    //     .replace("\t", "");
 
-    let cursor = Cursor::new(response);
+    // let cursor = Cursor::new(response);
     
-    // Parse the XML document
-    let doc = xml::reader::EventReader::new(cursor);
+    // // Parse the XML document
+    // let doc = xml::reader::EventReader::new(cursor);
 
-    // Iterate through the events in the XML document
-    let mut entry: RssEntry = RssEntry::default(); // temporary holds the entry being parsed
-    let mut entrys: Vec<RssEntry> = Vec::new();
-    let mut element_name = String::new(); // tracks what property a value belongs to
-    for event in doc {
-        match event {
-            // get the name of the next attribute
-            Ok(xml::reader::XmlEvent::StartElement { name, attributes: _, .. }) => {
-                element_name = name.local_name;
-            }
-            // get the value of the next attribute
-            Ok(xml::reader::XmlEvent::Characters(text)) => {
-                match element_name.as_str() {
-                    "title" => { entry.title = text; },
-                    "link" => { entry.link = text; },
-                    "guid" => { entry.guid = text; },
-                    "pubDate" => { entry.pub_date = text; },
-                    "downloads" => { entry.downloads = text.parse().unwrap(); },
-                    "infoHash" => { entry.info_hash = text; },
-                    "categoryId" => { entry.category_id = text; },
-                    "size" => { entry.size_string = text; },
-                    &_ => (),
-                }
-            }
-            // current entry is completed, store it and reset temp variables
-            Ok(xml::reader::XmlEvent::EndElement { name }) => {
-                if name.local_name == "item" {
-                    entrys.push(entry);
-                    entry = RssEntry::default();
-                }
-                element_name = String::new();
-            }
-            _ => {}
-        }
-    }
+    // // Iterate through the events in the XML document
+    // let mut entry: RssEntry = RssEntry::default(); // temporary holds the entry being parsed
+    // let mut entrys: Vec<RssEntry> = Vec::new();
+    // let mut element_name = String::new(); // tracks what property a value belongs to
+    // for event in doc {
+    //     match event {
+    //         // get the name of the next attribute
+    //         Ok(xml::reader::XmlEvent::StartElement { name, attributes: _, .. }) => {
+    //             element_name = name.local_name;
+    //         }
+    //         // get the value of the next attribute
+    //         Ok(xml::reader::XmlEvent::Characters(text)) => {
+    //             match element_name.as_str() {
+    //                 "title" => { entry.title = text; },
+    //                 "link" => { entry.link = text; },
+    //                 "guid" => { entry.guid = text; },
+    //                 "pubDate" => { entry.pub_date = text; },
+    //                 "downloads" => { entry.downloads = text.parse().unwrap(); },
+    //                 "infoHash" => { entry.info_hash = text; },
+    //                 "categoryId" => { entry.category_id = text; },
+    //                 "size" => { entry.size_string = text; },
+    //                 &_ => (),
+    //             }
+    //         }
+    //         // current entry is completed, store it and reset temp variables
+    //         Ok(xml::reader::XmlEvent::EndElement { name }) => {
+    //             if name.local_name == "item" {
+    //                 entrys.push(entry);
+    //                 entry = RssEntry::default();
+    //             }
+    //             element_name = String::new();
+    //         }
+    //         _ => {}
+    //     }
+    // }
 
-    let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
-    let file_size = Regex::new(r"(\d{1,3}\.\d?)").unwrap();
-    for e in entrys.iter_mut() {
+    // let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
+    // let file_size = Regex::new(r"(\d{1,3}\.\d?)").unwrap();
+    // for e in entrys.iter_mut() {
 
-        let mut title = e.title.clone();
+    //     let mut title = e.title.clone();
         
-        title = valid_file_extensions.replace_all(&title, "").to_string();
+    //     title = valid_file_extensions.replace_all(&title, "").to_string();
 
-        e.derived_values.resolution = file_name_recognition::extract_resolution(&title);
+    //     e.derived_values.resolution = file_name_recognition::extract_resolution(&title);
 
-        e.derived_values.sub_group = file_name_recognition::extract_sub_group(&title);
+    //     e.derived_values.sub_group = file_name_recognition::extract_sub_group(&title);
 
-        title = file_name_recognition::remove_brackets(&title);
+    //     title = file_name_recognition::remove_brackets(&title);
 
-        let (episode_string, episode, length) = file_name_recognition::identify_number(&title);
-        e.derived_values.length = length;
-        e.derived_values.episode = episode;
-        title = title.replace(&episode_string, "");
+    //     let (episode_string, episode, length) = file_name_recognition::identify_number(&title);
+    //     e.derived_values.length = length;
+    //     e.derived_values.episode = episode;
+    //     title = title.replace(&episode_string, "");
 
-        let lowercase_title = title.to_ascii_lowercase();
-        let (mut identified_anime_id, mut identified_title, mut similarity) = file_name_recognition::identify_media_id(&lowercase_title, &anime_data, Some(anime_id));
-        //println!("{} {} {} ", identified_anime_id, identified_title, similarity);
-        if identified_anime_id == 0 {
-            (identified_anime_id, identified_title, similarity) = file_name_recognition::identify_media_id(&lowercase_title, &anime_data, None);
-            //print!("{} {} {} ", identified_anime_id, identified_title, similarity)
-        }
-        if similarity > 0.0 {
-            e.derived_values.anime_id = identified_anime_id;
-            e.derived_values.title = identified_title;
-        }
+    //     let lowercase_title = title.to_ascii_lowercase();
+    //     let (mut identified_anime_id, mut identified_title, mut similarity) = file_name_recognition::identify_media_id(&lowercase_title, &anime_data, Some(anime_id));
+    //     //println!("{} {} {} ", identified_anime_id, identified_title, similarity);
+    //     if identified_anime_id == 0 {
+    //         (identified_anime_id, identified_title, similarity) = file_name_recognition::identify_media_id(&lowercase_title, &anime_data, None);
+    //         //print!("{} {} {} ", identified_anime_id, identified_title, similarity)
+    //     }
+    //     if similarity > 0.0 {
+    //         e.derived_values.anime_id = identified_anime_id;
+    //         e.derived_values.title = identified_title;
+    //     }
 
-        let captures = file_size.captures(&e.size_string).unwrap();
-        let size: f64 = captures.get(1).unwrap().as_str().parse().unwrap();
+    //     let captures = file_size.captures(&e.size_string).unwrap();
+    //     let size: f64 = captures.get(1).unwrap().as_str().parse().unwrap();
 
-        if e.size_string.contains("GiB") {
-            e.size = (size * 1024.0 * 1024.0) as i32;
-        } else if e.size_string.contains("MiB") {
-            e.size = (size * 1024.0) as i32;
-        } else {
-            e.size = size as i32;
-        }
+    //     if e.size_string.contains("GiB") {
+    //         e.size = (size * 1024.0 * 1024.0) as i32;
+    //     } else if e.size_string.contains("MiB") {
+    //         e.size = (size * 1024.0) as i32;
+    //     } else {
+    //         e.size = size as i32;
+    //     }
 
-        e.derived_values.batch = identify_batch(&e.title, e.derived_values.episode, e.size);
-    }
+    //     e.derived_values.batch = identify_batch(&e.title, e.derived_values.episode, e.size);
+    // }
 
-    entrys
+    // entrys
 }
 
 

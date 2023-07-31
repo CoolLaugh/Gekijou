@@ -2,7 +2,7 @@ use std::{path::Path, fs::File, io::Read};
 use serde::{Serialize, Deserialize};
 use regex::Regex;
 
-use crate::{file_name_recognition, GLOBAL_ANIME_DATA, api_calls, GLOBAL_REFRESH_UI};
+use crate::{file_name_recognition, api_calls, GLOBAL_REFRESH_UI, GLOBAL_ANIME_DATA2};
 
 
 
@@ -66,7 +66,7 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
     });
 
     {
-        let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+        let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
         let mut missing_ids: Vec<i32> = Vec::new();
         filenames.iter().for_each(|entry| {
             if anime_data.contains_key(&entry.expected_anime_id) == false {

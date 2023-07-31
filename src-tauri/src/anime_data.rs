@@ -1,9 +1,11 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}, path::Path};
 
 use regex::Regex;
 use serde::{Serialize, Deserialize};
+use tauri::api::file;
+use walkdir::WalkDir;
 
-use crate::{api_calls, user_data::UserInfo, constants};
+use crate::{api_calls, user_data::UserInfo, constants, file_name_recognition::AnimePath};
 
 
 
@@ -232,18 +234,24 @@ lazy_static! {
     static ref REPLACE_U: Regex = Regex::new(r"Ù|Ú|Û|Ü|ù|ú|û|ü").unwrap();
     static ref REPLACE_Y: Regex = Regex::new(r"Ý|ý|ÿ").unwrap();
 }
+
+lazy_static! {
+    static ref EXTRA_VIDEOS: Regex = Regex::new(r"[ _\.][oO][pP]\d*([vV]\d)?[ _\.]|[ _\.]NCOP\d*([vV]\d)?[ _\.]|[ _\.]NCED\d*([vV]\d)?[ _\.]|[ _\.][eE][dD]\d*([vV]\d)?[ _\.]|[ _\.][sS]kit[ _\.]|[eE]nding|[oO]pening|[ _][pP][vV][ _]|[bB][dD] [mM][eE][nN][uU]").unwrap();
+}
 // spell-checker:enable
 
 pub struct AnimeData {
     pub data : HashMap<i32, AnimeInfo>,
     pub nonexistent_ids: HashSet<i32>,
     pub needs_scan: Vec<i32>,
+    pub anime_path: HashMap<i32, HashMap<i32,AnimePath>>,
+    pub known_files: HashSet<String>,
 }
 
 impl AnimeData {
 
     pub const fn new() -> AnimeData {
-        AnimeData { data: HashMap::new(), nonexistent_ids: HashSet::new(), needs_scan: Vec::new() }
+        AnimeData { data: HashMap::new(), nonexistent_ids: HashSet::new(), needs_scan: Vec::new(), anime_path: HashMap::new(), known_files: HashSet::new() }
     }
 
     pub fn clear(&mut self) {
@@ -281,7 +289,7 @@ impl AnimeData {
         let missing_ids: Vec<i32> = valid_ids.iter().map(|id| *id).filter(|id| self.data.contains_key(id) == false).collect();
 
         if missing_ids.is_empty() == false {
-            match api_calls::anilist_api_call_multiple2(missing_ids.clone()).await {
+            match api_calls::anilist_api_call_multiple(missing_ids.clone()).await {
                 Ok(result) => {
                     let missing_from_anilist_ids = self.find_missing_ids(&missing_ids, &result);
                     for anime in result {
@@ -724,4 +732,118 @@ impl AnimeData {
             None => return None,
         }
     }
+
+    pub fn scan_folder(&mut self, folder: String, skip_files: bool, media_id: Option<i32>) {
+
+        let path = Path::new(&folder);
+        if path.exists() == false {
+            return;
+        }
+
+        let valid_extensions = ["mkv", "mp4", "avi"];
+        for entry in WalkDir::new(path).into_iter().filter_map(Result::ok) {
+
+            if entry.file_type().is_file() == false {
+                continue;
+            }
+
+            if let Some(ext) = entry.path().extension() {
+                if valid_extensions.contains(&ext.to_str().unwrap_or_default()) == false {
+                    continue;
+                }
+
+
+                let path = entry.path().to_path_buf().to_str().unwrap().to_string();
+                let file_name = path.split('\\').last().unwrap().to_string();
+
+                if EXTRA_VIDEOS.is_match(&file_name) {
+                    continue; // skip openings, endings, etc
+                }
+
+                if skip_files == true {
+                    if self.known_files.contains(&file_name) {
+                        continue;
+                    }
+                }
+                self.known_files.insert(file_name);
+                
+                if let Some(identity) = self.identify_anime(file_name, media_id) {
+
+                    if identity.media_id != 0 {
+
+                        let mut media = self.anime_path.entry(identity.media_id).or_default();
+                        if media.contains_key(&identity.episode) {
+                            media.entry(identity.episode).and_modify(|anime_path| {
+                                if identity.similarity_score > anime_path.similarity_score {
+                                    anime_path.similarity_score = identity.similarity_score;
+                                    anime_path.path = path;
+                                }
+                            });
+                        } else {
+                            media.insert(identity.episode, AnimePath { path: path, similarity_score: identity.similarity_score });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn remove_missing_files(&self) {
+
+        for (_, anime) in self.anime_path.iter_mut() {
+
+            anime.retain(|_, episode| { Path::new(&episode.path).exists() });
+        }
+        self.anime_path.retain(|_,anime| { anime.len() > 0 });
+    }
+
+    pub async fn get_prequel_data(&mut self) {
+
+        let mut get_info: Vec<i32> = Vec::new();
+        for (_, anime) in self.data.iter() {
+
+            for edge in anime.relations.edges.iter() {
+
+                if edge.relation_type == "PREQUEL" && edge.node.media_type == "ANIME" && self.data.contains_key(&edge.node.id) == false {
+                    
+                    get_info.push(edge.node.id);
+                }
+            }
+        }
+
+        while get_info.is_empty() == false {
+            println!("get_info size {}", get_info.len());
+            println!("{:?}", get_info);
+            match api_calls::anilist_api_call_multiple(get_info.clone()).await {
+                Ok(_result) => {
+                    
+                    let anime_ids = get_info.clone();
+                    get_info.clear();
+                    for id in anime_ids {
+            
+                        if anime_data.contains_key(&id) == false {
+            
+                            continue;
+                        }
+                        for edge in anime_data.get(&id).unwrap().relations.edges.iter() {
+            
+                            if edge.relation_type == "PREQUEL" && anime_data.contains_key(&edge.node.id) == false {
+                
+                                get_info.push(edge.node.id);
+                            }
+                        }
+                    }
+                },
+                Err(error) => {
+                    if error == "no connection" {
+                        GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+                        break;
+                    } else {
+                        println!("error getting prequel data: {}", error);
+                    }
+                },
+            }
+        }
+    }
+
 }

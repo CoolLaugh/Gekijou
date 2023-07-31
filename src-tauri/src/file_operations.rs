@@ -7,9 +7,9 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tauri::async_runtime::Mutex;
 
-use crate::api_calls::{AnimeInfo, UserAnimeInfo};
+use crate::anime_data::AnimeInfo;
 use crate::user_data::{TokenData2, UserSettings, UserInfo};
-use crate::{GLOBAL_ANIME_DATA, GLOBAL_ANIME_PATH, GLOBAL_REFRESH_UI};
+use crate::{GLOBAL_ANIME_PATH, GLOBAL_REFRESH_UI};
 
 extern crate dirs;
 
@@ -59,17 +59,16 @@ pub async fn read_file_update_queue(update_queue: &mut Vec<UserInfo>) -> Result<
     read_file_data(update_queue, "update_queue").await
 }
 
-
-
-// writes all held data on anime to a file
-pub fn write_file_anime_info_cache(anime_data: &HashMap<i32, AnimeInfo>) {
-    write_file_data(anime_data, "anime_cache");
+pub async fn write_file_anime_info_cache(anime_data: &HashMap<i32, AnimeInfo>) {
+    write_file_data(&anime_data, "anime_cache");
 }
 
-// reads all stored data on anime from a file
-pub async fn read_file_anime_info_cache() -> Result<(), &'static str> {
-    read_file_data_mutex(&GLOBAL_ANIME_DATA, "anime_cache").await
+pub async fn read_file_anime_info_cache(anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str> {
+    read_file_data(anime_data, "anime_cache").await
 }
+
+
+
 
 pub async fn write_file_episode_path() {
     write_file_data_mutex(&GLOBAL_ANIME_PATH, "episode_path").await;
@@ -101,7 +100,7 @@ async fn write_file_data_mutex<T: Serialize>(global: &Mutex<T>, filename: &str) 
 }
 
 // writes all held data on anime to a file
-fn write_file_data<T: Serialize>(global: &T, filename: &str) {
+pub fn write_file_data<T: Serialize>(global: &T, filename: &str) {
     
     let file_location = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
     let file_backup_location = format!("{}/{}/{}_backup.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
@@ -149,7 +148,7 @@ async fn read_file_data_mutex<T: DeserializeOwned>(global: &Mutex<T>, filename: 
     read_file_data(&mut *global.lock().await, filename).await
 }
 // reads all stored data from a file into the global collection
-async fn read_file_data<T: DeserializeOwned>(global: &mut T, filename: &str) -> Result<(), &'static str> {
+pub async fn read_file_data<T: DeserializeOwned>(global: &mut T, filename: &str) -> Result<(), &'static str> {
 
     let file_location = format!("{}/{}/{}.json", dirs::config_dir().unwrap().to_str().unwrap(), GEKIJOU_FOLDER, filename);
     let file_path = Path::new(&file_location);

@@ -1,4 +1,4 @@
-use std::{cmp::{Ordering, max}, collections::HashMap};
+use std::{cmp::{Ordering, max}, collections::{HashMap, HashSet}};
 
 
 use reqwest::Client;
@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
 
-use crate::{secrets, file_operations, GLOBAL_REFRESH_UI, user_data::{UserInfo, TokenData2}, anime_data};
+use crate::{secrets, file_operations, GLOBAL_REFRESH_UI, user_data::{UserInfo, TokenData2}, anime_data::{self, AnimeInfo, NextAiringEpisode}};
 
 
 // the structs below replicate the structure of data being returned by anilist api calls
@@ -172,13 +172,6 @@ pub struct Name {
     pub full: String,
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct NextAiringEpisode {
-    pub airing_at: i32,
-    pub episode: i32,
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Studio {
     pub nodes: Vec<NodeName>
@@ -188,6 +181,16 @@ pub struct Studio {
 pub struct NodeName {
     pub name: String,
     pub is_animation_studio: bool
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Media {
+    pub media: AnimeInfo
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Data {
+    pub data: Media
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -379,92 +382,9 @@ query($page: Int $ids: [Int]) {
     }
 }";
 // get anime data from anilist for all ids
-pub async fn anilist_api_call_multiple(get_ids: Vec<i32>, anime_data: &mut HashMap<i32, AnimeInfo>) -> Result<(), &'static str>  {
+pub async fn anilist_api_call_multiple(get_ids: Vec<i32>) -> Result<Vec<AnimeInfo>, &'static str>  {
 
-    if GLOBAL_404_ANIME_IDS.lock().await.len() == 0 {
-        match file_operations::read_file_404_ids(&GLOBAL_404_ANIME_IDS).await {
-            Ok(_result) => {
-                // do nothing
-            },
-            Err(error) => {
-                println!("{}", error);
-            },
-        }
-    }
-
-    let mut anilist_not_found_ids = GLOBAL_404_ANIME_IDS.lock().await;
-    let ids = get_ids.iter().filter(|id| anilist_not_found_ids.contains(id) == false).map(|id| *id).collect::<Vec<i32>>();
-    if ids.len() == 0 {
-        return Ok(());
-    }
-    let pages = ceiling_div(ids.len(), 50);
-    let mut scan_ids = GLOBAL_ANIME_SCAN_IDS.lock().await;
-    println!("ids {} pages {}", ids.len(), pages);
-    
-    for i in 0..pages {
-
-        GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading anime data ({} of {})", i, pages));
-        let start = i * 50;
-        let end = 
-        if start + 50 > ids.len() {
-            ids.len()
-        } else {
-            start + 50
-        };
-        let sub_vec = &ids[start..end];
-        let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE, "variables": { "page": 0, "ids": sub_vec}});
-
-        match post(&json, None).await {
-            Ok(result) => {
-                let response = anilist_to_snake_case(result);
-                let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
-                let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
-
-                if anime_vec.len() == 0 {
-                    println!("{}", response);
-                    println!("{:?}", sub_vec);
-                    for id in sub_vec.iter() {
-                        anilist_not_found_ids.insert(*id);
-                    }
-                }
-
-                for anime in anime_vec {
-                    if anime_data.contains_key(&anime.id) == false {
-                        scan_ids.push(anime.id);
-                    }
-                    anime_data.insert(anime.id, anime);
-                }
-            },
-            Err(error) => { 
-                GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
-                return Err(error); 
-            },
-        }
-    }
-    file_operations::write_file_404_ids(&anilist_not_found_ids).await;
-    GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
-    return Ok(());
-}
-
-const ANIME_INFO_QUERY_MULTIPLE2: &str = "
-query($page: Int $ids: [Int]) {
-    Page(page: $page, perPage: 50) {
-        pageInfo { total perPage currentPage lastPage hasNextPage }
-        media(type: ANIME, id_in: $ids) {
-          id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
-          duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
-          relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
-          recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
-          tags { name isGeneralSpoiler isMediaSpoiler description }
-          studios(isMain: true) { nodes { name isAnimationStudio } }
-          nextAiringEpisode { airingAt, episode }
-        }
-    }
-}";
-// get anime data from anilist for all ids
-pub async fn anilist_api_call_multiple2(get_ids: Vec<i32>) -> Result<Vec<anime_data::AnimeInfo>, &'static str>  {
-
-    let mut anime_info: Vec<anime_data::AnimeInfo> = Vec::new();
+    let mut anime_info: Vec<AnimeInfo> = Vec::new();
     let pages = ceiling_div(get_ids.len(), 50);
     println!("ids {} pages {}", get_ids.len(), pages);
     
@@ -478,13 +398,13 @@ pub async fn anilist_api_call_multiple2(get_ids: Vec<i32>) -> Result<Vec<anime_d
             start + 50
         };
         let sub_vec = &get_ids[start..end];
-        let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE2, "variables": { "page": 0, "ids": sub_vec}});
+        let json = json!({"query": ANIME_INFO_QUERY_MULTIPLE, "variables": { "page": 0, "ids": sub_vec}});
 
         match post(&json, None).await {
             Ok(result) => {
                 let response = anilist_to_snake_case(result);
                 let mut anime_json: serde_json::Value = serde_json::from_str(&response).unwrap();
-                let anime_vec: Vec<anime_data::AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
+                let anime_vec: Vec<AnimeInfo> = serde_json::from_value(anime_json["data"]["Page"]["media"].take()).unwrap();
                 anime_info.extend(anime_vec);
             },
             Err(error) => {
@@ -623,7 +543,7 @@ const MEDIA_INFO: &str = "query ($id: Int) {
     }
 }";
 
-pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<(), &'static str> {
+pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<AnimeInfo, &'static str> {
 
     // create client and query json
     let json = json!({"query": MEDIA_INFO, "variables": {"id": anime_id}});
@@ -637,20 +557,17 @@ pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<(), &'static
 
                 if let Ok(anime_data) = serde_json::from_value::<AnimeInfo>(anime_value["data"]["media"].take()) {
 
-                    if GLOBAL_ANIME_DATA.lock().await.contains_key(&anime_data.id) == false {
-                        GLOBAL_ANIME_SCAN_IDS.lock().await.push(anime_data.id);
-                    }
-                    GLOBAL_ANIME_DATA.lock().await.insert(anime_data.id, anime_data);
-                    return Ok(())
+                    return Ok(anime_data);
                 } else {
                     println!("serde_json::from_value::<AnimeInfo>(anime_value[\"data\"][\"media\"].take()) failed");
                     println!("{:?}", anime_value);
+                    return Err("AnimeInfo was not returned");
                 }
             } else {
                 println!("serde_json::from_str::<serde_json::Value>(&response) failed");
                 println!("{}", response);
+                return Err("Value was not returned");
             }
-            return Ok(())
         },
         Err(error) => return Err(error),
     }
