@@ -1,4 +1,4 @@
-use std::{collections::HashMap, cmp::Ordering};
+use std::{collections::{HashMap, HashSet}, cmp::Ordering};
 
 use chrono::{DateTime, Local, Datelike};
 use serde::{Deserialize, Serialize};
@@ -146,7 +146,7 @@ pub struct UserData {
     token: TokenData2,
     user_data: HashMap<i32, UserInfo>,
     user_lists: HashMap<String, Vec<i32>>,
-    max_episodes: HashMap<i32, i32>,
+    max_episodes: HashMap<i32, Option<i32>>,
     update_queue: Vec<UserInfo>,
 }
 
@@ -180,7 +180,7 @@ impl UserData {
         }
     }
 
-    fn check_correct_list(&mut self, data: &mut UserInfo) {
+    async fn check_correct_list(&mut self, data: &mut UserInfo) {
         
         let old_status = if let Some(old_data) = self.user_data.get(&data.media_id) {
             old_data.status.clone()
@@ -210,11 +210,14 @@ impl UserData {
                 data.status.clone()
             };
             self.user_lists.entry(list).and_modify(|entry| entry.push(data.media_id));
+            file_operations::write_file_user_lists(&self.user_lists).await;
         }
     }
 
-    pub fn set_user_data(&mut self, data: &mut UserInfo, update_website: bool) -> Result<Option<UserInfo>, &'static str> {
+    pub async fn set_user_data(&mut self, data: &mut UserInfo, update_website: bool) -> Result<Option<UserInfo>, &'static str> {
         
+        println!("{:?}", data);
+
         if USER_STATUSES.contains(&data.status.as_str()) == false {
             return Err("invalid status");
         }
@@ -231,7 +234,16 @@ impl UserData {
             -1
         };
 
-        self.check_correct_list(data);
+        self.check_correct_list(data).await;
+
+        if data.status == "COMPLETED" {
+            if let Some(max_episodes) = self.max_episodes.get(&data.media_id) {
+                if let Some(episodes) = max_episodes {
+                    data.progress = *episodes;
+                    println!("progress {}", data.progress);
+                }
+            }
+        }
 
         // update completed and started date if show is completed and don't change original start and end date if rewatching
         if data.status == "COMPLETED" && old_status != "REPEATING" {
@@ -260,7 +272,7 @@ impl UserData {
                 if started_at.day.is_none() && started_at.month.is_none() && started_at.year.is_none() { // user didn't input a date
                     // set if anime is a movie or special so the user will watch it in one sitting
                     if let Some(episodes) = self.max_episodes.get(&data.media_id) {
-                        if *episodes <= 1 { // anime is a movie or special
+                        if episodes.is_some() && episodes.unwrap() <= 1 { // anime is a movie or special
                             data.started_at = data.completed_at.clone();
                         }
                     }
@@ -289,10 +301,12 @@ impl UserData {
 
         // update anilist
         if update_website == true {
-
+            api_calls::update_user_entry(self.token.access_token.clone(), data.clone()).await;
         }
 
         let old_data = self.user_data.insert(data.media_id, data.clone());
+
+        file_operations::write_file_user_data(&self.user_data).await;
 
         Ok(old_data)
     }
@@ -354,6 +368,19 @@ impl UserData {
         Ok(data_list)
     }
 
+    pub async fn get_data(&self, list: &Vec<i32>) -> Result<Vec<UserInfo>, &'static str> {
+
+        let mut info_list: Vec<UserInfo> = Vec::new();
+        for id in list {
+
+            if let Some(data) = self.user_data.get(id) {
+                info_list.push(data.clone());
+            }
+        }
+
+        Ok(info_list)
+    }
+
     pub async fn pull_updates(&mut self) -> Result<bool, &'static str> {
         
         if self.setting.username.is_empty() {
@@ -381,13 +408,13 @@ impl UserData {
         Ok(true)
     }
 
-    pub fn increment_episode(&mut self, media_id: i32, length: i32) -> Result<bool, &'static str> {
+    pub async fn increment_episode(&mut self, media_id: i32, length: i32) -> Result<bool, &'static str> {
         
         if let Some(mut media) = self.user_data.get(&media_id).cloned() {
             if let Some(episodes) = self.max_episodes.get(&media_id).cloned() {
-                if media.progress + length <= episodes {
+                if episodes.is_none() || media.progress + length <= episodes.unwrap() {
                     media.progress += length;
-                    match self.set_user_data(&mut media, true) {
+                    match self.set_user_data(&mut media, true).await {
                         Ok(_result) => {
                             // do nothing
                         },
@@ -417,13 +444,13 @@ impl UserData {
             self.token = token;
         }
 
-        //file_operations::write_file_token_data().await;
+        file_operations::write_file_token_data(&self.token).await;
         
         (true, String::new())
     }
 
     pub fn get_user_settings(&self) -> UserSettings {
-        return self.setting;
+        return self.setting.clone();
     }
 
     pub async fn set_user_settings(&mut self, new_user_settings: UserSettings) -> (bool, Option<Vec<i32>>) {
@@ -471,7 +498,8 @@ impl UserData {
                 api_calls::anilist_get_list(self.setting.username.clone(), String::from(list), self.token.access_token.clone(), &mut self.user_data, &mut self.user_lists).await;
             }
             self.setting.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-
+            file_operations::write_file_user_data(&self.user_data).await;
+            file_operations::write_file_user_lists(&self.user_lists).await;
 
             let user_media_ids: Vec<i32> = {
                 let mut media_ids: Vec<i32> = Vec::new();
@@ -482,7 +510,7 @@ impl UserData {
             return (scan, Some(user_media_ids));
         }
 
-        //file_operations::write_file_user_settings().await;
+        file_operations::write_file_user_settings(&self.setting).await;
 
         return (scan, None);
     }
@@ -502,6 +530,38 @@ impl UserData {
     }
 
     pub fn get_highlight(&self) -> String {
-        self.setting.highlight_color
+        self.setting.highlight_color.clone()
     }
+
+    pub fn get_scores_from_list(&self, list: String) -> HashMap<i32, f32> {
+
+        if let Some(list_of_ids) = self.user_lists.get(&list) {
+
+            let mut scores: HashMap<i32, f32> = HashMap::new();
+            for id in list_of_ids {
+
+                if let Some(info) = self.user_data.get(id) {
+                    scores.insert(*id, info.score);
+                }
+            }
+            return scores;
+        } else {
+            return HashMap::new();
+        }
+    }
+
+    pub fn all_ids(&self) -> HashSet<i32> {
+
+        let mut set: HashSet<i32> = HashSet::new();
+        
+        for id in self.user_data.keys() {
+            set.insert(*id);
+        }
+        set
+    }
+
+    pub fn set_max_episodes(&mut self, max_episodes: HashMap<i32, Option<i32>>) {
+        self.max_episodes = max_episodes;
+    }
+
 }

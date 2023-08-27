@@ -1,8 +1,7 @@
 use std::{path::Path, fs::File, io::Read};
 use serde::{Serialize, Deserialize};
-use regex::Regex;
 
-use crate::{file_name_recognition, api_calls, GLOBAL_REFRESH_UI, GLOBAL_ANIME_DATA2};
+use crate::{GLOBAL_ANIME_DATA2, anime_data::IdentifyInfo};
 
 
 
@@ -28,7 +27,7 @@ pub struct FilenameTest {
 
 pub async fn filename_tests() -> Vec<FilenameTest> {
 
-    let file_path = Path::new("filename_tests.json");
+    let file_path = Path::new("filename_tests2.json");
 
     if file_path.exists() == false {
         return Vec::new();
@@ -47,10 +46,14 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
         Ok(file) => file,
     };
     
+    let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
     let filenames_values: Vec<serde_json::Value> = serde_json::from_str(&buffer).unwrap();
-    let mut filenames: Vec<FilenameTest> = Vec::new();
+    let mut test_results: Vec<FilenameTest> = Vec::new();
+    let mut anime_ids: Vec<i32> = Vec::new();
+
     filenames_values.iter().for_each(|entry| {
-        filenames.push(FilenameTest { 
+
+        let test_result = FilenameTest { 
             filename: entry["filename"].as_str().unwrap().to_string(), 
             anime_id: 0, 
             similarity_score: 0.0, 
@@ -62,68 +65,28 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
             id_title: String::new(), 
             expected_episode: entry["expected_episode"].as_i64().unwrap() as i32, 
             expected_resolution: entry["expected_resolution"].as_i64().unwrap() as i32 
-        });
+        };
+
+        anime_ids.push(test_result.expected_anime_id);
+        test_results.push(test_result);
     });
 
-    {
-        let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
-        let mut missing_ids: Vec<i32> = Vec::new();
-        filenames.iter().for_each(|entry| {
-            if anime_data.contains_key(&entry.expected_anime_id) == false {
-                missing_ids.push(entry.expected_anime_id);
-            }
-        });
-        match api_calls::anilist_api_call_multiple(missing_ids, &mut anime_data).await {
-            Ok(_result) => {
-                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
-                // do nothing
-            },
-            Err(error) => {
-                if error == "no connection" {
-                    GLOBAL_REFRESH_UI.lock().await.no_internet = true;
-                } else {
-                    println!("error getting missing ids: {}", error);
-                }
-            },
+    anime_data.get_anime_list_data(anime_ids).await;
+
+    test_results.iter_mut().for_each(|entry| {
+
+        let identify_info: Option<IdentifyInfo> = anime_data.identify_anime(entry.filename.clone(), None);
+
+        if let Some(info) = identify_info {
+            entry.anime_id = info.media_id;
+            entry.similarity_score = info.similarity_score;
+            entry.title = info.file_title;
+            entry.episode = info.episode;
+            entry.length = info.episode_length;
+            entry.resolution = info.resolution;
+            entry.id_title = info.media_title;
         }
-    }
-
-    file_name_recognition::get_prequel_data().await;
-
-    let valid_file_extensions = Regex::new(r"[_ ]?(\.mkv|\.avi|\.mp4)").unwrap();
-
-    let anime_data = GLOBAL_ANIME_DATA.lock().await;
-
-    filenames.iter_mut().for_each(|entry| {
-
-        entry.title = valid_file_extensions.replace_all(&entry.filename, "").to_string();
-
-        entry.resolution = file_name_recognition::extract_resolution(&entry.title);
-
-        entry.title = file_name_recognition::remove_brackets(&entry.title);
-
-        let (episode_string, episode, episode_length) = file_name_recognition::identify_number(&entry.title);
-        if episode != 0 {
-            entry.episode = episode;
-            entry.length = episode_length;
-            entry.title = entry.title.replace(episode_string.as_str(), "");
-        }
-
-        entry.title = file_name_recognition::irrelevant_information_removal(entry.title.clone());
-
-        let (id, _title, similarity_score) = file_name_recognition::identify_media_id(&entry.title, &anime_data, None);
-        
-        if similarity_score > entry.similarity_score {
-            entry.anime_id = id;
-            entry.similarity_score = similarity_score;
-        }
-
-        file_name_recognition::replace_with_sequel(&mut entry.anime_id, &mut entry.episode, &anime_data);
-
-        file_name_recognition::episode_fix(entry.anime_id, &mut entry.episode, &anime_data);
-
-        entry.id_title = anime_data.get(&entry.anime_id).unwrap().title.romaji.clone().unwrap();
     });
 
-    filenames
+    test_results
 }

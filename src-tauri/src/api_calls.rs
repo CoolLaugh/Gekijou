@@ -802,7 +802,7 @@ mutation ($id: Int, $media_id: Int, $status: MediaListStatus, $score: Float, $pr
 }";
 
 // change the users entry data on anilist with the current data
-pub async fn update_user_entry(access_token: String, anime: UserAnimeInfo) -> Result<String, &'static str> {
+pub async fn update_user_entry(access_token: String, anime: UserInfo) -> Result<String, &'static str> {
 
     let mut mutation: String = ANIME_UPDATE_ENTRY.to_string();
     let mut variables = json!({"media_id": anime.media_id, "status": anime.status, "score": anime.score, "progress": anime.progress});

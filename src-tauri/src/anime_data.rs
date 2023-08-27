@@ -2,10 +2,9 @@ use std::{cmp::Ordering, collections::{HashMap, HashSet}, path::Path};
 
 use regex::Regex;
 use serde::{Serialize, Deserialize};
-use tauri::api::file;
 use walkdir::WalkDir;
 
-use crate::{api_calls, user_data::UserInfo, constants, file_name_recognition::AnimePath};
+use crate::{api_calls, user_data::UserInfo, constants, GLOBAL_REFRESH_UI, file_operations, recommendation};
 
 
 
@@ -176,7 +175,7 @@ pub struct NextAiringEpisode {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-struct IdentifyInfo {
+pub struct IdentifyInfo {
     pub filename: String,
     pub file_title: String,
     pub media_id: i32,
@@ -205,10 +204,10 @@ lazy_static! {
     static ref CHECKSUM: Regex = Regex::new(r"\[[0-9A-Fa-f]{6,8}\]|\([0-9A-Fa-f]{6,8}\)").unwrap();
     static ref EXTENSION_CHECK: Regex = Regex::new(r"(.mkv)|(.mp4)|(.avi) ?$").unwrap();
     static ref TRAILING_EMPTY_SPACE: Regex = Regex::new(r"[ \-\.]+$").unwrap();
-    static ref REMOVE_INFO: Vec<&'static str> = vec![" mkv", " mp4", " avi", ".mkv", ".mp4", ".avi", "HEVC-10bit", "HEVC-10", "HEVC", "x264-KRP", "x264-KQRM", "x264-VARYG", "H 264-VARYG", "x264", "x265", "10bits", 
+    static ref REMOVE_INFO: Vec<&'static str> = vec![" mkv", " mp4", " avi", ".mkv", ".mp4", ".avi", "HEVC-10bit", "HEVC-10", "HEVC10", "HEVC", "x264-KRP", "x264-KQRM", "x264-VARYG", "H 264-VARYG", "x264", "x265", "10bits", 
     "10bit", "10Bit", "Hi10P", "Hi10", "Bluray", "BluRay", "YUV420P10LE", "AVC-YUV420P10", 
-    "AVC", "FLAC2 0", "FLAC 2 0", "2xFLAC", "3xFLAC", "FLAC", "English Subbed", "English Sub", "English Dub", "EnglIsh Dub", "WEB-DL", "AV1", "DualA", "Dual audio", "Multiple Subtitle",
-    "BDrip", "BDRip", "US BD", "UK BD-Remux", "UK BD-Remux", "BD-Rip", "BDRIP", "JP.BD", "WEBDL", "BD", "h264_qsv", "h264", "DTSx2", "DTS", "-DualPlease", "Dual", "Opus2 0", "Opus", "2xOPUS", "3xOPUS", "OPUS", "Multi-Subs", 
+    "AVC", "FLAC2.0", "FLAC2 0", "FLAC 2 0", "2xFLAC", "3xFLAC", "FLAC", "English Subbed", "English Sub", "English Dub", "EnglIsh Dub", "WEB-DL", "AV1", "DualA", "Dual audio", "Multiple Subtitle",
+    "BDrip", "BDRip", "US BD", "UK BD-Remux", "UK BD-Remux", "BD-Rip", "BDRIP", "JP.BD", "WEBDL", "BD", "h264_qsv", "H264", "h264", "DTSx2", "DTS", "-DualPlease", "Dual", "Opus2 0", "Opus", "2xOPUS", "3xOPUS", "OPUS", "Multi-Subs", 
     "Multi-Sub", "Multi-Audio", "EAC3", "E-AC3", "AC3", "AAC5 0", "AAC2 0", "2xAAC", "xHE-AAC", "AAC", "Multi Subs", "Multi Sub", "WebRip", "WEB-RIP", "WEBRip",
     "WEB", "ENG", " Eng", "Eng ", "CR", "FUNi-DL", "FUNi", "FUNI", "HIDI", "HID", "English-Japanese Audio", "Japanese Audio", "Audio", 
     "Remux", "4k", "4K", "NF", "X264", "Flac", "Bdrip", "dual audio", "multisub", "MultiSubs", "Multi", "Web-Rip", 
@@ -238,7 +237,19 @@ lazy_static! {
 lazy_static! {
     static ref EXTRA_VIDEOS: Regex = Regex::new(r"[ _\.][oO][pP]\d*([vV]\d)?[ _\.]|[ _\.]NCOP\d*([vV]\d)?[ _\.]|[ _\.]NCED\d*([vV]\d)?[ _\.]|[ _\.][eE][dD]\d*([vV]\d)?[ _\.]|[ _\.][sS]kit[ _\.]|[eE]nding|[oO]pening|[ _][pP][vV][ _]|[bB][dD] [mM][eE][nN][uU]").unwrap();
 }
-// spell-checker:enable
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct AnimePath {
+    pub path: String,
+    pub similarity_score: f64,
+}
+
+// used to tally up the number of times a anime has been recommended
+#[derive(Debug, Clone, Default)]
+struct RecommendTally {
+    pub id: i32,
+    pub rating: f32,
+}
 
 pub struct AnimeData {
     pub data : HashMap<i32, AnimeInfo>,
@@ -246,12 +257,13 @@ pub struct AnimeData {
     pub needs_scan: Vec<i32>,
     pub anime_path: HashMap<i32, HashMap<i32,AnimePath>>,
     pub known_files: HashSet<String>,
+    pub new_anime: bool,
 }
 
 impl AnimeData {
 
-    pub const fn new() -> AnimeData {
-        AnimeData { data: HashMap::new(), nonexistent_ids: HashSet::new(), needs_scan: Vec::new(), anime_path: HashMap::new(), known_files: HashSet::new() }
+    pub fn new() -> AnimeData {
+        AnimeData { data: HashMap::new(), nonexistent_ids: HashSet::new(), needs_scan: Vec::new(), anime_path: HashMap::new(), known_files: HashSet::new(), new_anime: false }
     }
 
     pub fn clear(&mut self) {
@@ -261,6 +273,14 @@ impl AnimeData {
 
     pub fn contains_key(&self, media_id: i32) -> bool {
         self.data.contains_key(&media_id)
+    }
+
+    pub async fn read_files(&mut self) {
+        
+        file_operations::read_file_anime_info_cache(&mut self.data).await;
+        file_operations::read_file_anime_missing_ids(&mut self.nonexistent_ids).await;
+        file_operations::read_file_episode_path(&mut self.anime_path).await;
+        file_operations::read_file_known_files(&mut self.known_files).await;
     }
 
     pub async fn get_anime_data(&mut self, media_id: i32) -> Result<AnimeInfo, &'static str> {
@@ -275,6 +295,8 @@ impl AnimeData {
             match api_calls::anilist_get_anime_info_single2(media_id).await {
                 Ok(result) => {
                     self.data.insert(result.id, result.clone());
+                    self.new_anime = true;
+                    file_operations::write_file_anime_info_cache(&self.data).await;
                     return Ok(result);
                 },
                 Err(error) => return Err(error),
@@ -294,10 +316,12 @@ impl AnimeData {
                     let missing_from_anilist_ids = self.find_missing_ids(&missing_ids, &result);
                     for anime in result {
                         self.data.insert(anime.id, anime);
+                        self.new_anime = true;
                     }
                     for id in missing_from_anilist_ids {
                         valid_ids.remove(valid_ids.iter().position(|v_id| *v_id == id).unwrap());
                     }
+                    file_operations::write_file_anime_info_cache(&self.data).await;
                 },
                 Err(error) => return Err(error),
             }
@@ -728,23 +752,47 @@ impl AnimeData {
 
     pub fn get_custom_filename(&self, media_id: i32) -> Option<String> {
         match self.data.get(&media_id) {
-            Some(anime) => anime.title.custom,
+            Some(anime) => anime.title.custom.clone(),
             None => return None,
         }
     }
 
-    pub fn scan_folder(&mut self, folder: String, skip_files: bool, media_id: Option<i32>) {
+    pub async fn scan_folders(&mut self, folders: Vec<String>, skip_files: bool, media_id: Option<i32>) -> bool {
+        let mut file_found = false;
+        for folder in folders {
+            println!("Scanning {}", folder);
+            if self.scan_folder(folder, skip_files, media_id) {
+                file_found = true;
+            }
+        }
+        file_operations::write_file_episode_path(&self.anime_path).await;
+        file_operations::write_file_known_files(&self.known_files).await;
+        file_found
+    }
 
+    pub fn scan_folder(&mut self, folder: String, skip_files: bool, media_id: Option<i32>) -> bool {
+
+        let mut file_found = false;
         let path = Path::new(&folder);
         if path.exists() == false {
-            return;
+            return false;
         }
+
+        let mut count = 0;
+        
+        let iter = WalkDir::new(path).into_iter();
+        println!("total: {}", iter.count());
 
         let valid_extensions = ["mkv", "mp4", "avi"];
         for entry in WalkDir::new(path).into_iter().filter_map(Result::ok) {
 
             if entry.file_type().is_file() == false {
                 continue;
+            }
+
+            count += 1;
+            if count % 100 == 0 {
+                println!("{}", count);
             }
 
             if let Some(ext) = entry.path().extension() {
@@ -765,13 +813,13 @@ impl AnimeData {
                         continue;
                     }
                 }
-                self.known_files.insert(file_name);
+                self.known_files.insert(file_name.clone());
                 
                 if let Some(identity) = self.identify_anime(file_name, media_id) {
 
-                    if identity.media_id != 0 {
+                    if identity.media_id != 0 && identity.similarity_score > constants::SIMILARITY_SCORE_THRESHOLD {
 
-                        let mut media = self.anime_path.entry(identity.media_id).or_default();
+                        let media = self.anime_path.entry(identity.media_id).or_default();
                         if media.contains_key(&identity.episode) {
                             media.entry(identity.episode).and_modify(|anime_path| {
                                 if identity.similarity_score > anime_path.similarity_score {
@@ -782,13 +830,16 @@ impl AnimeData {
                         } else {
                             media.insert(identity.episode, AnimePath { path: path, similarity_score: identity.similarity_score });
                         }
+                        file_found = true;
                     }
                 }
             }
         }
+        println!("scan finished");
+        file_found
     }
 
-    pub fn remove_missing_files(&self) {
+    pub fn remove_missing_files(&mut self) {
 
         for (_, anime) in self.anime_path.iter_mut() {
 
@@ -821,13 +872,13 @@ impl AnimeData {
                     get_info.clear();
                     for id in anime_ids {
             
-                        if anime_data.contains_key(&id) == false {
+                        if self.data.contains_key(&id) == false {
             
                             continue;
                         }
-                        for edge in anime_data.get(&id).unwrap().relations.edges.iter() {
+                        for edge in self.data.get(&id).unwrap().relations.edges.iter() {
             
-                            if edge.relation_type == "PREQUEL" && anime_data.contains_key(&edge.node.id) == false {
+                            if edge.relation_type == "PREQUEL" && self.data.contains_key(&edge.node.id) == false {
                 
                                 get_info.push(edge.node.id);
                             }
@@ -844,6 +895,259 @@ impl AnimeData {
                 },
             }
         }
+    }
+
+    pub fn play_episode(&self, anime_id: i32, episode: i32) -> bool {
+
+        let mut episode_opened = false;
+        if self.anime_path.contains_key(&anime_id) {
+            let media = self.anime_path.get(&anime_id).unwrap();
+            if let Some(media_episode) = media.get(&episode) {
+
+                println!("Opening: {} {}", media_episode.path, media_episode.similarity_score);
+                
+                let next_episode_path = Path::new(&media_episode.path);
+                match open::that(next_episode_path) {
+                    Err(why) => panic!("{}",why),
+                    Ok(_e) => { episode_opened = true },
+                }
+            }
+        }
+
+        episode_opened
+    }
+
+    pub fn get_existing_files_all_anime(&self) -> HashMap<i32, Vec<i32>> {
+
+        let mut episodes_exist: HashMap<i32, Vec<i32>> = HashMap::new();
+
+        for (anime_id, episodes) in self.anime_path.iter() {
+    
+            let mut episode_list: Vec<i32> = Vec::new();
+    
+            for (episode, _) in episodes {
+    
+                episode_list.push(*episode);
+            }
+    
+            episodes_exist.insert(*anime_id, episode_list);
+        }
+        episodes_exist
+    }
+
+    pub fn get_existing_files(&self, anime_id: i32) -> Vec<i32> {
+
+        let mut episodes_exist: Vec<i32> = Vec::new();
+        if let Some(paths) = self.anime_path.get(&anime_id) {
+            paths.keys().for_each(|key| {
+                episodes_exist.push(*key);
+            });
+        }
+        episodes_exist
+    }
+
+    pub async fn recommendations(&self, completed_scores: HashMap<i32, f32>, user_anime: HashSet<i32>, score_format: Option<String>, mode: String, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) -> Vec<i32> {
+
+        let mut recommend_tally = if mode == "user_recommended" {
+            self.tally_recommendations(completed_scores, user_anime, score_format)
+        } else {
+            self.related_recommendations(completed_scores, user_anime, score_format, mode).await
+        };
+        
+        // if any filter is used
+        self.filter_anime(&mut recommend_tally, genre_filter,year_min_filter, year_max_filter, format_filter).await;
+
+        // reduce number of shows so the ui isn't overloaded with a large number of shows
+        recommend_tally.truncate(100);
+        // only keep anime ids, no other information is needed
+        let recommend_list: Vec<_> = recommend_tally.iter().map(|anime| anime.id).collect();
+        recommend_list
+
+    }
+
+    fn tally_recommendations(&self, completed_scores: HashMap<i32, f32>, user_anime: HashSet<i32>, score_format: Option<String>) -> Vec<RecommendTally> {
+
+        let mut recommend_total: HashMap<i32, f32> = HashMap::new();
+        for (id, score) in completed_scores {
+
+            if let Some(anime_entry) = self.data.get(&id) {
+
+                if let Some(recommendations) = &anime_entry.recommendations {
+
+                    for rec in &recommendations.nodes {
+
+                        if let Some(recommendation) = &rec.media_recommendation {
+
+                            let score_modifier = self.score_to_rating_modifier(score, &score_format);
+                            // add the recommendation to the list or add the rating to the existing recommendation
+                            recommend_total.entry(recommendation.id)
+                                .and_modify(|r| { *r += (rec.rating as f32) * score_modifier })
+                                .or_insert((rec.rating as f32) * score_modifier);
+                        }
+                    }
+                }
+            }
+        }
+
+        // remove anime already in the users lists
+        recommend_total.retain(|id, _| { user_anime.contains(&id) == false });
+        
+        // move to a vector so the entries can be sorted
+        let mut recommendations: Vec<RecommendTally> = Vec::new();
+        for entry in recommend_total {
+            recommendations.push(RecommendTally {
+                id: entry.0,
+                rating: entry.1
+            });
+        }
+
+        
+        // sort by most recommended
+        recommendations.sort_by(| entry_a, entry_b | {
+            entry_b.rating.partial_cmp(&entry_a.rating).unwrap()
+        });
+
+        // remove the least recommended shows but not too many in case it will be further filtered
+        recommendations.truncate(1000);
+
+        recommendations
+    }
+
+    /// convert the score to a rating modifier. 
+    /// higher scores will produce a higher modifier so shows that a user liked will be worth more than a show the user disliked
+    fn score_to_rating_modifier(&self, score: f32, score_format: &Option<String>) -> f32 {
+
+        // show has no score
+        if score == 0.0 {
+            return 1.0;
+        }
+
+        if score_format.is_none() {
+            return 1.0;
+        }
+
+        // convert to modifier
+        match score_format.as_ref().unwrap().as_str() {
+            "POINT_100" => score / 50.0,
+            "POINT_10_DECIMAL" => score / 5.0,
+            "POINT_10" => score / 5.0,
+            "POINT_5" => score / 2.5,
+            "POINT_3" => score - 1.0,
+            _ => 1.0,
+        }
+    }
+
+        
+    // remove anime from anime_list if it does not match the filters
+    async fn filter_anime(&self, anime_list: &mut Vec<RecommendTally>, genre_filter: String, year_min_filter: i32, year_max_filter: i32, format_filter: String) {
+
+        if genre_filter.is_empty() == false || year_min_filter != 0 || year_max_filter != 0 || format_filter.is_empty() == false {
+
+            // filter out any show which doesn't match the genre
+            if genre_filter.is_empty() == false {
+
+                anime_list.retain(|rec| { 
+                    self.data.get(&rec.id).unwrap().genres.contains(&genre_filter)
+                })
+            }
+
+            // filter out any show which is too old
+            if year_min_filter != 0 {
+
+                anime_list.retain(|rec| { 
+                    self.data.get(&rec.id).unwrap().season_year.is_some() &&
+                    self.data.get(&rec.id).unwrap().season_year.unwrap() >= year_min_filter
+                })
+            }
+
+            // filter out any show which is too new
+            if year_max_filter != 0 {
+
+                anime_list.retain(|rec| { 
+                    self.data.get(&rec.id).unwrap().season_year.is_some() &&
+                    self.data.get(&rec.id).unwrap().season_year.unwrap() <= year_max_filter
+                })
+            }
+
+            // filter out any show which doesn't match the format
+            if format_filter.is_empty() == false {
+
+                anime_list.retain(|rec| { 
+                    self.data.get(&rec.id).unwrap().format.is_some() &&
+                    self.data.get(&rec.id).unwrap().format.as_ref().unwrap().eq(&format_filter)
+                })
+            }
+        }
+    }
+
+        
+    // create a list of recommended anime based on relations to anime in the completed list
+    async fn related_recommendations(&self, completed_scores: HashMap<i32, f32>, user_anime: HashSet<i32>, score_format: Option<String>, mode: String) -> Vec<RecommendTally> {
+
+        let mut recommend_total: HashMap<i32, f32> = HashMap::new();
+        for (id, score) in completed_scores {
+
+            if let Some(anime_entry) = self.data.get(&id) {
+
+                let score_modifier = self.score_to_rating_modifier(score, &score_format);
+
+                for related in &anime_entry.relations.edges {
+
+                    // filter by relation type
+                    if related.relation_type != mode {
+                        continue;
+                    }
+
+                    // add anime id and score modifier or replace score modifier if the new modifier is higher
+                    if recommend_total.contains_key(&related.node.id) == false {
+
+                        recommend_total.insert(related.node.id, score_modifier);
+                    } else if score_modifier > *recommend_total.get(&related.node.id).unwrap() {
+                        
+                        recommend_total.entry(related.node.id).and_modify(|entry| *entry = score_modifier);
+                    }
+                }
+            }
+        }
+
+        // remove anime already in the users lists
+        recommend_total.retain(|id, _| { user_anime.contains(&id) == false });
+
+        // some ids lead to 404 pages, these ids won't be in anime_data, remove them
+        recommend_total.retain(|anime_id, _| { self.data.contains_key(anime_id) == true });
+        
+        // sum up the number of recommendations for the anime and apply score modifier
+        let mut recommendations: Vec<RecommendTally> = Vec::new();
+        for (anime_id, score_modifier) in recommend_total {
+            
+            if let Some(anime_entry) = self.data.get(&anime_id) {
+        
+                if let Some(anime_recommendations) = &anime_entry.recommendations {
+        
+                    let score: i32 = anime_recommendations.nodes.iter().map(|r| r.rating).sum();
+
+                    recommendations.push(RecommendTally { id: anime_id, rating: score as f32 * score_modifier });
+                }
+            }
+        };
+
+        // sort by most recommended
+        recommendations.sort_by(| entry_a, entry_b | {
+            entry_b.rating.partial_cmp(&entry_a.rating).unwrap()
+        });
+
+        recommendations
+    }
+
+    pub fn get_anime_episodes(&self) -> HashMap<i32, Option<i32>> {
+
+        let mut episodes: HashMap<i32, Option<i32>> = HashMap::new();
+        for (id, info) in &self.data {
+
+            episodes.insert(*id, info.episodes);
+        }
+
+        episodes
     }
 
 }

@@ -31,6 +31,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("underline_tab_0").style.visibility = "visible";
 
   var user_settings = await invoke("get_user_settings");
+  console.log(user_settings);
+  user_settings = await invoke("get_user_settings");
+  console.log(user_settings);
   document.styleSheets[0].cssRules[0].style.setProperty("--highlight", user_settings.highlight_color);
   set_theme(null, user_settings.theme);
 
@@ -477,35 +480,19 @@ function exclusive_underline(index) {
 window.show_anime_list = show_anime_list;
 async function show_anime_list(name) {
 
-  document.getElementById("browse_filters").style.display = "none";
-  document.getElementById("recommended_filters").style.display = "none";
-  var watching = await invoke("get_list", { listName: name });
+  var f_current_page = current_page
+  current_page = 0;
+  expected_page = 0;
+  has_next_page = true;
 
-  if (watching.length > 0) {
-    var user_data = await invoke("get_list_user_info", { listName: name });
-
-    // get user data on anime
-    var user_settings = await invoke("get_user_settings");
-
-    // user didn't change the tab while getting the list from anilist
-    if (name == current_tab) {
-
-      // add anime to UI
-      removeChildren(document.getElementById("cover_panel_grid"));
-
-      for(var i = 0; i < watching.length; i++) {
-        if(user_settings.show_adult == false && watching[i].is_adult == true) {
-          continue;
-        }
-        add_anime(watching[i], user_data[i], i, user_settings.score_format, user_settings.show_airing_time);
-      }
-
-      sort_anime();
-    }
+  for(var i = 0; i < f_current_page; i++) {
+    show_anime_list_paged(i);
   }
 }
 
 
+
+var get_list_response = null;
 var current_page = 0;
 var expected_page = 0;
 var has_next_page = true;
@@ -524,11 +511,9 @@ async function show_anime_list_paged(page) {
   document.getElementById("recommended_filters").style.display = "none";
   document.getElementById("sort_area").style.display = "block";
 
-  var get_list_response = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order").value, ascending: sort_ascending, page: page});
-  if (get_list_response[1] != null) {
-    //alert(get_list_response[1]);
+  if (page == 0) {
+    get_list_response = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order").value, ascending: sort_ascending, page: page});
   }
-  var watching = get_list_response[0];
 
   var user_settings = await invoke("get_user_settings");
 
@@ -540,15 +525,18 @@ async function show_anime_list_paged(page) {
       removeChildren(document.getElementById("cover_panel_grid"));
       list_ids = await invoke("get_list_ids", { list: current_tab });
     }
-    if (watching.length < 50) {
+
+    var limit = (page + 1) * 50;
+    if(limit > get_list_response.length) {
+      limit = get_list_response.length;
       has_next_page = false;
     }
 
-    for(var i = 0; i < watching.length; i++) {
-      if(user_settings.show_adult == false && watching[i][0].is_adult == true) {
+    for(var i = page * 50; i < limit; i++) {
+      if(user_settings.show_adult == false && get_list_response[i][0].is_adult == true) {
         continue;
       }
-      await add_anime(watching[i][0], watching[i][1], i, user_settings.score_format, user_settings.show_airing_time);
+      await add_anime(get_list_response[i][0], get_list_response[i][1], i, user_settings.score_format, user_settings.show_airing_time);
     }
     current_page++;
   }

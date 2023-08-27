@@ -7,9 +7,9 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tauri::async_runtime::Mutex;
 
-use crate::anime_data::AnimeInfo;
+use crate::anime_data::{AnimeInfo, AnimePath};
 use crate::user_data::{TokenData2, UserSettings, UserInfo};
-use crate::{GLOBAL_ANIME_PATH, GLOBAL_REFRESH_UI};
+use crate::GLOBAL_REFRESH_UI;
 
 extern crate dirs;
 
@@ -67,32 +67,30 @@ pub async fn read_file_anime_info_cache(anime_data: &mut HashMap<i32, AnimeInfo>
     read_file_data(anime_data, "anime_cache").await
 }
 
-
-
-
-pub async fn write_file_episode_path() {
-    write_file_data_mutex(&GLOBAL_ANIME_PATH, "episode_path").await;
+pub async fn write_file_anime_missing_ids(missing_ids: &HashSet<i32>) {
+    write_file_data(&missing_ids, "404_ids");
 }
 
-pub async fn read_file_episode_path() -> Result<(), &'static str> {
-    read_file_data_mutex(&GLOBAL_ANIME_PATH, "episode_path").await
+pub async fn read_file_anime_missing_ids(missing_ids: &mut HashSet<i32>) -> Result<(), &'static str> {
+    read_file_data(missing_ids, "404_ids").await
+}
+
+pub async fn write_file_episode_path(episode_path: &HashMap<i32, HashMap<i32,AnimePath>>) {
+    write_file_data(&episode_path, "episode_path");
+}
+
+pub async fn read_file_episode_path(episode_path: &mut HashMap<i32, HashMap<i32,AnimePath>>) -> Result<(), &'static str> {
+    read_file_data(episode_path, "episode_path").await
 }
 
 pub async fn write_file_known_files(known_files: &HashSet<String>) {
     write_file_data(&known_files, "known_files");
 }
 
-pub async fn read_file_known_files(known_files: &Mutex<HashSet<String>>) -> Result<(), &'static str> {
-    read_file_data_mutex(known_files, "known_files").await
+pub async fn read_file_known_files(known_files: &mut HashSet<String>) -> Result<(), &'static str> {
+    read_file_data(known_files, "known_files").await
 }
 
-pub async fn write_file_404_ids(not_found_ids: &HashSet<i32>) {
-    write_file_data(&not_found_ids, "404_ids");
-}
-
-pub async fn read_file_404_ids(not_found_ids: &Mutex<HashSet<i32>>) -> Result<(), &'static str> {
-    read_file_data_mutex(&not_found_ids, "404_ids").await
-}
 
 
 async fn write_file_data_mutex<T: Serialize>(global: &Mutex<T>, filename: &str) {

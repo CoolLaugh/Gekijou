@@ -3,7 +3,7 @@ use regex::Regex;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use xml;
-use crate::{file_name_recognition, anime_data::AnimeInfo};
+use crate::anime_data::AnimeInfo;
 
 
 
