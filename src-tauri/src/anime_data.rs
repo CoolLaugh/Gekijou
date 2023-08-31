@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}, path::Path};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}, path::Path, time::{SystemTime, UNIX_EPOCH}};
 
 use regex::Regex;
 use serde::{Serialize, Deserialize};
@@ -306,10 +306,11 @@ impl AnimeData {
 
     pub async fn get_anime_list_data(&mut self, id_list: Vec<i32>) -> Result<Vec<AnimeInfo>, &'static str> {
         
+        // filter 404 ids out
         let mut valid_ids: Vec<i32> = id_list.iter().map(|id| *id).filter(|id| self.nonexistent_ids.contains(id) == false).collect();
-
+        
+        // check for missing ids
         let missing_ids: Vec<i32> = valid_ids.iter().map(|id| *id).filter(|id| self.data.contains_key(id) == false).collect();
-
         if missing_ids.is_empty() == false {
             match api_calls::anilist_api_call_multiple(missing_ids.clone()).await {
                 Ok(result) => {
@@ -327,6 +328,23 @@ impl AnimeData {
             }
         }
 
+        // check if airing time needs updating
+        let current_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time Error").as_secs() as i32;
+        for id in valid_ids.iter() {
+            let next_episode = self.data.get(&id).unwrap().next_airing_episode.clone();
+            if let Some(next_episode) = next_episode {
+                if next_episode.airing_at < current_time {
+                    match self.update_anime_data(*id).await {
+                        Ok(_) => {},
+                        Err(error) => {
+                            println!("update_anime_data error: {}", error);
+                        },
+                    }
+                }
+            }
+        }
+
+        // compile data of valid ids
         let mut list_anime: Vec<AnimeInfo> = Vec::new();
         for id in valid_ids {
             if let Some(anime) = self.data.get(&id) {
@@ -337,6 +355,20 @@ impl AnimeData {
         }
 
         Ok(list_anime)
+    }
+
+    pub async fn update_anime_data(&mut self, media_id: i32) -> Result<AnimeInfo, &'static str> {
+
+        match api_calls::anilist_api_call(media_id).await {
+            Ok(result) => {
+                self.data.insert(media_id, result.clone());
+                return Ok(result);
+            },
+            Err(error) => {
+                Err(error)
+            },
+        }
+
     }
 
     // find anime missing from anilist and add them to the nonexistent list

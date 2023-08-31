@@ -351,14 +351,14 @@ pub async fn anilist_remove_entry(id: i32, access_token: String) -> Result<bool,
 // retrieve information on anime using it's anilist id
 pub async fn anilist_api_call(id: i32) -> Result<AnimeInfo, &'static str> {
     
-    // create client and query json
-    let json = json!({"query": ANIME_INFO_QUERY, "variables": {"id": id}});
-
-    match post(&json, None).await {
+    // reuse call multiple for maintainability
+    match anilist_api_call_multiple(vec![id]).await {
         Ok(result) => {
-            let response = anilist_to_snake_case(result);
-            let json: Data = serde_json::from_str(&response).unwrap();
-            return Ok(json.data.media);
+            if let Some(first) = result.first() {
+                return Ok(first.to_owned());
+            } else {
+                return Err("No info");
+            }
         },
         Err(error) => return Err(error),
     }

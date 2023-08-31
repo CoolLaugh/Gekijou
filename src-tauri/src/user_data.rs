@@ -4,7 +4,7 @@ use chrono::{DateTime, Local, Datelike};
 use serde::{Deserialize, Serialize};
 use tauri::async_runtime::Mutex;
 
-use crate::{constants::{USER_STATUSES, USER_LISTS}, GLOBAL_REFRESH_UI, api_calls, file_operations};
+use crate::{constants::{USER_STATUSES, USER_LISTS, self}, GLOBAL_REFRESH_UI, api_calls, file_operations};
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -414,6 +414,10 @@ impl UserData {
             if let Some(episodes) = self.max_episodes.get(&media_id).cloned() {
                 if episodes.is_none() || media.progress + length <= episodes.unwrap() {
                     media.progress += length;
+                    if media.progress >= episodes.unwrap() {
+                        media.status = constants::USER_STATUSES[1].to_string(); // completed
+                        GLOBAL_REFRESH_UI.lock().await.anime_list = true;
+                    }
                     match self.set_user_data(&mut media, true).await {
                         Ok(_result) => {
                             // do nothing
