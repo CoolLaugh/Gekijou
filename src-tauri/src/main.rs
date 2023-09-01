@@ -284,7 +284,7 @@ async fn get_manga_info(id: i32) -> Option<MangaInfo> {
 
 // updates a entry on anilist with new information
 #[tauri::command]
-async fn update_user_entry(mut anime: UserInfo) {
+async fn update_user_entry(anime: UserInfo) {
 
     println!("main.rs update_user_entry");
 
@@ -292,7 +292,7 @@ async fn update_user_entry(mut anime: UserInfo) {
         println!("{:?}", anime);
     }
 
-    GLOBAL_USER_DATA.lock().await.set_user_data(&mut anime, true).await;
+    GLOBAL_USER_DATA.lock().await.set_user_data(anime, true).await;
 }
 
 
@@ -355,7 +355,9 @@ async fn play_next_episode(id: i32) -> Result<(), &'static str> {
                 // if episode location is unknown, search for new episodes and try again
                 let folders = user_data.get_user_settings().folders;
                 println!("play_next_episode 2");
+                GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(String::from("Searching For Episode"));
                 GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, false, Some(id)).await;
+                GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
                 println!("play_next_episode 3");
                 play_episode(id, next_episode).await;
                 println!("play_next_episode 4");
@@ -436,6 +438,10 @@ async fn anime_update_delay() {
     let anime_data = GLOBAL_ANIME_DATA2.lock().await;
     let mut user_data = GLOBAL_USER_DATA.lock().await;
     let mut watching_data = WATCHING_TRACKING.lock().await;
+
+    // reset monitoring
+    watching_data.iter_mut().for_each(|entry| entry.1.monitoring = false);
+
     for title in titles {
 
         // remove video player suffixes 
@@ -481,7 +487,7 @@ async fn anime_update_delay() {
         }
     }
 
-    // remove episodes that are no longer being played
+    // remove episodes that are no longer being played or have been played long enough
     watching_data.retain(|_, v| v.monitoring == true);
 
 }

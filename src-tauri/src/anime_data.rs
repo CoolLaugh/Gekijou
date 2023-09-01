@@ -791,18 +791,24 @@ impl AnimeData {
 
     pub async fn scan_folders(&mut self, folders: Vec<String>, skip_files: bool, media_id: Option<i32>) -> bool {
         let mut file_found = false;
+        let mut count = 0;
+        GLOBAL_REFRESH_UI.lock().await.scan_data.total_folders = folders.len() as i32;
         for folder in folders {
-            println!("Scanning {}", folder);
-            if self.scan_folder(folder, skip_files, media_id) {
+            count += 1;
+            GLOBAL_REFRESH_UI.lock().await.scan_data.current_folder = count;
+            if self.scan_folder(folder, skip_files, media_id).await {
                 file_found = true;
             }
         }
         file_operations::write_file_episode_path(&self.anime_path).await;
         file_operations::write_file_known_files(&self.known_files).await;
+        let mut refresh_ui = GLOBAL_REFRESH_UI.lock().await;
+        refresh_ui.scan_data.total_folders = 0;
+        refresh_ui.scan_data.current_folder = 0;
         file_found
     }
 
-    pub fn scan_folder(&mut self, folder: String, skip_files: bool, media_id: Option<i32>) -> bool {
+    pub async fn scan_folder(&mut self, folder: String, skip_files: bool, media_id: Option<i32>) -> bool {
 
         let mut file_found = false;
         let path = Path::new(&folder);
@@ -813,7 +819,7 @@ impl AnimeData {
         let mut count = 0;
         
         let iter = WalkDir::new(path).into_iter();
-        println!("total: {}", iter.count());
+        GLOBAL_REFRESH_UI.lock().await.scan_data.total_chunks = iter.count() as i32;
 
         let valid_extensions = ["mkv", "mp4", "avi"];
         for entry in WalkDir::new(path).into_iter().filter_map(Result::ok) {
@@ -825,6 +831,7 @@ impl AnimeData {
             count += 1;
             if count % 100 == 0 {
                 println!("{}", count);
+                GLOBAL_REFRESH_UI.lock().await.scan_data.completed_chunks = count;
             }
 
             if let Some(ext) = entry.path().extension() {

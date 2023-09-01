@@ -17,11 +17,12 @@ pub struct UserInfo {
     pub started_at: Option<Date>,
     pub completed_at: Option<Date>,
     pub notes: Option<String>,
+    pub updated_at: u64,
 }
 
 impl UserInfo {
     pub const fn new() -> UserInfo {
-        UserInfo { id: 0, media_id: 0, status: String::new(), score: 0.0, progress: 0, started_at: None, completed_at: None, notes: None }
+        UserInfo { id: 0, media_id: 0, status: String::new(), score: 0.0, progress: 0, started_at: None, completed_at: None, notes: None, updated_at: 0 }
     }
 }
 
@@ -115,12 +116,11 @@ pub struct UserSettings {
     pub show_airing_time: Option<bool>,
     pub theme: Option<i32>,
     pub user_id: Option<i32>,
-    pub updated_at: Option<u64>,
 }
 
 impl UserSettings {
     pub const fn new() -> UserSettings {
-        UserSettings { username: String::new(), title_language: String::new(), show_adult: false, folders: Vec::new(), update_delay: 0, score_format: None, highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0), user_id: None, updated_at: None }
+        UserSettings { username: String::new(), title_language: String::new(), show_adult: false, folders: Vec::new(), update_delay: 0, score_format: None, highlight_color: String::new(), current_tab: String::new(), first_time_setup: true, show_airing_time: Some(true), theme: Some(0), user_id: None }
     }
     
     pub fn clear(&mut self) {
@@ -136,7 +136,6 @@ impl UserSettings {
         self.show_airing_time = Some(true);
         self.theme = Some(0);
         self.user_id = None;
-        self.updated_at = None;
     }
 }
 
@@ -180,7 +179,7 @@ impl UserData {
         }
     }
 
-    async fn check_correct_list(&mut self, data: &mut UserInfo) {
+    async fn check_correct_list(&mut self, data: &UserInfo) {
         
         let old_status = if let Some(old_data) = self.user_data.get(&data.media_id) {
             old_data.status.clone()
@@ -214,7 +213,7 @@ impl UserData {
         }
     }
 
-    pub async fn set_user_data(&mut self, data: &mut UserInfo, update_website: bool) -> Result<Option<UserInfo>, &'static str> {
+    pub async fn set_user_data(&mut self, mut data: UserInfo, update_website: bool) -> Result<Option<UserInfo>, &'static str> {
         
         println!("{:?}", data);
 
@@ -234,7 +233,7 @@ impl UserData {
             -1
         };
 
-        self.check_correct_list(data).await;
+        self.check_correct_list(&data).await;
 
         if data.status == "COMPLETED" {
             if let Some(max_episodes) = self.max_episodes.get(&data.media_id) {
@@ -304,8 +303,13 @@ impl UserData {
             api_calls::update_user_entry(self.token.access_token.clone(), data.clone()).await;
         }
 
+        // set the time when user data was updated to prevent being overwritten by anilist
+        data.updated_at = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+
+        // save new data
         let old_data = self.user_data.insert(data.media_id, data.clone());
 
+        // write to file for the next time gekijou is opened
         file_operations::write_file_user_data(&self.user_data).await;
 
         Ok(old_data)
@@ -387,24 +391,24 @@ impl UserData {
             return Err("No username");
         }
 
-        if let Some(updated_at) = self.setting.updated_at {
-            match api_calls::get_updated_media_ids2(self.setting.username.clone(), updated_at).await {
-                Ok(list) => {
-                    GLOBAL_REFRESH_UI.lock().await.no_internet = false;
-                    
-                    for mut entry in list {
-
-                        self.check_correct_list(&mut entry);
-                        self.user_data.insert(entry.media_id, entry);
+        match api_calls::get_updated_media_ids(self.setting.username.clone(), 0).await {
+            Ok(list) => {
+                GLOBAL_REFRESH_UI.lock().await.no_internet = false;
+                
+                for entry in list {
+                    if self.user_data.contains_key(&entry.media_id) {
+                        let client_updated_at = self.user_data.get(&entry.media_id).unwrap().updated_at;
+                        if entry.updated_at > client_updated_at {
+                            self.set_user_data(entry, false).await;
+                        }
+                    } else {
+                        self.set_user_data(entry, false).await;
                     }
-
-                    // update time to now so old updates aren't processed
-                    self.setting.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-                },
-                Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
-            }
+                }
+            },
+            Err(_error) => GLOBAL_REFRESH_UI.lock().await.no_internet = true,
         }
-
+    
         Ok(true)
     }
 
@@ -418,7 +422,7 @@ impl UserData {
                         media.status = constants::USER_STATUSES[1].to_string(); // completed
                         GLOBAL_REFRESH_UI.lock().await.anime_list = true;
                     }
-                    match self.set_user_data(&mut media, true).await {
+                    match self.set_user_data(media, true).await {
                         Ok(_result) => {
                             // do nothing
                         },
@@ -501,7 +505,6 @@ impl UserData {
                 GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading User Lists ({} of 5)", list_count));
                 api_calls::anilist_get_list(self.setting.username.clone(), String::from(list), self.token.access_token.clone(), &mut self.user_data, &mut self.user_lists).await;
             }
-            self.setting.updated_at = Some(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
             file_operations::write_file_user_data(&self.user_data).await;
             file_operations::write_file_user_lists(&self.user_lists).await;
 
@@ -511,12 +514,14 @@ impl UserData {
                 media_ids
             };
 
+            file_operations::write_file_user_settings(&self.setting).await;
             return (scan, Some(user_media_ids));
+        } else {
+            
+            file_operations::write_file_user_settings(&self.setting).await;
+            return (scan, None);
         }
 
-        file_operations::write_file_user_settings(&self.setting).await;
-
-        return (scan, None);
     }
 
     pub fn set_current_tab(&mut self, tab: String) {

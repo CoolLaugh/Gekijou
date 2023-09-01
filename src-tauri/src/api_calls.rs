@@ -439,6 +439,7 @@ fn anilist_to_snake_case(anilist_json: String) -> String {
         .replace("completedAt", "completed_at")
         .replace("isAnimationStudio", "is_animation_studio")
         .replace("primaryOccupations", "primary_occupations")
+        .replace("updatedAt", "updated_at")
 }
 
 fn ceiling_div(x: usize, y: usize) -> usize {
@@ -509,7 +510,8 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
                                                                     progress: entry["progress"].as_i64().unwrap() as i32, 
                                                                     started_at: serde_json::from_value(entry["started_at"].clone()).unwrap(), 
                                                                     completed_at: serde_json::from_value(entry["completed_at"].clone()).unwrap(),
-                                                                    notes: serde_json::from_value(entry["notes"].clone()).unwrap()};
+                                                                    notes: serde_json::from_value(entry["notes"].clone()).unwrap(),
+                                                                    updated_at: entry["updated_at"].as_u64().unwrap()};
         
                     anime_user_data.insert(user_info.media_id, user_info);
                     let mut media: AnimeInfo = serde_json::from_value(entry["media"].clone()).unwrap();
@@ -946,79 +948,6 @@ pub async fn get_user_updated_at(username: String) -> Option<u64> {
 
 const USER_MEDIA_UPDATED: &str = "
 query($name: String) { 
-    Page(page: 0, perPage: 50){
-        pageInfo {
-            hasNextPage
-        }
-        mediaList(userName: $name, sort: UPDATED_TIME_DESC) {
-            updatedAt
-            mediaId
-        }
-    }
-}";
-// returns a list of media that has been updated after the supplied time
-pub async fn get_updated_media_ids(username: String, newer_than_this: u64) -> Result<Vec<i32>, &'static str> {
-    
-    let mut continue_to_next_page = true;
-    let mut page_number = 0;
-    let mut media_ids: Vec<i32> = Vec::new();
-
-    while continue_to_next_page {
-
-        let json = json!({"query": USER_MEDIA_UPDATED, "variables": {"name": username,"page": page_number}});
-        //println!("json {}", json);
-        match post(&json, None).await {
-            Ok(result) => {
-                let response_value = serde_json::from_str::<serde_json::Value>(&result).unwrap();
-                //println!("{:?}", response_value);
-
-                if let Some(error_list) = response_value["errors"].as_array() {
-                    for entry in error_list {
-                        if let Some(message) = entry["message"].as_str() {
-                            println!("message {}", message);
-                        }
-                        if let Some(status) = entry["status"].as_i64() {
-                            println!("status {}", status);
-                        }
-                    }
-                    break;
-                }
-
-                if let Some(media_list) = response_value["data"]["Page"]["mediaList"].as_array() {
-                    for media in media_list {
-                        if let Some(updated_at) = media["updatedAt"].as_u64() {
-                            if updated_at > newer_than_this {
-                                if let Some(media_id) = media["mediaId"].as_i64() {
-                                    media_ids.push(media_id as i32);
-                                }
-                            } else {
-                                // this and all following media will be older than time specified
-                                continue_to_next_page = false;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if continue_to_next_page == true {
-                    if let Some(has_next_page) = response_value["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
-                        continue_to_next_page = has_next_page;
-                    }
-                }
-
-                page_number += 1;
-            },
-            Err(error) => return Err(error),
-        }
-    }
-
-    Ok(media_ids)
-}
-
-
-
-const USER_MEDIA_UPDATED2: &str = "
-query($name: String) { 
     Page(page: 0, perPage: 10){
         pageInfo {
             hasNextPage
@@ -1045,63 +974,42 @@ query($name: String) {
     }
 }";
 // returns a list of media that has been updated after the supplied time
-pub async fn get_updated_media_ids2(username: String, newer_than_this: u64) -> Result<Vec<UserInfo>, &'static str> {
+pub async fn get_updated_media_ids(username: String, page: i32) -> Result<Vec<UserInfo>, &'static str> {
     
-    let mut continue_to_next_page = true;
-    let mut page_number = 0;
-    let mut media_entrys: Vec<UserInfo> = Vec::new();
+    // get list of recent activity about the user
+    let json = json!({"query": USER_MEDIA_UPDATED, "variables": {"name": username,"page": page}});
+    match post(&json, None).await {
+        Ok(result) => {
+            let response = anilist_to_snake_case(result);
+            let response_value = serde_json::from_str::<serde_json::Value>(&response).unwrap();
 
-    while continue_to_next_page {
-
-        let json = json!({"query": USER_MEDIA_UPDATED2, "variables": {"name": username,"page": page_number}});
-        //println!("json {}", json);
-        match post(&json, None).await {
-            Ok(result) => {
-                let response_value = serde_json::from_str::<serde_json::Value>(&result).unwrap();
-                //println!("{:?}", response_value);
-
-                if let Some(error_list) = response_value["errors"].as_array() {
-                    for entry in error_list {
-                        if let Some(message) = entry["message"].as_str() {
-                            println!("message {}", message);
-                        }
-                        if let Some(status) = entry["status"].as_i64() {
-                            println!("status {}", status);
-                        }
+            // print errors
+            if let Some(error_list) = response_value["errors"].as_array() {
+                for entry in error_list {
+                    if let Some(message) = entry["message"].as_str() {
+                        println!("message {}", message);
                     }
-                    break;
-                }
-
-                if let Some(media_list) = response_value["data"]["Page"]["mediaList"].as_array() {
-                    for media in media_list {
-                        if let Some(updated_at) = media["updatedAt"].as_u64() {
-                            if updated_at > newer_than_this {
-                                let data: UserInfo = serde_json::from_value(media.to_owned()).unwrap();
-                                media_entrys.push(data);
-                            } else {
-                                // this and all following media will be older than time specified
-                                continue_to_next_page = false;
-                                break;
-                            }
-                        }
+                    if let Some(status) = entry["status"].as_i64() {
+                        println!("status {}", status);
                     }
                 }
+                return Err("anilist returned error");
+            }
 
-                if continue_to_next_page == true {
-                    if let Some(has_next_page) = response_value["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
-                        continue_to_next_page = has_next_page;
-                    }
+            // get user info out of json response
+            let mut media_entrys: Vec<UserInfo> = Vec::new();
+            if let Some(media_list) = response_value["data"]["Page"]["mediaList"].as_array() {
+                for media in media_list {
+                    let data: UserInfo = serde_json::from_value(media.to_owned()).unwrap();
+                    media_entrys.push(data);
                 }
-
-                page_number += 1;
-            },
-            Err(error) => return Err(error),
-        }
+                return Ok(media_entrys);
+            }
+        },
+        Err(error) => return Err(error),
     }
-
-    Ok(media_entrys)
+    return Ok(Vec::new());
 }
-
 
 
 // send post json to https://graphql.anilist.co/ and return its response as a string
