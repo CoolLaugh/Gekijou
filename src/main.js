@@ -231,12 +231,12 @@ async function close_error_window() {
 
 // confirm the user wants to delete an anime and then delete it
 window.confirm_delete_entry = confirm_delete_entry;
-async function confirm_delete_entry(id, media_id) {
+async function confirm_delete_entry(media_id) {
 
   // await warning is a lie, don't remove await
   if (await confirm('This will remove all data about this anime from your list. Are you sure?') == true) {
     
-    var removed = await invoke("remove_anime", { id: id, mediaId: media_id});
+    var removed = await invoke("remove_anime", { mediaId: media_id});
     if (removed == true) {
 
       if (current_tab == "CURRENT" || current_tab == "COMPLETED" || current_tab == "PAUSED" || current_tab == "DROPPED" || current_tab == "PLANNING") {
@@ -524,6 +524,10 @@ async function show_anime_list_paged(page) {
     if (page == 0) {
       removeChildren(document.getElementById("cover_panel_grid"));
       list_ids = await invoke("get_list_ids", { list: current_tab });
+    }
+
+    if (get_list_response.length == 0) {
+      document.getElementById("cover_panel_grid").insertAdjacentHTML("beforeend", "<p>This list is empty.</p>");
     }
 
     var limit = (page + 1) * 50;
@@ -1947,6 +1951,7 @@ async function add_user_data(anime_id, user_settings) {
 
     // custom filename is a separate call because it is not part of user data
     var custom_title = await invoke("get_custom_filename", {animeId: anime_id});
+    console.log(custom_title);
     document.getElementById("custom_filename").value = custom_title;
   
     var user_data = await invoke("get_user_info", {id: anime_id});
@@ -1954,7 +1959,7 @@ async function add_user_data(anime_id, user_settings) {
     setup_score_dropdown(user_settings.score_format);
 
     if (user_data != null) {
-      document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.id, user_data.media_id); }
+      document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.media_id); }
       document.getElementById("status_select").value = user_data.status;
       document.getElementById("episode_number").value = user_data.progress;
       document.getElementById("score_dropdown").value = user_data.score;
@@ -2029,7 +2034,8 @@ async function update_user_entry(anime_id) {
     'status': document.getElementById("status_select").value,
     'score': parseFloat(document.getElementById("score_dropdown").value),
     'progress': parseInt(document.getElementById("episode_number").value),
-    'notes' : document.getElementById("user_notes").value
+    'notes' : document.getElementById("user_notes").value,
+    'updated_at' : 0
   };
 
   if (user_data != null) {

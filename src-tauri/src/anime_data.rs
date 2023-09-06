@@ -1,4 +1,5 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}, path::Path, time::{SystemTime, UNIX_EPOCH}};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}, path::Path, time::{SystemTime, UNIX_EPOCH}, io::ErrorKind};
+use std::hash::{Hash, Hasher};
 
 use regex::Regex;
 use serde::{Serialize, Deserialize};
@@ -256,7 +257,7 @@ pub struct AnimeData {
     pub nonexistent_ids: HashSet<i32>,
     pub needs_scan: Vec<i32>,
     pub anime_path: HashMap<i32, HashMap<i32,AnimePath>>,
-    pub known_files: HashSet<String>,
+    pub known_files: HashSet<u64>,
     pub new_anime: bool,
 }
 
@@ -314,7 +315,7 @@ impl AnimeData {
         if missing_ids.is_empty() == false {
             match api_calls::anilist_api_call_multiple(missing_ids.clone()).await {
                 Ok(result) => {
-                    let missing_from_anilist_ids = self.find_missing_ids(&missing_ids, &result);
+                    let missing_from_anilist_ids = self.find_missing_ids(&missing_ids, &result).await;
                     for anime in result {
                         self.data.insert(anime.id, anime);
                         self.new_anime = true;
@@ -372,7 +373,7 @@ impl AnimeData {
     }
 
     // find anime missing from anilist and add them to the nonexistent list
-    fn find_missing_ids(&mut self, ids: &Vec<i32>, data: &Vec<AnimeInfo>) -> Vec<i32> {
+    async fn find_missing_ids(&mut self, ids: &Vec<i32>, data: &Vec<AnimeInfo>) -> Vec<i32> {
 
         let mut missing_ids: Vec<i32> = Vec::new();
         for id in ids {
@@ -388,7 +389,7 @@ impl AnimeData {
                 missing_ids.push(*id);
             }
         }
-
+        file_operations::write_file_anime_missing_ids(&self.nonexistent_ids).await;
         missing_ids
     }
 
@@ -549,35 +550,20 @@ impl AnimeData {
             let length = 1 + captures2.get(2).unwrap().as_str().parse::<i32>().unwrap() - episode;
             return (captures2.get(0).unwrap().as_str().to_string(), episode, length);
         }
-    
-        // remove episode titles with numbers that would be misidentified as episode numbers
-        let episode_title_number = Regex::new(r"'.*\d+.*'").unwrap();
-        let filename_episode_title_removed = episode_title_number.replace_all(&filename, "").to_string();
-    
-        // most anime fit this format
-        let num1 = self.extract_number(&filename_episode_title_removed, Regex::new(r" - (\d+)").unwrap());
-        if num1.1 != 0 {
-            return (num1.0, num1.1, 1);
+
+        let episode_patterns = vec![Regex::new(r" - (\d+)").unwrap(), // most anime fit this format
+                                                Regex::new(r" - Episode (\d+)").unwrap(), // less common formats
+                                                Regex::new(r"[sS]\d+[eE][pP]? ?(\d+)").unwrap(),
+                                                Regex::new(r"[eE][pP]? ?(\d+)").unwrap(),
+                                                Regex::new(r"[^vsVS](\d+)").unwrap()]; // wider search for numbers, use last number that is not a version or season number
+
+        for pattern in episode_patterns {
+            let (episode_string, episode_number) = self.extract_number(&filename, pattern);
+            if episode_number != 0 {
+                return (episode_string, episode_number, 1);
+            }
         }
-        // less common formats
-        let num2 = self.extract_number(&filename_episode_title_removed, Regex::new(r" - Episode (\d+)").unwrap());
-        if num2.1 != 0 {
-            return (num2.0, num2.1, 1);
-        }
-        let num3 = self.extract_number(&filename_episode_title_removed, Regex::new(r"[sS]\d+[eE][pP]? ?(\d+)").unwrap());
-        if num3.1 != 0 {
-            return (num3.0, num3.1, 1);
-        }
-        let num4 = self.extract_number(&filename_episode_title_removed, Regex::new(r"[eE][pP]? ?(\d+)").unwrap());
-        if num4.1 != 0 {
-            return (num4.0, num4.1, 1);
-        }
-        // wider search for numbers, use last number that is not a version or season number
-        let num5 = self.extract_number(&filename_episode_title_removed, Regex::new(r"[^vsVS](\d+)").unwrap());
-        if num5.1 != 0 && num5.0 != "x264" {
-            return (num5.0, num5.1, 1);
-        }
-    
+
         (String::new(), 0, 0)
     }
     
@@ -773,11 +759,12 @@ impl AnimeData {
         }
     }
 
-    pub fn set_custom_filename(&mut self, media_id: i32, filename: String) -> Result<(), &'static str> {
+    pub async fn set_custom_filename(&mut self, media_id: i32, filename: String) -> Result<(), &'static str> {
         if self.data.contains_key(&media_id) == false {
             Err("Anime does not exist")
         } else {
             self.data.entry(media_id).and_modify(|anime| anime.title.custom = Some(filename));
+            file_operations::write_file_anime_info_cache(&self.data).await;
             Ok(())
         }
     }
@@ -789,14 +776,36 @@ impl AnimeData {
         }
     }
 
+    pub async fn scan_new_ids(&mut self, folders: Vec<String>) {
+
+        for id in self.needs_scan.clone() {
+            self.scan_folders(folders.clone(), false, Some(id)).await;
+        }
+        self.needs_scan.clear();
+    }
+
     pub async fn scan_folders(&mut self, folders: Vec<String>, skip_files: bool, media_id: Option<i32>) -> bool {
+
+        self.remove_missing_files();
+
+        // any anime that needs to be scanned will be scanned for if the following conditions are met
+        if skip_files == false && media_id.is_none() {
+            // a second scan is redundant
+            self.needs_scan.clear();
+        }
+
         let mut file_found = false;
         let mut count = 0;
+        let known_files = self.known_files.clone();
+        self.known_files.clear(); // clear this so missing files are removed
         GLOBAL_REFRESH_UI.lock().await.scan_data.total_folders = folders.len() as i32;
         for folder in folders {
             count += 1;
-            GLOBAL_REFRESH_UI.lock().await.scan_data.current_folder = count;
-            if self.scan_folder(folder, skip_files, media_id).await {
+            let mut refresh_ui = GLOBAL_REFRESH_UI.lock().await;
+            refresh_ui.scan_data.current_folder = count;
+            refresh_ui.scan_data.completed_chunks = 0;
+            drop(refresh_ui);
+            if self.scan_folder(folder, skip_files, media_id, &known_files).await {
                 file_found = true;
             }
         }
@@ -808,7 +817,7 @@ impl AnimeData {
         file_found
     }
 
-    pub async fn scan_folder(&mut self, folder: String, skip_files: bool, media_id: Option<i32>) -> bool {
+    pub async fn scan_folder(&mut self, folder: String, skip_files: bool, media_id: Option<i32>, known_files: &HashSet<u64>) -> bool {
 
         let mut file_found = false;
         let path = Path::new(&folder);
@@ -847,12 +856,16 @@ impl AnimeData {
                     continue; // skip openings, endings, etc
                 }
 
+                // hash file name for privacy and check if hash has already been seen before
+                let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                path.hash(&mut hasher);
+                let hash = hasher.finish();
+                self.known_files.insert(hash);
                 if skip_files == true {
-                    if self.known_files.contains(&file_name) {
+                    if known_files.contains(&hash) {
                         continue;
                     }
                 }
-                self.known_files.insert(file_name.clone());
                 
                 if let Some(identity) = self.identify_anime(file_name, media_id) {
 
@@ -936,7 +949,7 @@ impl AnimeData {
         }
     }
 
-    pub fn play_episode(&self, anime_id: i32, episode: i32) -> bool {
+    pub async fn play_episode(&self, anime_id: i32, episode: i32) -> bool {
 
         let mut episode_opened = false;
         if self.anime_path.contains_key(&anime_id) {
@@ -947,7 +960,14 @@ impl AnimeData {
                 
                 let next_episode_path = Path::new(&media_episode.path);
                 match open::that(next_episode_path) {
-                    Err(why) => panic!("{}",why),
+                    Err(error) => {
+                        match error.kind() {
+                            ErrorKind::NotFound => {
+                                println!("Episode missing or moved");
+                            },
+                            _ => { println!("{:?}", error); },
+                        }
+                    },
                     Ok(_e) => { episode_opened = true },
                 }
             }
@@ -1187,6 +1207,13 @@ impl AnimeData {
         }
 
         episodes
+    }
+
+    // show will be searched for the next time folders are scanned. 
+    // this scan will not skip files that were previously checked, 
+    // instead it will skip comparing those files against multiple anime
+    pub fn add_id_for_scanning(&mut self, media_id: i32) {
+        self.needs_scan.push(media_id);
     }
 
 }

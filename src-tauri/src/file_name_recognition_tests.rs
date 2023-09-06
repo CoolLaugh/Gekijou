@@ -27,7 +27,7 @@ pub struct FilenameTest {
 
 pub async fn filename_tests() -> Vec<FilenameTest> {
 
-    let file_path = Path::new("filename_tests2.json");
+    let file_path = Path::new("filename_tests.json");
 
     if file_path.exists() == false {
         return Vec::new();

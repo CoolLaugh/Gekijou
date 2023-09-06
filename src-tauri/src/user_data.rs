@@ -315,22 +315,27 @@ impl UserData {
         Ok(old_data)
     }
 
-    pub async fn remove_anime(&mut self, id: i32, media_id: i32) ->Result<bool, &'static str> {
+    pub async fn remove_anime(&mut self, media_id: i32) ->Result<bool, &'static str> {
 
-        // remove from users anilist
-        match api_calls::anilist_remove_entry(id, self.token.access_token.clone()).await {
-            Ok(removed) => {
-                if removed == true {
-            
-                    self.user_lists.iter_mut().for_each(|(_,list)| list.retain(|list_id| *list_id != media_id));
-                    self.user_data.remove(&media_id);
+        if let Some(anime) = self.user_data.get(&media_id){
 
-                    file_operations::write_file_user_data(&mut self.user_data).await;
-                    file_operations::write_file_user_lists(&mut self.user_lists).await;
-                }
-                return Ok(removed)
-            },
-            Err(error) => return Err(error),
+            // remove from users anilist
+            match api_calls::anilist_remove_entry(anime.id, self.token.access_token.clone()).await {
+                Ok(removed) => {
+                    if removed == true {
+                
+                        self.user_lists.iter_mut().for_each(|(_,list)| list.retain(|list_id| *list_id != media_id));
+                        self.user_data.remove(&media_id);
+
+                        file_operations::write_file_user_data(&mut self.user_data).await;
+                        file_operations::write_file_user_lists(&mut self.user_lists).await;
+                    }
+                    return Ok(removed)
+                },
+                Err(error) => return Err(error),
+            }
+        } else {
+            return Err("media id does not exist");
         }
     }
 
@@ -342,6 +347,9 @@ impl UserData {
 
         if self.user_lists.contains_key(name) == false {
             // list is missing, get it
+            api_calls::anilist_get_list(self.setting.username.clone(), String::from(name), self.token.access_token.clone(), &mut self.user_data, &mut self.user_lists).await;
+            file_operations::write_file_user_lists(&self.user_lists).await;
+            file_operations::write_file_user_data(&self.user_data).await;
         }
 
         let list = self.user_lists.get(name).unwrap().clone();
@@ -415,23 +423,29 @@ impl UserData {
     pub async fn increment_episode(&mut self, media_id: i32, length: i32) -> Result<bool, &'static str> {
         
         if let Some(mut media) = self.user_data.get(&media_id).cloned() {
+
+            if media.progress == 0 {
+                media.status = constants::USER_STATUSES[0].to_string(); // current
+                GLOBAL_REFRESH_UI.lock().await.anime_list = true;
+            }
+
+            media.progress += length;
+
             if let Some(episodes) = self.max_episodes.get(&media_id).cloned() {
-                if episodes.is_none() || media.progress + length <= episodes.unwrap() {
-                    media.progress += length;
-                    if media.progress >= episodes.unwrap() {
+                if let Some(episodes_unwrapped) = episodes {
+
+                    if media.progress >= episodes_unwrapped {
                         media.status = constants::USER_STATUSES[1].to_string(); // completed
                         GLOBAL_REFRESH_UI.lock().await.anime_list = true;
                     }
-                    match self.set_user_data(media, true).await {
-                        Ok(_result) => {
-                            // do nothing
-                        },
-                        Err(error) => println!("{}", error),
-                    }
                 }
-            } else {
-                println!("increment_episode: missing max episodes");
             }
+
+            match self.set_user_data(media, true).await {
+                Ok(_result) => {},
+                Err(error) => println!("{}", error),
+            }
+
         } else {
             println!("increment_episode: userinfo missing");
         }

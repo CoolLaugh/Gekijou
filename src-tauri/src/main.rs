@@ -125,9 +125,7 @@ async fn set_user_settings(settings: UserSettings) {
 
     if scan {
         let folders = GLOBAL_USER_DATA.lock().await.get_user_settings().folders;
-        for folder in folders {
-            GLOBAL_ANIME_DATA2.lock().await.scan_folder(folder, true, None);
-        }
+        GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, true, None).await;
     }
 
     GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
@@ -300,7 +298,7 @@ async fn update_user_entry(anime: UserInfo) {
 // changes the custom title of anime with id of anime_id to title
 #[tauri::command]
 async fn set_custom_filename(anime_id: i32, title: String) {
-    GLOBAL_ANIME_DATA2.lock().await.set_custom_filename(anime_id, title);
+    GLOBAL_ANIME_DATA2.lock().await.set_custom_filename(anime_id, title).await;
 }
 
 
@@ -329,6 +327,13 @@ async fn on_startup() {
     let episodes = anime_data.get_anime_episodes();
     user_data.set_max_episodes(episodes);
 
+    for id in anime_data.nonexistent_ids.clone() {
+        match user_data.remove_anime(id).await {
+            Ok(_) => {},
+            Err(error) => println!("{}", error)
+        }
+    }
+
     *GLOBAL_STARTUP_FINISHED.lock().await = true;
 }
 
@@ -351,16 +356,18 @@ async fn play_next_episode(id: i32) -> Result<(), &'static str> {
             let next_episode = user_info.progress + 1;
 
             if play_episode(id, next_episode).await == false {
-                println!("play_next_episode 1");
                 // if episode location is unknown, search for new episodes and try again
                 let folders = user_data.get_user_settings().folders;
-                println!("play_next_episode 2");
+                // don't interrupt another scan
+                if GLOBAL_REFRESH_UI.lock().await.scan_data.total_folders > 0 {
+                    return Ok(());
+                }
                 GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(String::from("Searching For Episode"));
-                GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, false, Some(id)).await;
+                if GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, false, Some(id)).await {
+                    GLOBAL_REFRESH_UI.lock().await.canvas = true;
+                }
                 GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
-                println!("play_next_episode 3");
                 play_episode(id, next_episode).await;
-                println!("play_next_episode 4");
             }
             Ok(())
         },
@@ -374,7 +381,7 @@ async fn play_next_episode(id: i32) -> Result<(), &'static str> {
 // returns true if the episode was played
 async fn play_episode(anime_id: i32, episode: i32) -> bool {
     println!("play {} episode {}", anime_id, episode);
-    GLOBAL_ANIME_DATA2.lock().await.play_episode(anime_id, episode)
+    GLOBAL_ANIME_DATA2.lock().await.play_episode(anime_id, episode).await
 }
 
 
@@ -392,8 +399,13 @@ async fn increment_decrement_episode(anime_id: i32, change: i32) {
 // scan folders for episodes of anime
 #[tauri::command]
 async fn scan_anime_folder() -> bool {
+    if GLOBAL_REFRESH_UI.lock().await.scan_data.total_folders > 0 {
+        return false;
+    }
     let folders = GLOBAL_USER_DATA.lock().await.get_user_settings().folders;
-    GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, true, None).await
+    let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
+    anime_data.scan_new_ids(folders.clone()).await;
+    anime_data.scan_folders(folders, true, None).await
 }
 
 
@@ -451,7 +463,7 @@ async fn anime_update_delay() {
         title_edit = mpv_remove.replace(&title_edit, "").to_string();
         title_edit = pot_remove.replace(&title_edit, "").to_string();
 
-        if let Some(identify_info) = anime_data.identify_anime(title, None) {
+        if let Some(identify_info) = anime_data.identify_anime(title_edit, None) {
 
             if let Ok(user_entry) = user_data.get_user_data(identify_info.media_id) {
 
@@ -626,17 +638,16 @@ async fn add_to_list(id: i32, list: String) {
 
     update_user_entry(user_anime).await;
 
-    let folders = GLOBAL_USER_DATA.lock().await.get_user_settings().folders;
-    GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, false, Some(id)).await;
+    GLOBAL_ANIME_DATA2.lock().await.add_id_for_scanning(id);
 }
 
 
 
 // removes anime from the users list
 #[tauri::command]
-async fn remove_anime(id: i32, media_id: i32) -> Result<bool, &'static str> {
+async fn remove_anime(media_id: i32) -> Result<bool, &'static str> {
 
-    GLOBAL_USER_DATA.lock().await.remove_anime(id, media_id).await
+    GLOBAL_USER_DATA.lock().await.remove_anime(media_id).await
 }
 
 
@@ -772,6 +783,9 @@ async fn startup_finished() -> bool {
 
 #[tauri::command]
 async fn manual_scan() {
+    if GLOBAL_REFRESH_UI.lock().await.scan_data.total_folders > 0 {
+        return;
+    }
     let folders = GLOBAL_USER_DATA.lock().await.get_user_settings().folders;
     GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, false, None).await;
 }

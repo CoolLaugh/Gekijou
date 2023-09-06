@@ -83,11 +83,11 @@ pub async fn read_file_episode_path(episode_path: &mut HashMap<i32, HashMap<i32,
     read_file_data(episode_path, "episode_path").await
 }
 
-pub async fn write_file_known_files(known_files: &HashSet<String>) {
+pub async fn write_file_known_files(known_files: &HashSet<u64>) {
     write_file_data(&known_files, "known_files");
 }
 
-pub async fn read_file_known_files(known_files: &mut HashSet<String>) -> Result<(), &'static str> {
+pub async fn read_file_known_files(known_files: &mut HashSet<u64>) -> Result<(), &'static str> {
     read_file_data(known_files, "known_files").await
 }
 
