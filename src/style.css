@@ -140,7 +140,7 @@ dialog::backdrop {
   transform: translate(-50%,-50%);
   background-color: var(--background-color2);
   width: 932px;
-  min-height: 411px;
+  min-height: 631px;
   display: grid;
   border-radius: 10px;
   padding: 10px;
@@ -269,6 +269,7 @@ dialog::backdrop {
   font-size: 24px;
   vertical-align: bottom;
   height: 30px;
+  text-align: center;
 }
 
 .anime_info_title_row p {
@@ -287,6 +288,9 @@ dialog::backdrop {
 
 .anime_info_cover {
   max-width: 200px;
+  margin-left: 0px;
+  margin-top: 4px;
+  margin-right: 8px;
 }
 
 #delete_anime:hover {
@@ -294,9 +298,15 @@ dialog::backdrop {
 }
 
 .anime_info_text {
-  min-height: 150px;
-  max-height: 300px;
-  Overflow-y: auto;
+  min-height: 310px;
+  max-height: 330px;
+  display: flex;
+}
+
+.torrent_table td {
+  text-align: center;
+  text-wrap: nowrap;
+  overflow: hidden;
 }
 
 .anilist_login_panel {

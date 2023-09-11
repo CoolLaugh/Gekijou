@@ -215,7 +215,7 @@ impl UserData {
 
     pub async fn set_user_data(&mut self, mut data: UserInfo, update_website: bool) -> Result<Option<UserInfo>, &'static str> {
         
-        println!("{:?}", data);
+        println!("set_user_data: {:?}", data);
 
         if USER_STATUSES.contains(&data.status.as_str()) == false {
             return Err("invalid status");
@@ -284,8 +284,8 @@ impl UserData {
                 println!("ERROR: started_at is None"); // this function should always be called with started_at existing
             }
         }
-
-        if data.status == "CURRENT" &&  data.progress > 0 && old_progress == 0 {
+        println!("data {:?} old progress {}", data, old_progress);
+        if data.status == constants::USER_STATUSES[0] /* current */ &&  data.progress > 0 && old_progress == 0 {
             if let Some(started_at) = &data.started_at {
                 if started_at.day.is_none() && started_at.month.is_none() && started_at.year.is_none() { // user didn't input a date
                     let now: DateTime<Local> = Local::now();
@@ -424,7 +424,7 @@ impl UserData {
         
         if let Some(mut media) = self.user_data.get(&media_id).cloned() {
 
-            if media.progress == 0 {
+            if media.progress == 0 && media.status == constants::USER_STATUSES[4] /* Planning */ {
                 media.status = constants::USER_STATUSES[0].to_string(); // current
                 GLOBAL_REFRESH_UI.lock().await.anime_list = true;
             }
@@ -490,6 +490,11 @@ impl UserData {
                     scan = true;
                 }
             }
+        }
+
+        if self.setting.show_adult != new_user_settings.show_adult ||
+            self.setting.title_language != new_user_settings.title_language {
+            GLOBAL_REFRESH_UI.lock().await.anime_list = true;
         }
 
         let old_current_tab = self.setting.current_tab.clone(); // don't change this value

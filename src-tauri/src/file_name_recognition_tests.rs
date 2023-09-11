@@ -1,7 +1,7 @@
 use std::{path::Path, fs::File, io::Read};
 use serde::{Serialize, Deserialize};
 
-use crate::{GLOBAL_ANIME_DATA2, anime_data::IdentifyInfo};
+use crate::{GLOBAL_ANIME_DATA, anime_data::IdentifyInfo};
 
 
 
@@ -46,7 +46,7 @@ pub async fn filename_tests() -> Vec<FilenameTest> {
         Ok(file) => file,
     };
     
-    let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
     let filenames_values: Vec<serde_json::Value> = serde_json::from_str(&buffer).unwrap();
     let mut test_results: Vec<FilenameTest> = Vec::new();
     let mut anime_ids: Vec<i32> = Vec::new();

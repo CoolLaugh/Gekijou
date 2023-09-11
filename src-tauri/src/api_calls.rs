@@ -278,7 +278,7 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
     Page(page: $page, perPage: 50) {
         pageInfo { total perPage currentPage lastPage hasNextPage }
         media(type: $type season: $season format_in: $format seasonYear: $seasonYear genre_in: $genres tag_in: $tags search: $search sort: $sort) {
-            id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+            id title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
             duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
             relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
             recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
@@ -290,7 +290,7 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
 }";
 
 // retrieve a list of anime based on criteria like the year/season it was released, format, or genre
-pub async fn anilist_browse_call(page: i32, year: String, season: String, genre: String, format: String, search: String, order: String) -> Result<serde_json::Value, &'static str> {
+pub async fn anilist_browse_call(page: usize, year: String, season: String, genre: String, format: String, search: String, order: String) -> Result<serde_json::Value, &'static str> {
 
     let mut variables = json!({"page": page, "type": "ANIME"});
     if year.is_empty() == false {
@@ -371,7 +371,7 @@ query($page: Int $ids: [Int]) {
     Page(page: $page, perPage: 50) {
         pageInfo { total perPage currentPage lastPage hasNextPage }
         media(type: ANIME, id_in: $ids) {
-          id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+          id title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
           duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
           relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
           recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
@@ -457,7 +457,7 @@ query($userName: String, $status: [MediaListStatus]) {
       entries {
         id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day } notes
         media {
-          id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+          id title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
           duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
           relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
           recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }

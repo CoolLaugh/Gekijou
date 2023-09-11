@@ -1,11 +1,11 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}, path::Path, time::{SystemTime, UNIX_EPOCH}, io::ErrorKind};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}, path::Path, time::{SystemTime, UNIX_EPOCH, Instant}, io::ErrorKind};
 use std::hash::{Hash, Hasher};
 
 use regex::Regex;
 use serde::{Serialize, Deserialize};
 use walkdir::WalkDir;
 
-use crate::{api_calls, user_data::UserInfo, constants, GLOBAL_REFRESH_UI, file_operations, recommendation};
+use crate::{api_calls, user_data::UserInfo, constants, GLOBAL_REFRESH_UI, file_operations};
 
 
 
@@ -33,6 +33,7 @@ pub struct AnimeInfo {
     pub trending: i32,
     pub studios: Studio,
     pub next_airing_episode: Option<NextAiringEpisode>,
+    pub synonyms: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -252,6 +253,7 @@ struct RecommendTally {
     pub rating: f32,
 }
 
+#[derive(Clone)]
 pub struct AnimeData {
     pub data : HashMap<i32, AnimeInfo>,
     pub nonexistent_ids: HashSet<i32>,
@@ -650,6 +652,9 @@ impl AnimeData {
         if anime.title.english.is_some() { titles.push(self.replace_special_vowels(anime.title.english.clone().unwrap().to_ascii_lowercase())) }
         if anime.title.romaji.is_some() { titles.push(self.replace_special_vowels(anime.title.romaji.clone().unwrap().to_ascii_lowercase())) }
         if anime.title.custom.is_some() { titles.push(self.replace_special_vowels(anime.title.custom.clone().unwrap().to_ascii_lowercase())) }
+        for synonym in anime.synonyms.clone() {
+            titles.push(self.replace_special_vowels(synonym.to_ascii_lowercase()));
+        }
     
         for title in titles {
     

@@ -27,7 +27,7 @@ use tauri::async_runtime::Mutex;
 use tauri::Manager;
 use user_data::{UserData, UserInfo, UserSettings};
 use window_titles::{Connection, ConnectionTrait};
-use std::{collections::{HashMap, HashSet}, path::Path, time::{Duration, Instant}, ops::Range};
+use std::{collections::{HashMap, HashSet}, path::Path, time::{Duration, Instant}, ops::{Range, Deref}};
 use open;
 use api_calls::MangaInfo;
 use crate::anime_data::{AnimeData, AnimePath};
@@ -83,7 +83,7 @@ lazy_static! {
     static ref GLOBAL_REFRESH_UI: Mutex<RefreshUI> = Mutex::new(RefreshUI::default());
     static ref GLOBAL_UPDATE_ANIME_DELAYED: Mutex<HashMap<i32, Instant>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_DATA: Mutex<UserData> = Mutex::new(UserData::new());
-    static ref GLOBAL_ANIME_DATA2: Mutex<AnimeData> = Mutex::new(AnimeData::new());
+    static ref GLOBAL_ANIME_DATA: Mutex<AnimeData> = Mutex::new(AnimeData::new());
 }
 
 
@@ -114,7 +114,7 @@ async fn set_user_settings(settings: UserSettings) {
     if let Some(ids) = media_ids {
         // get anime data from anilist
         GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(format!("Downloading Anime Data"));
-        let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
+        let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
         anime_data.get_anime_list_data(ids).await;
         if anime_data.new_anime == true {
             GLOBAL_USER_DATA.lock().await.set_max_episodes(anime_data.get_anime_episodes());
@@ -124,8 +124,7 @@ async fn set_user_settings(settings: UserSettings) {
     }
 
     if scan {
-        let folders = GLOBAL_USER_DATA.lock().await.get_user_settings().folders;
-        GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, true, None).await;
+        scan_anime_folder();
     }
 
     GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
@@ -173,7 +172,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
         Err(error) => { return Err(error); },
     };
 
-    let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
     let anime_list_data = match anime_data.get_anime_list_data(list).await {
         Ok(list) => { 
             if anime_data.new_anime == true {
@@ -249,7 +248,7 @@ async fn get_delay_info() -> UpdateDelayInfo {
 #[tauri::command]
 async fn get_anime_info(id: i32) -> Option<AnimeInfo> {
 
-    let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
     match anime_data.get_anime_data(id).await {
         Ok(result) => {
             if anime_data.new_anime == true {
@@ -298,7 +297,7 @@ async fn update_user_entry(anime: UserInfo) {
 // changes the custom title of anime with id of anime_id to title
 #[tauri::command]
 async fn set_custom_filename(anime_id: i32, title: String) {
-    GLOBAL_ANIME_DATA2.lock().await.set_custom_filename(anime_id, title).await;
+    GLOBAL_ANIME_DATA.lock().await.set_custom_filename(anime_id, title).await;
 }
 
 
@@ -306,7 +305,7 @@ async fn set_custom_filename(anime_id: i32, title: String) {
 // returns the custom title set by the user previously, if the custom title or anime doesn't exist a empty string is returned
 #[tauri::command]
 async fn get_custom_filename(anime_id: i32) -> String {
-    match GLOBAL_ANIME_DATA2.lock().await.get_custom_filename(anime_id) {
+    match GLOBAL_ANIME_DATA.lock().await.get_custom_filename(anime_id) {
         Some(title) => return title,
         None => return String::new(),
     }
@@ -322,7 +321,7 @@ async fn on_startup() {
     user_data.read_files().await;
     user_data.pull_updates().await;
 
-    let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
     anime_data.read_files().await;
     let episodes = anime_data.get_anime_episodes();
     user_data.set_max_episodes(episodes);
@@ -363,7 +362,7 @@ async fn play_next_episode(id: i32) -> Result<(), &'static str> {
                     return Ok(());
                 }
                 GLOBAL_REFRESH_UI.lock().await.loading_dialog = Some(String::from("Searching For Episode"));
-                if GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, false, Some(id)).await {
+                if GLOBAL_ANIME_DATA.lock().await.scan_folders(folders, false, Some(id)).await {
                     GLOBAL_REFRESH_UI.lock().await.canvas = true;
                 }
                 GLOBAL_REFRESH_UI.lock().await.loading_dialog = None;
@@ -381,7 +380,7 @@ async fn play_next_episode(id: i32) -> Result<(), &'static str> {
 // returns true if the episode was played
 async fn play_episode(anime_id: i32, episode: i32) -> bool {
     println!("play {} episode {}", anime_id, episode);
-    GLOBAL_ANIME_DATA2.lock().await.play_episode(anime_id, episode).await
+    GLOBAL_ANIME_DATA.lock().await.play_episode(anime_id, episode).await
 }
 
 
@@ -403,9 +402,12 @@ async fn scan_anime_folder() -> bool {
         return false;
     }
     let folders = GLOBAL_USER_DATA.lock().await.get_user_settings().folders;
-    let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
+    // make a copy because scan folders will take a long time
+    let mut anime_data: AnimeData = GLOBAL_ANIME_DATA.lock().await.clone();
     anime_data.scan_new_ids(folders.clone()).await;
-    anime_data.scan_folders(folders, true, None).await
+    let file_found = anime_data.scan_folders(folders, true, None).await;
+    *GLOBAL_ANIME_DATA.lock().await = anime_data;
+    file_found
 }
 
 
@@ -447,7 +449,7 @@ async fn anime_update_delay() {
     let mut titles: Vec<String> = get_titles(); // for some reason mutex locking has to happen before this function
     titles.retain(|title| video_files.is_match(title));
 
-    let anime_data = GLOBAL_ANIME_DATA2.lock().await;
+    let anime_data = GLOBAL_ANIME_DATA.lock().await;
     let mut user_data = GLOBAL_USER_DATA.lock().await;
     let mut watching_data = WATCHING_TRACKING.lock().await;
 
@@ -565,7 +567,7 @@ async fn background_tasks() {
 // returns a list of what episodes of what anime exist on disk
 #[tauri::command]
 async fn episodes_exist() -> HashMap<i32, Vec<i32>> {
-    GLOBAL_ANIME_DATA2.lock().await.get_existing_files_all_anime()
+    GLOBAL_ANIME_DATA.lock().await.get_existing_files_all_anime()
 }
 
 
@@ -574,7 +576,7 @@ async fn episodes_exist() -> HashMap<i32, Vec<i32>> {
 #[tauri::command]
 async fn episodes_exist_single(id: i32) -> Vec<i32> {
     
-    GLOBAL_ANIME_DATA2.lock().await.get_existing_files(id)
+    GLOBAL_ANIME_DATA.lock().await.get_existing_files(id)
 }
 
 
@@ -582,48 +584,38 @@ async fn episodes_exist_single(id: i32) -> Vec<i32> {
 // returns a list of anime based on filters and sorting order
 // anime in user's list does not matter and user login is not used
 #[tauri::command]
-async fn browse(year: String, season: String, genre: String, format: String, search: String, order: String) -> Result<Vec<AnimeInfo>, &'static str> {
+async fn browse(year: String, season: String, genre: String, format: String, search: String, order: String, page: usize) -> Result<(Vec<AnimeInfo>, bool), &'static str> {
 
     let mut list: Vec<AnimeInfo> = Vec::new();
     let mut has_next_page = true;
 
-    // each page has 50 entries, loop until all entries are retrieved or the limit is reached
-    let mut page = 0;
-    while has_next_page {
-        
-        match api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone(), search.clone(), order.clone()).await {
-            Ok(response) =>  {
-
-                page += 1;
-        
-                // add anime to return list and global data for further uses
-                for anime in response["data"]["Page"]["media"].as_array().unwrap() {
-        
-                    let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
-                    list.push(anime_entry);
-                }
-        
-                // limit number of pages for a timely response
-                if page >= constants::BROWSE_PAGE_LIMIT {
-                    break;
-                }
-
-                // check if a next page exists
-                if let Some(response_next_page) = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
-                    has_next_page = response_next_page;
-                } else {
-                    has_next_page = false;
-                }
-            },
-            Err(error) => { 
-                GLOBAL_REFRESH_UI.lock().await.no_internet = true;
-                GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Cannot browse anilist. No internet connection."));
-                return Err(error);
-            },
-        }
-    }
     
-    Ok(list)
+    match api_calls::anilist_browse_call(page, year.clone(), season.clone(), genre.clone(), format.clone(), search.clone(), order.clone()).await {
+        Ok(response) =>  {
+
+            // add anime to return list and global data for further uses
+            for anime in response["data"]["Page"]["media"].as_array().unwrap() {
+    
+                let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
+                list.push(anime_entry);
+            }
+    
+            // check if a next page exists
+            if let Some(response_next_page) = response["data"]["Page"]["pageInfo"]["hasNextPage"].as_bool() {
+                has_next_page = response_next_page;
+            } else {
+                has_next_page = false;
+            }
+        },
+        Err(error) => { 
+            GLOBAL_REFRESH_UI.lock().await.no_internet = true;
+            GLOBAL_REFRESH_UI.lock().await.errors.push(String::from("Cannot browse anilist. No internet connection."));
+            return Err(error);
+        },
+    }
+
+    
+    Ok((list,has_next_page))
 }
 
 
@@ -638,7 +630,7 @@ async fn add_to_list(id: i32, list: String) {
 
     update_user_entry(user_anime).await;
 
-    GLOBAL_ANIME_DATA2.lock().await.add_id_for_scanning(id);
+    GLOBAL_ANIME_DATA.lock().await.add_id_for_scanning(id);
 }
 
 
@@ -688,23 +680,24 @@ async fn recommend_anime(mode: String, genre_filter: String, year_min_filter: i3
     let completed_scores = user_data.get_scores_from_list(String::from("COMPLETED"));
     let user_anime = user_data.all_ids();
     let score_format = user_data.get_user_settings().score_format;
-    let ids = GLOBAL_ANIME_DATA2.lock().await.recommendations(completed_scores, user_anime, score_format, mode, genre_filter, year_min_filter, year_max_filter, format_filter).await;
-    let mut anime: Vec<AnimeInfo> = Vec::new();
-    let mut anime_data = GLOBAL_ANIME_DATA2.lock().await;
-    for id in ids {
-        if anime_data.contains_key(id) == false {
-            println!("missing: {}", id);
-            continue;
-        }
-        anime.push(anime_data.get_anime_data(id).await.unwrap());
-    }
+    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+    let ids = anime_data.recommendations(completed_scores, user_anime, score_format, mode, genre_filter, year_min_filter, year_max_filter, format_filter).await;
+    let anime = anime_data.get_anime_list_data(ids).await;
 
     if anime_data.new_anime == true {
         user_data.set_max_episodes(anime_data.get_anime_episodes());
         anime_data.new_anime = false;
     }
-
-    anime
+    
+    match anime {
+        Ok(anime_list) => {
+            return anime_list;
+        },
+        Err(error) => { 
+            println!("{}", error);
+            return Vec::new();
+        },
+    }
 }
 
 
@@ -762,7 +755,7 @@ async fn get_debug() -> bool {
 async fn delete_data() -> bool {
 
     GLOBAL_USER_DATA.lock().await.clear();
-    GLOBAL_ANIME_DATA2.lock().await.clear();
+    GLOBAL_ANIME_DATA.lock().await.clear();
 
     GLOBAL_REFRESH_UI.lock().await.clear();
     GLOBAL_UPDATE_ANIME_DELAYED.lock().await.clear();
@@ -787,7 +780,10 @@ async fn manual_scan() {
         return;
     }
     let folders = GLOBAL_USER_DATA.lock().await.get_user_settings().folders;
-    GLOBAL_ANIME_DATA2.lock().await.scan_folders(folders, false, None).await;
+    // make a copy because scan folders will take a long time
+    let mut anime_data: AnimeData = GLOBAL_ANIME_DATA.lock().await.clone();
+    anime_data.scan_folders(folders, false, None).await;
+    *GLOBAL_ANIME_DATA.lock().await = anime_data;
 }
 
 

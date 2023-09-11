@@ -524,6 +524,7 @@ async function show_anime_list_paged(page) {
     if (page == 0) {
       removeChildren(document.getElementById("cover_panel_grid"));
       list_ids = await invoke("get_list_ids", { list: current_tab });
+      anime_info.clear();
     }
 
     if (get_list_response.length == 0) {
@@ -540,7 +541,8 @@ async function show_anime_list_paged(page) {
       if(user_settings.show_adult == false && get_list_response[i][0].is_adult == true) {
         continue;
       }
-      await add_anime(get_list_response[i][0], get_list_response[i][1], i, user_settings.score_format, user_settings.show_airing_time);
+      await add_anime(get_list_response[i][0], get_list_response[i][1], i, user_settings);
+      anime_info.set(get_list_response[i][0].id, get_list_response[i][0]);
     }
     current_page++;
   }
@@ -591,7 +593,7 @@ async function show_recommended_anime_list() {
       if(user_settings.show_adult == false && recommended_list[i].is_adult == true) {
         continue;
       }
-      await add_anime(recommended_list[i], null, i, user_settings.score_format, user_settings.show_airing_time);
+      await add_anime(recommended_list[i], null, i, user_settings);
       list_ids.push(recommended_list[i].id);
     }
   }
@@ -711,9 +713,9 @@ async function sort_anime() {
 
 // add an anime to the ui
 window.add_anime = add_anime;
-async function add_anime(anime, user_data, cover_id, score_format, show_airing) {
+async function add_anime(anime, user_data, cover_id, user_settings) {
 
-  var title = await determine_title(anime.title, null);
+  var title = await determine_title(anime.title, user_settings);
 
   // left side of episode text
   var episode_text = "";
@@ -755,7 +757,7 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
     display_trailer = "block";
   }
 
-  var sort_value = await determine_sort_value(anime, user_data, score_format);
+  var sort_value = determine_sort_value(anime, user_data, user_settings.score_format);
   var display_sort_value = "none";
   if (sort_value != null && sort_value.length > 0) {
     display_sort_value = "block";
@@ -765,7 +767,7 @@ async function add_anime(anime, user_data, cover_id, score_format, show_airing) 
   var airing_value = "";
   var airing_at = 0;
   var airing_ep = 0;
-  if (anime.next_airing_episode != null && show_airing == true) {
+  if (anime.next_airing_episode != null && user_settings.show_airing_time == true) {
     display_airing_value = "block";
     airing_at = anime.next_airing_episode.airing_at * 1000;
     airing_ep = anime.next_airing_episode.episode;
@@ -838,7 +840,7 @@ var x = setInterval(function() {
   }
 }, 1000);
 
-async function determine_sort_value(anime, user_data, score_format) {
+function determine_sort_value(anime, user_data, score_format) {
 
   switch(document.getElementById("sort_order").value) {
     case "Alphabetical":
@@ -1108,6 +1110,7 @@ document.querySelector("#search_text").addEventListener("keyup", event => {
   event.preventDefault();
 });
 
+var anime_info = new Map();
 // fill in the ui with anime retrieved from anilist based on the categories selected
 window.browse_update = browse_update;
 async function browse_update() {
@@ -1154,27 +1157,43 @@ async function browse_update() {
   }
 
   try {
-    var list = await invoke("browse", {year: year, season: season, genre: genre, format: format, search: search, order: sort_value});
-
-    // ignore browse returns with different filters
-    if (year != document.getElementById("year_select").value ||
-        season != document.getElementById("season_select").value ||
-        format != document.getElementById("format_select").value ||
-        genre != document.getElementById("genre_select").value ||
-        sort != document.getElementById("sort_order").value) {
-      return;
-    }
 
     removeChildren(document.getElementById("cover_panel_grid"));
     list_ids = [];
-    for(var i = 0; i < list.length; i++) {
-  
-      if(user_settings.show_adult == false && list[i].is_adult == true) {
-        continue;
+    anime_info.clear();
+
+    for(var page = 1; page <= 4; page++) {
+
+      var response = await invoke("browse", {year: year, season: season, genre: genre, format: format, search: search, order: sort_value, page: page});
+      var list = response[0];
+      var has_next_page = response[1];
+
+      console.log(list);
+      // ignore browse returns with different filters
+      if (year != document.getElementById("year_select").value ||
+          season != document.getElementById("season_select").value ||
+          format != document.getElementById("format_select").value ||
+          genre != document.getElementById("genre_select").value ||
+          sort != document.getElementById("sort_order").value) {
+        return;
       }
-      add_anime(list[i], null, i, user_settings.score_format, user_settings.show_airing_time);
-      list_ids.push(list[i].id);
+  
+      for(var i = 0; i < list.length; i++) {
+    
+        if(user_settings.show_adult == false && list[i].is_adult == true) {
+          continue;
+        }
+        
+        add_anime(list[i], null, i, user_settings);
+        list_ids.push(list[i].id);
+        anime_info.set(list[i].id, list[i]);
+      }
+
+      if(has_next_page == false) {
+        break;
+      }
     }
+
   } catch (error) {
     // do nothing
   }
@@ -1673,7 +1692,12 @@ async function show_anime_info_window(anime_id) {
 
   // retrieve necessary information
   var user_settings = await invoke("get_user_settings");
-  var info = await invoke("get_anime_info", {id: anime_id});
+  var info;
+  if(anime_info.has(anime_id)) {
+    info = anime_info.get(anime_id);
+  } else {
+    info = await invoke("get_anime_info", {id: anime_id});
+  }
   var title = await determine_title(info.title, user_settings);
 
   // fill in info window with data
@@ -1701,13 +1725,23 @@ async function show_anime_info_window(anime_id) {
     }
     var index_next = (index + 1) % list_ids.length;
   
-    var previous_info = await invoke("get_anime_info", {id: list_ids[index_previous]});
+    var previous_info;
+    if(anime_info.has(list_ids[index_previous])) {
+      previous_info = anime_info.get(list_ids[index_previous]);
+    } else {
+      previous_info = await invoke("get_anime_info", {id: list_ids[index_previous]});
+    }
     var previous_title = await determine_title(previous_info.title, user_settings);
     document.getElementById("info_window_previous").style.display = "";
     document.getElementById("info_window_previous").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_previous] + ")");
     document.getElementById("info_window_previous").title = previous_title;
   
-    var next_info = await invoke("get_anime_info", {id: list_ids[index_next]});
+    var next_info;
+    if(anime_info.has(list_ids[index_next])) {
+      next_info = anime_info.get(list_ids[index_next]);
+    } else {
+      next_info = await invoke("get_anime_info", {id: list_ids[index_next]});
+    }
     var next_title = await determine_title(next_info.title, user_settings);
     document.getElementById("info_window_next").style.display = "";
     document.getElementById("info_window_next").setAttribute("onclick", "show_anime_info_window(" + list_ids[index_next] + ")");
@@ -1957,7 +1991,7 @@ async function add_user_data(anime_id, user_settings) {
     var user_data = await invoke("get_user_info", {id: anime_id});
   
     setup_score_dropdown(user_settings.score_format);
-
+    console.log(user_data);
     if (user_data != null) {
       document.getElementById("delete_anime").onclick = function() { confirm_delete_entry(user_data.media_id); }
       document.getElementById("status_select").value = user_data.status;
@@ -2429,30 +2463,32 @@ function add_torrent_row(table, rss_entry) {
   a.onclick = function() { open_window(magnet) };
   download_link_cell.appendChild(a);
 
-  var sub_group_cell = row.insertCell(1);
-  sub_group_cell.innerHTML = rss_entry.derived_values.sub_group;
+  //var sub_group_cell = row.insertCell(1);
+  //sub_group_cell.innerHTML = rss_entry.derived_values.sub_group;
 
-  var title_cell = row.insertCell(2);
+  var title_cell = row.insertCell(1);
   title_cell.innerHTML = rss_entry.derived_values.title;
+  title_cell.style = "text-align: left;";
+  title_cell.title = rss_entry.derived_values.title;
 
-  var episode_cell = row.insertCell(3);
+  var episode_cell = row.insertCell(2);
   if (rss_entry.derived_values.batch == false) {
     episode_cell.innerHTML = "Ep " + rss_entry.derived_values.episode;
   } else {
     episode_cell.innerHTML = "Batch";
   }
 
-  var resolution_cell = row.insertCell(4);
+  var resolution_cell = row.insertCell(3);
   if (rss_entry.derived_values.resolution == 0) {
     resolution_cell.innerHTML = "Unknown";
   } else {
     resolution_cell.innerHTML = rss_entry.derived_values.resolution + "p";
   }
 
-  var size_cell = row.insertCell(5);
+  var size_cell = row.insertCell(4);
   size_cell.innerHTML = rss_entry.size_string;
 
-  var downloads_cell = row.insertCell(6);
+  var downloads_cell = row.insertCell(5);
   downloads_cell.innerHTML = rss_entry.downloads + " dl";
 
 }

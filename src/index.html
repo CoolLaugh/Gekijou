@@ -75,11 +75,7 @@
           <button class="anime_info_close"id="info_close_button" onclick="hide_anime_info_window()" style="float: right;"><span href="#" class="innerButton">✖</span></button>
         </div>
         <div class="anime_info_lower">
-          <div class="anime_info_cover">
-            <img style="cursor:pointer" alt="Cover Image" height="300" id="info_cover" src="" width="200">
-            <table><tbody><tr><th><p id="studio">Studio</p></th></tr></tbody></table>
-          </div>
-          <div style="width: 727px;">
+          <div style="width: 932px;">
             <div class="tab_navigation">
               <a href="#information" onclick="openTab('information', 'underline_tab_0')">Information<div class="tab_underline" id="underline_tab_0" style="visibility: visible;"></div></a>
               <a href="#user_entry" onclick="openTab('user_entry', 'underline_tab_1')" id="my_list_tab">My List<div class="tab_underline" id="underline_tab_1"></div></a>
@@ -89,7 +85,10 @@
             </div>
             <div class="tab_content" id="information" style="display: block;">
               <div class="anime_info_text">
-                <p id="info_description"></p>
+                <div class="anime_info_cover">
+                  <img style="cursor:pointer" alt="Cover Image" height="300" id="info_cover" src="" width="200">
+                </div>
+                <p id="info_description" style="Overflow-y: auto;"></p>
               </div>
               <div>
                 <table>
@@ -99,6 +98,7 @@
                       <th><p id="info_rating"></p></th>
                       <th><p id="info_duration"></p></th>
                       <th><p id="info_season_year"></p></th>
+                      <th><p id="studio">Studio</p></th>
                     </tr>
                   </tbody>
                 </table>
@@ -107,13 +107,13 @@
               <div><p id="info_tags"></p></div>
             </div>
             <div class="tab_content" id="user_entry">
-              <table style="text-align: left;">
+              <table style="text-align: left; display: flex; -webkit-border-vertical-spacing: 40px;">
                 <thead>
                 </thead>
                 <tbody>
                   <tr>
-                    <th style="text-align: right; padding-right: 10px;"><p>Status:</p></th>
-                    <th>
+                    <th style="text-align: right; padding-right: 10px; width: 220px;"><p>Status:</p></th>
+                    <th style="width: 233px;">
                       <select id="status_select" name="status select" onchange="status_change()">
                         <option value="CURRENT">Watching</option>
                         <option value="COMPLETED">Completed</option>
@@ -124,38 +124,32 @@
                       </select>
                       <button id="delete_anime" onclick="" type="button">Delete</button>
                     </th>
+                    <th style="text-align: right; padding-right: 10px; width: 102px;"><p>Episode: </p></th>
+                    <th><input id="episode_number" max="26" min="0" name="quantity" type="number"></th>
                   </tr>
                   <tr>
-                    <th style="text-align: right; padding-right: 10px;"><p>Episode: </p></th>
-                    <th><input id="episode_number" max="26" min="0" name="quantity" type="number"></th>
+                    <th style="text-align: right; padding-right: 10px;"><p>Started: </p></th>
+                    <th><input id="started_date" max="2100-12-31" min="1970-01-01" name="started date" type="date" value=""><button class="anime_info_close"id="info_close_button" onclick="clearDate('started_date')" style="vertical-align: middle;"><span href="#" class="innerButton">✖</span></button></th>
+                    <th style="text-align: right; padding-right: 10px;"><p>Finished: </p></th>
+                    <th><input id="finished_date" max="2100-12-31" min="1970-01-01" name="finished date" type="date" value=""><button class="anime_info_close"id="info_close_button" onclick="clearDate('finished_date')" style="vertical-align: middle;"><span href="#" class="innerButton">✖</span></button></th>
                   </tr>
                   <tr>
                     <th style="text-align: right; padding-right: 10px;"><p>Score: </p></th>
                     <th id="score_cell">
                       <input id="score_dropdown" min="0.0" max="10.0" step=0.1 type="number">
                     </th>
-                  </tr>
-                  <tr>
-                    <th style="text-align: right; padding-right: 10px;"><p>Started: </p></th>
-                    <th><input id="started_date" max="2100-12-31" min="1970-01-01" name="started date" type="date" value=""><button class="anime_info_close"id="info_close_button" onclick="clearDate('started_date')" style="vertical-align: middle;"><span href="#" class="innerButton">✖</span></button></th>
-                  </tr>
-                  <tr>
-                    <th style="text-align: right; padding-right: 10px;"><p>Finished: </p></th>
-                    <th><input id="finished_date" max="2100-12-31" min="1970-01-01" name="finished date" type="date" value=""><button class="anime_info_close"id="info_close_button" onclick="clearDate('finished_date')" style="vertical-align: middle;"><span href="#" class="innerButton">✖</span></button></th>
-                  </tr>
-                  <tr>
                     <th style="text-align: right; padding-right: 10px;"><p title="title of the anime used in the filename. Use this if Gekijou can't find the files for this anime">Custom Title: </p></th>
                     <th><input id="custom_filename" type="text"></th>
                   </tr>
                   <tr>
                     <th style="text-align: right; padding-right: 10px;"><p title="">Notes: </p></th>
-                    <th><textarea id="user_notes" cols="45", rows="4" style="resize:vertical; max-height: 200px; min-height: 34px;"></textarea></th>
+                    <th colspan="3"><textarea id="user_notes" cols="67", rows="10" style="resize: none; max-height: 200px; min-height: 34px;"></textarea></th>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div class="tab_content" id="trailer">
-              <iframe allow="autoplay; picture-in-picture" allowfullscreen="" frameborder="0" height="293" id="youtube_embed" src="" title="YouTube video player" width="522" allowfullscreen></iframe>
+            <div class="tab_content" id="trailer" style="display: block;text-align: center;">
+              <iframe allow="autoplay; picture-in-picture" allowfullscreen="" frameborder="0" height="480" id="youtube_embed" src="" title="YouTube video player" width="854" allowfullscreen></iframe>
             </div>
             <div class="tab_content" id="related" style="padding-left: 5px; max-height: 500px; overflow: auto;">
               <div class="related_title"><p>Related</p></div>
@@ -168,10 +162,9 @@
               </div>
             </div>
             <div class="tab_content" id="torrent" style="overflow: auto; scroll-behavior: auto; max-height: 500px;">
-              <table id="torrent_table">
+              <table id="torrent_table" class="torrent_table">
                 <tbody>
                   <tr>
-                    <th style="width: 20px;"></th>
                     <th style="width: 90px;">
                       <select style="width: auto;" id="sub_group_filter" onchange="filter_sort_torrents(0)">
                         <option>Any</option>
