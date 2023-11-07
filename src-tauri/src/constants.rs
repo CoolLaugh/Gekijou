@@ -10,6 +10,7 @@ pub const BROWSE_PAGE_LIMIT: i32 = 4;
 pub const FILENAME_CHUNKS: usize = 200;
 pub const USER_LISTS: [&'static str; 5] = ["CURRENT","COMPLETED","PAUSED","DROPPED","PLANNING"];
 pub const USER_STATUSES: [&'static str; 6] = ["CURRENT","COMPLETED","PAUSED","DROPPED","PLANNING","REPEATING"];
+pub const MAL_USER_STATUSES: [&'static str; 5] = ["watching","completed","on_hold","dropped","plan_to_watch"];
 
 
 #[cfg(debug_assertions)]

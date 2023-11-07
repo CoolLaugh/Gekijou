@@ -899,6 +899,7 @@ dependencies = [
  "dirs",
  "lazy_static",
  "open",
+ "rand 0.8.5",
  "regex",
  "reqwest",
  "serde",

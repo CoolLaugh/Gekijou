@@ -4,7 +4,7 @@ use chrono::{DateTime, Local, Datelike};
 use serde::{Deserialize, Serialize};
 use tauri::async_runtime::Mutex;
 
-use crate::{constants::{USER_STATUSES, USER_LISTS, self}, GLOBAL_REFRESH_UI, api_calls, file_operations};
+use crate::{constants::{USER_STATUSES, USER_LISTS, self}, GLOBAL_REFRESH_UI, api_calls::{self, TokenData}, mal_api_calls, file_operations};
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -81,26 +81,7 @@ impl Date {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct TokenData2 {
-    pub token_type: String,
-    pub expires_in: i32,
-    pub access_token: String,
-    pub refresh_token: String
-}
 
-impl TokenData2 {
-    pub const fn new() -> TokenData2 {
-        TokenData2 { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() }
-    }
-
-    pub fn clear(&mut self) {
-        self.token_type.clear();
-        self.expires_in = 0;
-        self.access_token.clear();
-        self.refresh_token.clear();
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserSettings {
@@ -142,7 +123,7 @@ impl UserSettings {
 pub struct UserDataMutex(Mutex<UserData>);
 pub struct UserData {
     setting: UserSettings,
-    token: TokenData2,
+    token: TokenData,
     user_data: HashMap<i32, UserInfo>,
     user_lists: HashMap<String, Vec<i32>>,
     max_episodes: HashMap<i32, Option<i32>>,
@@ -154,7 +135,7 @@ pub struct UserData {
 impl UserData {
 
     pub fn new() -> UserData {
-        UserData { setting: UserSettings::new(), token: TokenData2::new(), user_data: HashMap::new(), user_lists: HashMap::new(), max_episodes: HashMap::new(), update_queue: Vec::new() }
+        UserData { setting: UserSettings::new(), token: TokenData::new(), user_data: HashMap::new(), user_lists: HashMap::new(), max_episodes: HashMap::new(), update_queue: Vec::new() }
     }
     
     pub fn clear(&mut self) {
@@ -457,6 +438,24 @@ impl UserData {
     pub async fn anilist_oauth_token(&mut self, code: String) -> (bool, String) {
         
         let token = api_calls::anilist_get_access_token2(code).await;
+        let combine = format!("{}\n{}", token.token_type, token.access_token);
+
+        if token.access_token.len() == 0 {
+            return (false, combine);
+        }
+        else {
+            self.token = token;
+        }
+
+        file_operations::write_file_token_data(&self.token).await;
+        
+        (true, String::new())
+    }
+
+    // takes a oauth code from the user and exchanges it for a oauth access token
+    pub async fn mal_oauth_token(&mut self, code: String, code_verifier: String) -> (bool, String) {
+        
+        let token = mal_api_calls::mal_get_access_token(code.as_str(), code_verifier.as_str()).await;
         let combine = format!("{}\n{}", token.token_type, token.access_token);
 
         if token.access_token.len() == 0 {

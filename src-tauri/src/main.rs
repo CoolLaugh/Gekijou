@@ -8,6 +8,7 @@
 pub mod constants;
 pub mod secrets;
 pub mod api_calls;
+pub mod mal_api_calls;
 pub mod file_operations;
 pub mod rss_parser;
 pub mod recommendation;
@@ -31,6 +32,7 @@ use std::{collections::{HashMap, HashSet}, path::Path, time::{Duration, Instant}
 use open;
 use api_calls::MangaInfo;
 use crate::anime_data::{AnimeData, AnimePath};
+use rand::Rng;
 
 
 
@@ -84,6 +86,7 @@ lazy_static! {
     static ref GLOBAL_UPDATE_ANIME_DELAYED: Mutex<HashMap<i32, Instant>> = Mutex::new(HashMap::new());
     static ref GLOBAL_USER_DATA: Mutex<UserData> = Mutex::new(UserData::new());
     static ref GLOBAL_ANIME_DATA: Mutex<AnimeData> = Mutex::new(AnimeData::new());
+    static ref GLOBAL_MAL_CODE_CHALLENGE: Mutex<String> = Mutex::new(String::new());
 }
 
 
@@ -93,6 +96,15 @@ lazy_static! {
 async fn anilist_oauth_token(code: String) -> (bool, String) {
     
     GLOBAL_USER_DATA.lock().await.anilist_oauth_token(code).await
+}
+
+
+
+// takes a oauth code from the user and exchanges it for a oauth access token
+#[tauri::command]
+async fn mal_oauth_token(code: String) -> (bool, String) {
+    
+    GLOBAL_USER_DATA.lock().await.mal_oauth_token(code, GLOBAL_MAL_CODE_CHALLENGE.lock().await.clone()).await
 }
 
 
@@ -595,7 +607,7 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
 
             // add anime to return list and global data for further uses
             for anime in response["data"]["Page"]["media"].as_array().unwrap() {
-    
+                println!("{:?}", anime);
                 let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
                 list.push(anime_entry);
             }
@@ -788,6 +800,26 @@ async fn manual_scan() {
 
 
 
+#[tauri::command]
+async fn generate_code_challenge() -> String {
+    
+    let random_string: String = {
+        const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_.~";
+        let mut rng = rand::thread_rng();
+
+        (0..128).map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        }).collect()
+    };
+
+    *GLOBAL_MAL_CODE_CHALLENGE.lock().await = random_string.clone();
+
+    random_string
+}
+
+
+
 // initialize and run Gekijou
 fn main() {
     tauri::Builder::default()
@@ -808,7 +840,7 @@ fn main() {
         get_user_settings,get_anime_info,get_manga_info,get_user_info,update_user_entry,on_startup,scan_anime_folder,
         play_next_episode,anime_update_delay,refresh_ui,clear_errors,increment_decrement_episode,episodes_exist,browse,
         add_to_list,remove_anime,episodes_exist_single,get_delay_info,get_list_paged,set_current_tab,get_torrents,recommend_anime,
-        open_url,get_list_ids,run_filename_tests,get_debug,delete_data,background_tasks,startup_finished,get_custom_filename,set_custom_filename])
+        open_url,get_list_ids,run_filename_tests,get_debug,delete_data,background_tasks,startup_finished,get_custom_filename,set_custom_filename,generate_code_challenge])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

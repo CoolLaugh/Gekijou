@@ -19,6 +19,7 @@ pub struct AnimeInfo {
     pub format: Option<String>,
     pub genres: Vec<String>,
     pub id: i32,
+    pub id_mal: Option<i32>,
     pub is_adult: bool,
     pub popularity: i32,
     pub season: Option<String>,
@@ -844,7 +845,7 @@ impl AnimeData {
 
             count += 1;
             if count % 100 == 0 {
-                println!("{}", count);
+                //println!("{}", count);
                 GLOBAL_REFRESH_UI.lock().await.scan_data.completed_chunks = count;
             }
 

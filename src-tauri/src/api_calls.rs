@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
 
 
-use crate::{secrets, file_operations, GLOBAL_REFRESH_UI, user_data::{UserInfo, TokenData2}, anime_data::{self, AnimeInfo, NextAiringEpisode}};
+use crate::{secrets, file_operations, GLOBAL_REFRESH_UI, user_data::UserInfo, anime_data::{self, AnimeInfo, NextAiringEpisode}};
 
 
 // the structs below replicate the structure of data being returned by anilist api calls
@@ -194,7 +194,34 @@ pub struct Data {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub enum Website {
+    None,
+    Anilist,
+    MyAnimeList
+}
+
+impl Website {
+    pub fn to_string(&self) -> String {
+        match self {
+            Website::None => String::from("None"),
+            Website::Anilist => String::from("Anilist"),
+            Website::MyAnimeList => String::from("MyAnimeList"),
+        }
+    }
+
+    pub fn from_string(website: &str) -> Website {
+        match website {
+            "None" => Website::None,
+            "Anilist" => Website::Anilist,
+            "MyAnimeList" => Website::MyAnimeList,
+            _ => Website::None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TokenData {
+    pub website: Website,
     pub token_type: String,
     pub expires_in: i32,
     pub access_token: String,
@@ -203,10 +230,11 @@ pub struct TokenData {
 
 impl TokenData {
     pub const fn new() -> TokenData {
-        TokenData { token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() }
+        TokenData { website: Website::None, token_type: String::new(), expires_in: 0, access_token: String::new(), refresh_token: String::new() }
     }
 
     pub fn clear(&mut self) {
+        self.website = Website::None;
         self.token_type.clear();
         self.expires_in = 0;
         self.access_token.clear();
@@ -237,7 +265,7 @@ impl UserAnimeInfo {
 const ANIME_INFO_QUERY: &str = "
 query ($id: Int) {
     Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
-        id title { english } coverImage { large } season seasonYear type format episodes duration isAdult genres averageScore popularity description trailer { id site } startDate { year month day } trending
+        id idMal title { english } coverImage { large } season seasonYear type format episodes duration isAdult genres averageScore popularity description trailer { id site } startDate { year month day } trending
     }
 }";
 
@@ -246,7 +274,7 @@ const ANIME_LIST_QUERY: &str = "
 query ($username: String) {
     MediaListCollection (userName: $username, type: ANIME) {
         lists {
-            name entries { id mediaId status score progress startedAt { year month day } completedAt { year month day } } status
+            name entries { id idMal mediaId status score progress startedAt { year month day } completedAt { year month day } } status
         }
     }
 }";
@@ -278,7 +306,7 @@ query($page: Int $type: MediaType $format: [MediaFormat] $season: MediaSeason $s
     Page(page: $page, perPage: 50) {
         pageInfo { total perPage currentPage lastPage hasNextPage }
         media(type: $type season: $season format_in: $format seasonYear: $seasonYear genre_in: $genres tag_in: $tags search: $search sort: $sort) {
-            id title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
+            id idMal title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
             duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
             relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
             recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
@@ -371,7 +399,7 @@ query($page: Int $ids: [Int]) {
     Page(page: $page, perPage: 50) {
         pageInfo { total perPage currentPage lastPage hasNextPage }
         media(type: ANIME, id_in: $ids) {
-          id title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
+          id idMal title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
           duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
           relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
           recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
@@ -440,6 +468,7 @@ fn anilist_to_snake_case(anilist_json: String) -> String {
         .replace("isAnimationStudio", "is_animation_studio")
         .replace("primaryOccupations", "primary_occupations")
         .replace("updatedAt", "updated_at")
+        .replace("idMal", "id_mal")
 }
 
 fn ceiling_div(x: usize, y: usize) -> usize {
@@ -457,7 +486,7 @@ query($userName: String, $status: [MediaListStatus]) {
       entries {
         id mediaId status score progress updatedAt startedAt { year month day } completedAt { year month day } notes
         media {
-          id title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
+          id idMal title { userPreferred romaji english native } synonyms coverImage { large } season seasonYear type format episodes trending
           duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
           relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
           recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
@@ -535,7 +564,7 @@ pub async fn anilist_get_list(username: String, status: String, access_token: St
 // query for a specific list along with all user data and media data for the anime on that list
 const MEDIA_INFO: &str = "query ($id: Int) {
     Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
-        id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+        id idMal title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
         duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
         relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
         recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
@@ -578,7 +607,7 @@ pub async fn anilist_get_anime_info_single(anime_id: i32) -> Result<AnimeInfo, &
 // query for a specific list along with all user data and media data for the anime on that list
 const MEDIA_INFO2: &str = "query ($id: Int) {
     Media (id: $id, type: ANIME) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
-        id title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
+        id idMal title { userPreferred romaji english native } coverImage { large } season seasonYear type format episodes trending
         duration isAdult genres averageScore popularity description status trailer { id site } startDate { year month day }
         relations { edges { relationType node { id title { romaji english native userPreferred } coverImage { large } type } } }
         recommendations { nodes { rating mediaRecommendation { id title { romaji english native userPreferred } coverImage { large } type } } }
@@ -621,7 +650,7 @@ pub async fn anilist_get_anime_info_single2(anime_id: i32) -> Result<anime_data:
 // query for a specific list along with all user data and media data for the manga on that list
 const MEDIA_INFO_MANGA: &str = "query ($id: Int) {
     Media (id: $id) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
-        id title { english romaji native userPreferred } coverImage { large } type format isAdult genres 
+        id idMal title { english romaji native userPreferred } coverImage { large } type format isAdult genres 
         averageScore popularity description trailer { id site } startDate { year month day } trending
         chapters volumes source 
         staff { nodes { name { full } primaryOccupations } }
@@ -701,14 +730,14 @@ pub async fn anilist_get_access_token(code: String) -> TokenData {
     let response_string = response.unwrap();
 
     if response_string.contains("\"error\"") {
-        return TokenData { token_type: json.to_string(), expires_in: 0, access_token: response_string, refresh_token: String::new() };
+        return TokenData { website: Website::Anilist, token_type: json.to_string(), expires_in: 0, access_token: response_string, refresh_token: String::new() };
     }
     
     return serde_json::from_str(&response_string).unwrap();
 }
 
 // exchanges a code the user pastes in for a access token that is used to authorize access
-pub async fn anilist_get_access_token2(code: String) -> TokenData2 {
+pub async fn anilist_get_access_token2(code: String) -> TokenData {
 
     let client = Client::new();
 
@@ -733,10 +762,19 @@ pub async fn anilist_get_access_token2(code: String) -> TokenData2 {
     let response_string = response.unwrap();
 
     if response_string.contains("\"error\"") {
-        return TokenData2 { token_type: json.to_string(), expires_in: 0, access_token: response_string, refresh_token: String::new() };
+        return TokenData { website: Website::Anilist, token_type: json.to_string(), expires_in: 0, access_token: response_string, refresh_token: String::new() };
     }
+
+    let value: Value = serde_json::from_str(&response_string).unwrap();
+    let token: TokenData = TokenData { 
+        website: Website::Anilist, 
+        token_type: value["token_type"].as_str().unwrap().to_string(), 
+        expires_in: value["expires_in"].as_i64().unwrap() as i32, 
+        access_token: value["access_token"].as_str().unwrap().to_string(), 
+        refresh_token: value["refresh_token"].as_str().unwrap().to_string() 
+    };
     
-    return serde_json::from_str(&response_string).unwrap();
+    return token;
 }
 
 
@@ -746,7 +784,7 @@ const AIRING_INFO: &str = "query($page: Int $ids: [Int]) {
     Page(page: $page, perPage: 50) {
         pageInfo { total perPage currentPage lastPage hasNextPage }
         media(type: ANIME, id_in: $ids) {
-          id nextAiringEpisode { airingAt, episode }
+          id idMal nextAiringEpisode { airingAt, episode }
         }
     }
 }";
@@ -799,7 +837,7 @@ pub async fn anilist_airing_time(anime_ids: Vec<i32>, anime_data: &mut HashMap<i
 const ANIME_UPDATE_ENTRY: &str = "
 mutation ($id: Int, $media_id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $start_year: Int, $start_month: Int, $start_day: Int, $end_year: Int, $end_month: Int, $end_day: Int, $notes: String) { 
     SaveMediaListEntry (id: $id, mediaId: $media_id, status: $status, score: $score, progress: $progress, startedAt: {year: $start_year, month: $start_month, day: $start_day}, completedAt: {year: $end_year, month: $end_month, day: $end_day}, notes: $notes) {
-        id mediaId status score progress startedAt { year month day } completedAt { year month day } notes
+        id idMal mediaId status score progress startedAt { year month day } completedAt { year month day } notes
     }
 }";
 

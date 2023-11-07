@@ -1575,7 +1575,13 @@ async function hide_setting_window() {
 // open another window for the user to log in and get a code they can copy and paste
 window.open_oauth_window = open_oauth_window;
 async function open_oauth_window() {
-  window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13512&redirect_uri=https://anilist.co/api/v2/oauth/pin&response_type=code");
+
+  if(document.getElementById("website_selector").value == "Anilist") {
+    window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13512&redirect_uri=https://anilist.co/api/v2/oauth/pin&response_type=code");
+  } else if(document.getElementById("website_selector").value == "MyAnimeList") {
+    var code_challenge = await invoke("generate_code_challenge");
+    window.open("https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=5bea283aa1e0b46366a4f37198b5017c&code_challenge=" + code_challenge + "&state=RequestID42");
+  }
 }
 
 
@@ -1584,7 +1590,7 @@ async function open_oauth_window() {
 window.get_oauth_token = get_oauth_token;
 async function get_oauth_token() {
   
-  var input = document.getElementById("oauth_code")
+  var input = document.getElementById("oauth_code");
   
   var success = await invoke("anilist_oauth_token", { code: document.getElementById("oauth_code").value});
 
@@ -1594,6 +1600,15 @@ async function get_oauth_token() {
   } else {
     input.setAttribute("placeholder", "Failed");
     alert(success[1]);
+  }
+
+  
+  if(document.getElementById("website_selector").value == "Anilist") {
+    window.open("https://anilist.co/api/v2/oauth/authorize?client_id=13512&redirect_uri=https://anilist.co/api/v2/oauth/pin&response_type=code");
+  } else if(document.getElementById("website_selector").value == "MyAnimeList") {
+    
+    var input = document.getElementById("oauth_code");
+    var success = await invoke("mal_oauth_token", { code: document.getElementById("oauth_code").value});
   }
 }
 

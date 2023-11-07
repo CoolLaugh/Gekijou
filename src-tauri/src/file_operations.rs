@@ -8,7 +8,8 @@ use serde::Serialize;
 use tauri::async_runtime::Mutex;
 
 use crate::anime_data::{AnimeInfo, AnimePath};
-use crate::user_data::{TokenData2, UserSettings, UserInfo};
+use crate::api_calls::TokenData;
+use crate::user_data::{UserSettings, UserInfo};
 use crate::GLOBAL_REFRESH_UI;
 
 extern crate dirs;
@@ -19,11 +20,11 @@ const GEKIJOU_FOLDER: &str = "Gekijou_debug";
 #[cfg(not(debug_assertions))]
 const GEKIJOU_FOLDER: &str = "Gekijou";
 
-pub async fn write_file_token_data(token: &TokenData2) {
+pub async fn write_file_token_data(token: &TokenData) {
     write_file_data(&token, "token");
 }
 
-pub async fn read_file_token_data(token: &mut TokenData2) -> Result<(), &'static str> {
+pub async fn read_file_token_data(token: &mut TokenData) -> Result<(), &'static str> {
     read_file_data(token, "token").await
 }
 

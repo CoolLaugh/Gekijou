@@ -27,6 +27,7 @@ chrono = "0.4"
 dirs = "4.0"
 xml-rs = "0.8.4"
 walkdir = "2"
+rand = "0.8"
 
 [features]
 # by default Tauri runs in production mode
