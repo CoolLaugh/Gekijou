@@ -492,7 +492,6 @@ async function show_anime_list(name) {
 
 
 
-var get_list_response = null;
 var current_page = 0;
 var expected_page = 0;
 var has_next_page = true;
@@ -511,9 +510,7 @@ async function show_anime_list_paged(page) {
   document.getElementById("recommended_filters").style.display = "none";
   document.getElementById("sort_area").style.display = "block";
 
-  if (page == 0) {
-    get_list_response = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order").value, ascending: sort_ascending, page: page});
-  }
+  var get_list_response = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order").value, ascending: sort_ascending, page: page});
 
   var user_settings = await invoke("get_user_settings");
 
@@ -531,13 +528,13 @@ async function show_anime_list_paged(page) {
       document.getElementById("cover_panel_grid").insertAdjacentHTML("beforeend", "<p>This list is empty.</p>");
     }
 
-    var limit = (page + 1) * 50;
+    var limit = 50;
     if(limit > get_list_response.length) {
       limit = get_list_response.length;
       has_next_page = false;
     }
 
-    for(var i = page * 50; i < limit; i++) {
+    for(var i = 0; i < limit; i++) {
       if(user_settings.show_adult == false && get_list_response[i][0].is_adult == true) {
         continue;
       }
@@ -547,6 +544,8 @@ async function show_anime_list_paged(page) {
     current_page++;
   }
 }
+
+
 
 window.show_recommended_anime_list_tab = show_recommended_anime_list_tab;
 async function show_recommended_anime_list_tab() {
@@ -1824,6 +1823,7 @@ function add_anime_data(info, title) {
     var studio_name = "";
     var anime_format = "";
     var episode_text = "";
+    var duration_text = "";
     var date = "";
 
 
@@ -1849,18 +1849,23 @@ function add_anime_data(info, title) {
     if (info.media_type == "ANIME") {
       // determine the number of episodes and length of each episode
       if (info.episodes == null) {
-          episode_text = "?? x ";
+          episode_text = "?? Episodes";
       } else if (info.episodes > 1) {
-          episode_text = info.episodes + " x ";
+          episode_text = info.episodes + " Episodes";
+      } else {
+        episode_text = "1 Episode";
       }
-      episode_text += null_check(info.duration, info.duration + " Minutes", "?? Minutes");
+      duration_text = null_check(info.duration, info.duration + " Minutes", "?? Minutes");
     } else { // manga and LNs
       if (info.chapters != null) {
-        episode_text = info.chapters + " chapters";
-      } else if (info.volumes != null) {
+        duration_text = info.chapters + " chapters";
+      } else {
+        episode_text = "unknown chapters";
+      }
+      if (info.volumes != null) {
         episode_text = info.volumes + " volumes";
       } else {
-        episode_text = "unknown";
+        episode_text = "unknown volumes";
       }
     }
 
@@ -1881,7 +1886,13 @@ function add_anime_data(info, title) {
         // capitalize the first letter
         date = info.season.charAt(0) + info.season.toLowerCase().slice(1) + " " + info.season_year; 
     } else if (info.start_date != null) {
-        date = info.start_date.year + "-" + info.start_date.month + "-" + info.start_date.day;
+        date = info.start_date.year;
+        if (info.start_date.month != null) {
+          date += "-" + info.start_date.month
+        }
+        if (info.start_date.day != null) {
+          date += "-" + info.start_date.day
+        }
     } else {
         date = "Unknown Date";
     }
@@ -1930,27 +1941,6 @@ function add_anime_data(info, title) {
       all_titles += "Native: " + info.title.native;
     }
 
-    // create string of episode and duration information for episode hover
-    var episode_title_text = "";
-    if (info.media_type == "ANIME") {
-      if (info.episodes <= 1) {
-        episode_title_text = episode_text;
-      } else {
-        episode_title_text = info.episodes + " Episodes, " + info.duration + " Minutes each";
-      }
-    } else { // manga and LNs
-      if (info.chapters != null) {
-        episode_title_text = info.chapters + " chapters";
-        if (info.volumes != null) {
-          episode_title_text += " " + info.volumes + " volumes";
-        }
-      } else if (info.volumes != null) {
-        episode_title_text = info.volumes + " volumes";
-      } else {
-        episode_title_text = "unknown";
-      }
-    }
-
     var cover_onclick = "";
     if (info.media_type == "ANIME") {
       cover_onclick = "open_window(\"https://anilist.co/anime/" + info.id + "\")";
@@ -1969,16 +1959,19 @@ function add_anime_data(info, title) {
     document.getElementById("info_description").innerHTML = info.description;
     document.getElementById("info_format").textContent = anime_format;
     document.getElementById("info_rating").textContent = null_check(info.average_score, info.average_score + "%", "No Score");
-    document.getElementById("info_duration").textContent = episode_text;
-    document.getElementById("info_duration").title = episode_title_text;
+    document.getElementById("info_episodes").textContent = episode_text;
+    document.getElementById("info_episodes").title = episode_text;
+    document.getElementById("info_duration").textContent = duration_text;
+    document.getElementById("info_duration").title = episode_text;
     document.getElementById("info_season_year").textContent = date;
-    document.getElementById("info_season_year").title = info.start_date.year + "-" + info.start_date.month + "-" + info.start_date.day;
+    document.getElementById("info_season_year").title = date;
     document.getElementById("info_genres").textContent = "Genres: " + genres_text;
     document.getElementById("info_tags").innerHTML = "Tags: " + tags;
     if (spoiler_tags.length > 0) {
       document.getElementById("info_tags").innerHTML += ", <a style=\"color: var(--highlight);\" href=\"#\" id=\"show_spoilers\" onclick=\"show_spoiler_tags()\">Show Spoiler Tags</a>";
     }
 }
+
 
 
 var spoiler_tags = "";

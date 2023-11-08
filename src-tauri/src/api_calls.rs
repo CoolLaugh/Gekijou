@@ -736,6 +736,8 @@ pub async fn anilist_get_access_token(code: String) -> TokenData {
     return serde_json::from_str(&response_string).unwrap();
 }
 
+
+
 // exchanges a code the user pastes in for a access token that is used to authorize access
 pub async fn anilist_get_access_token2(code: String) -> TokenData {
 
@@ -837,7 +839,7 @@ pub async fn anilist_airing_time(anime_ids: Vec<i32>, anime_data: &mut HashMap<i
 const ANIME_UPDATE_ENTRY: &str = "
 mutation ($id: Int, $media_id: Int, $status: MediaListStatus, $score: Float, $progress: Int, $start_year: Int, $start_month: Int, $start_day: Int, $end_year: Int, $end_month: Int, $end_day: Int, $notes: String) { 
     SaveMediaListEntry (id: $id, mediaId: $media_id, status: $status, score: $score, progress: $progress, startedAt: {year: $start_year, month: $start_month, day: $start_day}, completedAt: {year: $end_year, month: $end_month, day: $end_day}, notes: $notes) {
-        id idMal mediaId status score progress startedAt { year month day } completedAt { year month day } notes
+        id mediaId status score progress startedAt { year month day } completedAt { year month day } notes
     }
 }";
 

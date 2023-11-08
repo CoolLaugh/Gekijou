@@ -290,20 +290,27 @@ impl AnimeData {
     pub async fn get_anime_data(&mut self, media_id: i32) -> Result<AnimeInfo, &'static str> {
 
         if self.nonexistent_ids.contains(&media_id) {
+            println!("get_anime_data Anime does not exist");
             return Err("Anime does not exist");
         }
 
         if let Some(anime) = self.data.get(&media_id) {
+            println!("anime data found");
             return Ok(anime.clone());
         } else {
+            println!("getting anime data from anilist");
             match api_calls::anilist_get_anime_info_single2(media_id).await {
                 Ok(result) => {
+                    println!("{:?}", result);
                     self.data.insert(result.id, result.clone());
                     self.new_anime = true;
                     file_operations::write_file_anime_info_cache(&self.data).await;
                     return Ok(result);
                 },
-                Err(error) => return Err(error),
+                Err(error) => { 
+                    println!("{:?}", error); 
+                    return Err(error)
+                },
             }
         }
     }

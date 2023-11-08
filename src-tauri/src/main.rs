@@ -87,6 +87,7 @@ lazy_static! {
     static ref GLOBAL_USER_DATA: Mutex<UserData> = Mutex::new(UserData::new());
     static ref GLOBAL_ANIME_DATA: Mutex<AnimeData> = Mutex::new(AnimeData::new());
     static ref GLOBAL_MAL_CODE_CHALLENGE: Mutex<String> = Mutex::new(String::new());
+    static ref GLOBAL_LIST_DATA_CACHE: Mutex<Vec<(anime_data::AnimeInfo, UserInfo)>> = Mutex::new(Vec::new());
 }
 
 
@@ -168,44 +169,70 @@ async fn set_current_tab(current_tab: String) {
 #[tauri::command]
 async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: usize) -> Result<Vec<(anime_data::AnimeInfo, UserInfo)>, &'static str>{
 
-    // // list won't exist if user doesn't exist
-    // if GLOBAL_USER_SETTINGS.lock().await.username.is_empty() {
-    //     return (Vec::new(), None);
-    // }
-    let mut user_data = GLOBAL_USER_DATA.lock().await;
+    if page == 0 {
 
-    let list = match user_data.get_list(&list_name).await {
-        Ok(list) => { list },
-        Err(error) => { return Err(error); },
-    };
+        let mut user_data = GLOBAL_USER_DATA.lock().await;
+    
+        let list = match user_data.get_list(&list_name).await {
+            Ok(list) => { list },
+            Err(error) => { return Err(error); },
+        };
 
-    let user_list_data = match user_data.get_data(&list).await {
-        Ok(list) => { list },
-        Err(error) => { return Err(error); },
-    };
+        let user_list_data = match user_data.get_data(&list).await {
+            Ok(list) => { list },
+            Err(error) => { return Err(error); },
+        };
+    
+        let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
+        let anime_list_data = match anime_data.get_anime_list_data(list).await {
+            Ok(list) => { 
+                if anime_data.new_anime == true {
+                    user_data.set_max_episodes(anime_data.get_anime_episodes());
+                    anime_data.new_anime = false;
+                }
+                list },
+            Err(error) => { return Err(error); },
+        };
+        drop(user_data);
+    
+        let mut combined_list: Vec<(anime_data::AnimeInfo, UserInfo)> = Vec::new();
+        for i in 0..anime_list_data.len() {
+            combined_list.push((anime_list_data[i].clone(), user_list_data[i].clone()));
+        }
+    
+        anime_data.sort_list(&mut combined_list, Some(sort));
+        if ascending == false {
+            combined_list.reverse();
+        }
 
-    let mut anime_data = GLOBAL_ANIME_DATA.lock().await;
-    let anime_list_data = match anime_data.get_anime_list_data(list).await {
-        Ok(list) => { 
-            if anime_data.new_anime == true {
-                user_data.set_max_episodes(anime_data.get_anime_episodes());
-                anime_data.new_anime = false;
-            }
-            list },
-        Err(error) => { return Err(error); },
-    };
-    drop(user_data);
+        let mut list_cache = GLOBAL_LIST_DATA_CACHE.lock().await;
+        *list_cache = combined_list;
 
-    let mut combined_list: Vec<(anime_data::AnimeInfo, UserInfo)> = Vec::new();
-    for i in 0..anime_list_data.len() {
-        combined_list.push((anime_list_data[i].clone(), user_list_data[i].clone()));
+        let end = if 50 >= list_cache.len() {
+            list_cache.len()
+        } else {
+            50
+        };
+
+        return Ok(Vec::from_iter(list_cache[0..end].iter().cloned()));
+    } else {
+
+        let list_cache = GLOBAL_LIST_DATA_CACHE.lock().await;
+
+        let start = if page * 50 < list_cache.len() {
+            page * 50
+        } else {
+            return Err("page is too high")
+        };
+
+        let end = if (page + 1) * 50 < list_cache.len() {
+            (page + 1) * 50
+        } else {
+            return Err("page is too high")
+        };
+
+        return Ok(list_cache[start..end].iter().cloned().collect());
     }
-
-    anime_data.sort_list(&mut combined_list, Some(sort));
-    if ascending == false {
-        combined_list.reverse();
-    }
-    Ok(combined_list)
 }
 
 
@@ -607,7 +634,7 @@ async fn browse(year: String, season: String, genre: String, format: String, sea
 
             // add anime to return list and global data for further uses
             for anime in response["data"]["Page"]["media"].as_array().unwrap() {
-                println!("{:?}", anime);
+                //println!("{:?}", anime);
                 let anime_entry: AnimeInfo = serde_json::from_value(anime.clone()).unwrap();
                 list.push(anime_entry);
             }

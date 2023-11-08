@@ -134,14 +134,20 @@ pub struct UserData {
 
 impl UserData {
 
+
+
     pub fn new() -> UserData {
         UserData { setting: UserSettings::new(), token: TokenData::new(), user_data: HashMap::new(), user_lists: HashMap::new(), max_episodes: HashMap::new(), update_queue: Vec::new() }
     }
     
+
+
     pub fn clear(&mut self) {
         self.user_data.clear();
         self.user_lists.clear();
     }
+
+
 
     pub async fn read_files(&mut self) {
 
@@ -152,6 +158,8 @@ impl UserData {
         file_operations::read_file_update_queue(&mut self.update_queue).await;
     }
 
+
+
     pub fn get_user_data(&self, media_id: i32) -> Result<UserInfo, &'static str> {
         if let Some(data) = self.user_data.get(&media_id) {
             Ok(data.clone())
@@ -159,6 +167,8 @@ impl UserData {
             Err("data does not exist")
         }
     }
+
+
 
     async fn check_correct_list(&mut self, data: &UserInfo) {
         
@@ -193,6 +203,8 @@ impl UserData {
             file_operations::write_file_user_lists(&self.user_lists).await;
         }
     }
+
+
 
     pub async fn set_user_data(&mut self, mut data: UserInfo, update_website: bool) -> Result<Option<UserInfo>, &'static str> {
         
@@ -296,6 +308,8 @@ impl UserData {
         Ok(old_data)
     }
 
+
+
     pub async fn remove_anime(&mut self, media_id: i32) ->Result<bool, &'static str> {
 
         if let Some(anime) = self.user_data.get(&media_id){
@@ -320,6 +334,8 @@ impl UserData {
         }
     }
 
+
+
     pub async fn get_list(&mut self, name: &String) -> Result<Vec<i32>, &'static str> {
         
         if USER_LISTS.contains(&name.as_str()) == false {
@@ -337,6 +353,41 @@ impl UserData {
 
         Ok(list)
     }
+
+
+
+    pub async fn get_list_paged(&mut self, name: &String, page: usize, entries_per_page: usize) -> Result<Vec<i32>, &'static str> {
+        
+        if USER_LISTS.contains(&name.as_str()) == false {
+            return Err("invalid list");
+        }
+
+        if self.user_lists.contains_key(name) == false {
+            // list is missing, get it
+            api_calls::anilist_get_list(self.setting.username.clone(), String::from(name), self.token.access_token.clone(), &mut self.user_data, &mut self.user_lists).await;
+            file_operations::write_file_user_lists(&self.user_lists).await;
+            file_operations::write_file_user_data(&self.user_data).await;
+        }
+
+        let user_list = self.user_lists.get(name).unwrap();
+        let start = if page * entries_per_page < user_list.len() {
+            page * entries_per_page
+        } else {
+            return Err("page too high")
+        };
+
+        let end = if (page + 1) * entries_per_page < user_list.len() {
+            (page + 1) * entries_per_page
+        } else {
+            return Err("page too high")
+        };
+
+        let list = user_list[start..end].iter().cloned().collect();
+
+        Ok(list)
+    }
+
+
 
     pub async fn get_list_with_data(&mut self, name: &String) -> Result<Vec<UserInfo>, &'static str> {
         
@@ -361,6 +412,8 @@ impl UserData {
         Ok(data_list)
     }
 
+
+
     pub async fn get_data(&self, list: &Vec<i32>) -> Result<Vec<UserInfo>, &'static str> {
 
         let mut info_list: Vec<UserInfo> = Vec::new();
@@ -373,6 +426,8 @@ impl UserData {
 
         Ok(info_list)
     }
+
+
 
     pub async fn pull_updates(&mut self) -> Result<bool, &'static str> {
         
@@ -400,6 +455,8 @@ impl UserData {
     
         Ok(true)
     }
+
+
 
     pub async fn increment_episode(&mut self, media_id: i32, length: i32) -> Result<bool, &'static str> {
         
@@ -434,6 +491,8 @@ impl UserData {
         Ok(true)
     }
 
+
+
     // takes a oauth code from the user and exchanges it for a oauth access token
     pub async fn anilist_oauth_token(&mut self, code: String) -> (bool, String) {
         
@@ -451,6 +510,8 @@ impl UserData {
         
         (true, String::new())
     }
+
+
 
     // takes a oauth code from the user and exchanges it for a oauth access token
     pub async fn mal_oauth_token(&mut self, code: String, code_verifier: String) -> (bool, String) {
@@ -470,9 +531,13 @@ impl UserData {
         (true, String::new())
     }
 
+
+
     pub fn get_user_settings(&self) -> UserSettings {
         return self.setting.clone();
     }
+
+
 
     pub async fn set_user_settings(&mut self, new_user_settings: UserSettings) -> (bool, Option<Vec<i32>>) {
         
@@ -542,23 +607,33 @@ impl UserData {
 
     }
 
+
+
     pub fn set_current_tab(&mut self, tab: String) {
         self.setting.current_tab = tab;
         //file_operations::write_file_user_settings
     }
+
+
 
     pub fn get_update_delay(&self) -> i32 {
 
         self.setting.update_delay
     }
 
+
+
     pub fn set_highlight(&mut self, color: String) {
         self.setting.highlight_color = color;
     }
 
+
+
     pub fn get_highlight(&self) -> String {
         self.setting.highlight_color.clone()
     }
+
+
 
     pub fn get_scores_from_list(&self, list: String) -> HashMap<i32, f32> {
 
@@ -577,6 +652,8 @@ impl UserData {
         }
     }
 
+
+
     pub fn all_ids(&self) -> HashSet<i32> {
 
         let mut set: HashSet<i32> = HashSet::new();
@@ -587,8 +664,9 @@ impl UserData {
         set
     }
 
+
+
     pub fn set_max_episodes(&mut self, max_episodes: HashMap<i32, Option<i32>>) {
         self.max_episodes = max_episodes;
     }
-
 }
