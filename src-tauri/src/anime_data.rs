@@ -403,77 +403,75 @@ impl AnimeData {
         missing_ids
     }
 
-    pub fn sort_list(&self, anime_list: &mut Vec<(AnimeInfo,UserInfo)>, sorting: Option<String>) {
-        if let Some(sort_category) = sorting {
-            match sort_category.as_str() {
-                "Alphabetical_native" => anime_list.sort_by(|first, second| {
-                    if let Some(first_title) = first.0.title.native.clone() {
-                        if let Some(second_title) = second.0.title.native.clone() {
-                            first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
-                        } else {
-                            std::cmp::Ordering::Less
-                        }
+    pub fn sort_list(&self, anime_list: &mut Vec<(AnimeInfo,UserInfo)>, sorting: String) {
+        match sorting.as_str() {
+            "Alphabetical_native" => anime_list.sort_by(|first, second| {
+                if let Some(first_title) = first.0.title.native.clone() {
+                    if let Some(second_title) = second.0.title.native.clone() {
+                        first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
                     } else {
-                        std::cmp::Ordering::Greater
+                        std::cmp::Ordering::Less
                     }
-                }),
-                "Alphabetical_romaji" => anime_list.sort_by(|first, second| {
-                    if let Some(first_title) = first.0.title.romaji.clone() {
-                        if let Some(second_title) = second.0.title.romaji.clone() {
-                            first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
-                        } else {
-                            std::cmp::Ordering::Less
-                        }
+                } else {
+                    std::cmp::Ordering::Greater
+                }
+            }),
+            "Alphabetical_romaji" => anime_list.sort_by(|first, second| {
+                if let Some(first_title) = first.0.title.romaji.clone() {
+                    if let Some(second_title) = second.0.title.romaji.clone() {
+                        first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
                     } else {
-                        std::cmp::Ordering::Greater
+                        std::cmp::Ordering::Less
                     }
-                }),
-                "Alphabetical_english" => anime_list.sort_by(|first, second| {
-                    if let Some(first_title) = first.0.title.english.clone() {
-                        if let Some(second_title) = second.0.title.english.clone() {
-                            first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
-                        } else if let Some(second_title) = second.0.title.romaji.clone() {
-                            first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
-                        } else {
-                            std::cmp::Ordering::Less
-                        }
-                    } else if let Some(first_title) = first.0.title.romaji.clone() {
-                        if let Some(second_title) = second.0.title.english.clone() {
-                            first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
-                        } else if let Some(second_title) = second.0.title.romaji.clone() {
-                            first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
-                        } else {
-                            std::cmp::Ordering::Less
-                        }
+                } else {
+                    std::cmp::Ordering::Greater
+                }
+            }),
+            "Alphabetical_english" => anime_list.sort_by(|first, second| {
+                if let Some(first_title) = first.0.title.english.clone() {
+                    if let Some(second_title) = second.0.title.english.clone() {
+                        first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
+                    } else if let Some(second_title) = second.0.title.romaji.clone() {
+                        first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
                     } else {
-                        std::cmp::Ordering::Greater
+                        std::cmp::Ordering::Less
                     }
-                }),
-                "Score" => anime_list.sort_by(|first, second| {
-                    first.0.average_score.partial_cmp(&second.0.average_score).unwrap()
-                }),
-                "MyScore" => anime_list.sort_by(|first, second| {
-                    first.1.score.partial_cmp(&second.1.score).unwrap()
-                }),
-                "Date" => anime_list.sort_by(|first, second| {
-                    first.0.start_date.partial_cmp(&second.0.start_date).unwrap()
-                }),
-                "Popularity" => anime_list.sort_by(|first, second| {
-                    first.0.popularity.partial_cmp(&second.0.popularity).unwrap()
-                }),
-                "Trending" => anime_list.sort_by(|first, second| {
-                    first.0.trending.partial_cmp(&second.0.trending).unwrap()
-                }),
-                "Started" => anime_list.sort_by(|first, second| {
-                    first.1.started_at.partial_cmp(&second.1.started_at).unwrap()
-                }),
-                "Completed" => anime_list.sort_by(|first, second| {
-                    first.1.completed_at.partial_cmp(&second.1.completed_at).unwrap()
-                }),
-                &_ => (),
-            }
-        } else {
-
+                } else if let Some(first_title) = first.0.title.romaji.clone() {
+                    if let Some(second_title) = second.0.title.english.clone() {
+                        first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
+                    } else if let Some(second_title) = second.0.title.romaji.clone() {
+                        first_title.to_lowercase().partial_cmp(&second_title.to_lowercase()).unwrap()
+                    } else {
+                        std::cmp::Ordering::Less
+                    }
+                } else {
+                    std::cmp::Ordering::Greater
+                }
+            }),
+            "Score" => anime_list.sort_by(|first, second| {
+                first.0.average_score.partial_cmp(&second.0.average_score).unwrap()
+            }),
+            "MyScore" => anime_list.sort_by(|first, second| {
+                first.1.score.partial_cmp(&second.1.score).unwrap()
+            }),
+            "Date" => anime_list.sort_by(|first, second| {
+                first.0.start_date.partial_cmp(&second.0.start_date).unwrap()
+            }),
+            "Popularity" => anime_list.sort_by(|first, second| {
+                first.0.popularity.partial_cmp(&second.0.popularity).unwrap()
+            }),
+            "Trending" => anime_list.sort_by(|first, second| {
+                first.0.trending.partial_cmp(&second.0.trending).unwrap()
+            }),
+            "Started" => anime_list.sort_by(|first, second| {
+                first.1.started_at.partial_cmp(&second.1.started_at).unwrap()
+            }),
+            "Completed" => anime_list.sort_by(|first, second| {
+                first.1.completed_at.partial_cmp(&second.1.completed_at).unwrap()
+            }),
+            &_ => ({
+                println!("Unknown sorting: {}", sorting)
+            }),
         }
     }
 

@@ -200,7 +200,7 @@ async fn get_list_paged(list_name: String, sort: String, ascending: bool, page: 
             combined_list.push((anime_list_data[i].clone(), user_list_data[i].clone()));
         }
     
-        anime_data.sort_list(&mut combined_list, Some(sort));
+        anime_data.sort_list(&mut combined_list, sort);
         if ascending == false {
             combined_list.reverse();
         }

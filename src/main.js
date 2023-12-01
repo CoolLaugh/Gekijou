@@ -510,9 +510,26 @@ async function show_anime_list_paged(page) {
   document.getElementById("recommended_filters").style.display = "none";
   document.getElementById("sort_area").style.display = "block";
 
-  var get_list_response = await invoke("get_list_paged", { listName: current_tab, sort: document.getElementById("sort_order").value, ascending: sort_ascending, page: page});
-
   var user_settings = await invoke("get_user_settings");
+
+  var sort_order = document.getElementById("sort_order").value;
+  if (sort_order == "Alphabetical") {
+    console.log(user_settings.title_language);
+    switch(user_settings.title_language){
+      case "romaji":
+        sort_order = "Alphabetical_romaji";
+        break;
+      case "english":
+        sort_order = "Alphabetical_english";
+        break;
+      case "native":
+        sort_order = "Alphabetical_native";
+        break;
+    }
+  }
+
+  var get_list_response = await invoke("get_list_paged", { listName: current_tab, sort: sort_order, ascending: sort_ascending, page: page});
+
 
   // user didn't change the tab while getting the list from anilist
   if (name == current_tab) {
@@ -1716,6 +1733,7 @@ async function show_anime_info_window(anime_id) {
 
   // fill in info window with data
   add_anime_data(info, title);
+  
   document.getElementById("my_list_tab").style.display = "";
   document.getElementById("torrent_button").style.display = "";
   await add_user_data(anime_id, user_settings);
@@ -1970,6 +1988,8 @@ function add_anime_data(info, title) {
     if (spoiler_tags.length > 0) {
       document.getElementById("info_tags").innerHTML += ", <a style=\"color: var(--highlight);\" href=\"#\" id=\"show_spoilers\" onclick=\"show_spoiler_tags()\">Show Spoiler Tags</a>";
     }
+    // user info
+    document.getElementById("episode_number").max = info.episodes;
 }
 
 
@@ -2055,6 +2075,13 @@ async function hide_anime_info_window(anime_id) {
 
 
 
+var entry_changed = false;
+document.getElementById("status_select").addEventListener("change", function () { entry_changed = true; }, false);
+document.getElementById("episode_number").addEventListener("change", function () { entry_changed = true; }, false);
+document.getElementById("started_date").addEventListener("change", function () { entry_changed = true; }, false);
+document.getElementById("finished_date").addEventListener("change", function () { entry_changed = true; }, false);
+document.getElementById("score_dropdown").addEventListener("change", function () { entry_changed = true; }, false);
+document.getElementById("user_notes").addEventListener("change", function () { entry_changed = true; }, false);
 // updates the entry for the current anime with new information from the info window
 async function update_user_entry(anime_id) {
 
@@ -2092,7 +2119,7 @@ async function update_user_entry(anime_id) {
   }
 
   // keep notes null/None if it is empty
-  if (user_entry.notes.size == 0) {
+  if (user_entry.notes == "") {
     user_entry.notes = null;
   }
 
@@ -2149,15 +2176,17 @@ async function update_user_entry(anime_id) {
     }
 
     // only update if something changed
-    if (user_entry.status != user_data.status ||
+    if (entry_changed == true ||
+      user_entry.status != user_data.status ||
       user_entry.score != user_data.score ||
       user_entry.progress != user_data.progress ||
       started_changed == true ||
       completed_changed == true ||
       user_entry.notes != user_data.notes) {
-  
+
         await invoke("update_user_entry", {anime: user_entry});
     }
+    entry_changed = false;
   } else {
     if (user_entry.status != null && user_entry.status != "") {
       
